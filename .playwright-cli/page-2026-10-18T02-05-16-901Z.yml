@@ -1,0 +1,110 @@
+- generic [ref=e3]:
+  - navigation [ref=e4]:
+    - generic [ref=e6]:
+      - button [ref=e7] [cursor=pointer]:
+        - img "木薯腐烂面积精准量化系统" [ref=e9]
+        - generic [ref=e10]:
+          - paragraph [ref=e11]: CASSAVA LAB
+          - heading "木薯腐烂面积精准量化系统" [level=1] [ref=e12]
+      - generic [ref=e13]:
+        - button [ref=e14] [cursor=pointer]
+        - button [ref=e19] [cursor=pointer]
+  - generic [ref=e22]:
+    - generic [ref=e25]:
+      - generic [ref=e26]:
+        - generic [ref=e27]:
+          - generic [ref=e28]: 中国热带农业科学院&海南师范大学
+          - heading "木薯采后腐烂面积智能预测系统" [level=1] [ref=e32]
+          - paragraph [ref=e33]: 农业农村部木薯种质资源保护与利用重点实验室+海南师范大学龙海侠团队实验室联合出品
+          - paragraph [ref=e34]: 1秒预测20张<2.1%像素级分割结果
+          - generic [ref=e35]:
+            - button "开始体验" [ref=e36] [cursor=pointer]
+            - button "观看演示" [ref=e39] [cursor=pointer]
+        - generic [ref=e40]:
+          - generic [ref=e41]:
+            - generic [ref=e42]:
+              - generic [ref=e43]: 0+
+              - generic [ref=e44]: 总访问量
+            - generic [ref=e45]:
+              - generic [ref=e46]: 0%
+              - generic [ref=e47]: 预测准确率
+            - generic [ref=e48]:
+              - generic [ref=e49]: 0+
+              - generic [ref=e50]: 预测功能使用次数
+            - generic [ref=e51]:
+              - generic [ref=e52]: 0+
+              - generic [ref=e53]: 预测图片总数
+          - generic [ref=e54]:
+            - button "木薯采后腐烂面积智能预测系统" [ref=e55] [cursor=pointer]
+            - button "木薯采后腐烂面积智能预测系统" [ref=e56] [cursor=pointer]
+            - button "木薯采后腐烂面积智能预测系统" [ref=e57] [cursor=pointer]
+      - generic [ref=e58]:
+        - generic [ref=e59]:
+          - generic [ref=e60]:
+            - img "木薯横截面智能分割示意" [ref=e61]
+            - generic [ref=e63]:
+              - generic [ref=e64]: AI Segmentation
+              - paragraph [ref=e65]: 农业农村部木薯种质资源保护与利用重点实验室+海南师范大学龙海侠团队实验室联合出品
+          - generic:
+            - img "木薯科研样本图像管理示意"
+            - generic:
+              - generic: Image Archive
+              - paragraph: 科研样本、图像与分析流程集中管理
+          - generic:
+            - img "木薯样本采集与实验室分析场景示意"
+            - generic:
+              - generic: Research Delivery
+              - paragraph: 联合实验室成果沉淀为可用平台
+        - generic [ref=e66]:
+          - generic [ref=e67]:
+            - heading "数据" [level=3] [ref=e79]
+            - paragraph [ref=e80]: 18.4 万张 5 通道多光谱影像，覆盖 1 096 份核心种质
+          - generic [ref=e81]:
+            - heading "速度" [level=3] [ref=e85]
+            - paragraph [ref=e86]: 1秒预测20张，支持批量离线处理
+          - generic [ref=e87]:
+            - heading "落地" [level=3] [ref=e91]
+            - paragraph [ref=e92]: 已在儋州、白沙、琼中示范 410 亩，累计减损 54 t
+          - generic [ref=e93]:
+            - heading "系统架构" [level=3] [ref=e100]
+            - paragraph [ref=e101]: 数据采集 → 数据标注 → 模型训练 → 面积换算 → 前端展示
+    - generic [ref=e103]:
+      - generic [ref=e104]:
+        - paragraph [ref=e105]: 核心优势
+        - heading "我们的系统在木薯腐烂面积预测方面具有独特优势" [level=2] [ref=e106]
+        - generic [ref=e107]:
+          - paragraph [ref=e112]: 木薯采后 48 h 内一旦出现细菌性软腐，损失率可达 30 % 以上。传统人工勾绘每 100 筐需 2.5 人·时，误差 > 15 %。
+          - paragraph [ref=e117]: 18.4 万张 5 通道多光谱影像，覆盖 1 096 份核心种质
+          - paragraph [ref=e122]: 1秒预测20张，误差 < 2.1%
+      - generic [ref=e123]:
+        - article [ref=e124]:
+          - heading "国家木薯种质资源圃（儋州）/ 木薯研究中心" [level=3] [ref=e129]
+          - generic [ref=e130]:
+            - generic [ref=e131]:
+              - paragraph [ref=e132]: 负责人/团队
+              - paragraph [ref=e133]: 木薯研究中心 / 国家木薯产业技术体系
+            - generic [ref=e134]:
+              - paragraph [ref=e135]: 依托平台
+              - paragraph [ref=e136]: 主要职责：1.木薯种质资源保护利用与品种选育；2.高产栽培技术研究；3.采后处理与加工利用研究。
+            - generic [ref=e137]:
+              - paragraph [ref=e138]: 研究方向
+              - paragraph [ref=e139]: 主要进展：1.考察收集保存木薯资源，培育优良新品种、获新品种权及国审品种；2.推动“食品化-饲料化-基质化”一体化（食用菜谱、特色食品、叶粉加工、茎秆基质利用、生物发酵饲料、全程机械化）；3.依托国家体系与CIAT等国内外机构深度合作，支撑获国家国际科技合作奖。
+        - article [ref=e140]:
+          - heading "海南师范大学龙海侠实验室" [level=3] [ref=e146]
+          - generic [ref=e147]:
+            - generic [ref=e148]:
+              - paragraph [ref=e149]: 负责人/团队
+              - paragraph [ref=e150]: 龙海侠教授牵头，团队包含刘波、余霞、马翠花等多位互补专家，拥有IEEE高级会员、全球前2%顶尖科学家等高水平人才。现有博士生2名、研究生13名、本科生3名，分为网安、生信、生态、复杂网络4个研究组。
+            - generic [ref=e151]:
+              - paragraph [ref=e152]: 依托平台
+              - paragraph [ref=e153]: 教育部重点实验室数据科学与智慧教育、海南省工程研究中心数据技术与应用
+            - generic [ref=e154]:
+              - paragraph [ref=e155]: 研究方向
+              - paragraph [ref=e156]: 核心研究领域：1.网络空间安全（区块链诈骗检测、联邦隐私保护）；2.生物信息学（非编码RNA与疾病关联、单细胞肿瘤药物反应）；3.生态与农业智能检测（菠萝蜜/橙子无损检测、鸟类/两栖声学识别、木薯腐烂量化）；4.复杂网络与人工智能理论。 以第一或通讯作者在Computers in Biology and Medicine等国内外重要期刊发表高水平论文60余篇，近五年SCI论文32篇。 获授权专利11项，软件著作权15项。主持国家自然科学基金2项、省基金4项，获海南省科技进步奖1项等。
+    - generic [ref=e159]:
+      - generic [ref=e160]:
+        - paragraph [ref=e161]: 开启智能农业新时代
+        - heading "立即体验我们的木薯腐烂面积智能预测系统，感受AI技术为农业带来的革命性变化" [level=2] [ref=e162]
+      - generic [ref=e163]:
+        - button "立即开始检测" [ref=e164] [cursor=pointer]
+        - button "联系我们" [ref=e167] [cursor=pointer]

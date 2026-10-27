@@ -1,0 +1,16 @@
+[
+  {
+    "source": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\软著申请\\网页\\back\\cassavaBack\\media\\images\\5\\S15 (4).jpg",
+    "target": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\images\\5\\S15 (4).jpg",
+    "bytes": 1119752,
+    "sha256": "9e190e57616f31b80a19de82c9f47e24e845f710728252dd259dc4b0ac6c4639",
+    "exact_crop_checks": 3
+  },
+  {
+    "source": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\软著申请\\网页\\back\\cassavaBack\\media\\images\\5\\S19 (1).jpg",
+    "target": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\images\\5\\S19 (1).jpg",
+    "bytes": 1474429,
+    "sha256": "1bc14b4f189a4ff5b776df0ff1e05f157023429fea95711a65f71786065e7b4a",
+    "exact_crop_checks": 3
+  }
+]

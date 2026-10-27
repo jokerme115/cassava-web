@@ -1,0 +1,412 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  ArrowRight,
+  BarChart3,
+  Brain,
+  CheckCircle2,
+  ChevronRight,
+  Globe2,
+  Leaf,
+  Microscope,
+  Shield,
+  Sparkles
+} from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { analyticsApi, systemSettingsApi } from '../services/api';
+
+interface HomePageProps {
+  onSectionChange: (section: string) => void;
+}
+
+const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
+  const { t } = useTranslation();
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [siteAnnouncement, setSiteAnnouncement] = useState('');
+  const [statsValues, setStatsValues] = useState({
+    visits: 0,
+    accuracy: 90,
+    prediction_usage: 0,
+    images_predicted: 0
+  });
+  const [animatedNumbers, setAnimatedNumbers] = useState({
+    visits: 0,
+    accuracy: 0,
+    prediction_usage: 0,
+    images_predicted: 0
+  });
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const settings = await systemSettingsApi.getPublic();
+        if (settings.site_announcement) {
+          setSiteAnnouncement(settings.site_announcement);
+        }
+      } catch (error) {
+        console.error('Failed to fetch public settings', error);
+      }
+    };
+
+    fetchSettings();
+  }, []);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await analyticsApi.getPublicStats();
+        setStatsValues((prev) => ({
+          ...prev,
+          prediction_usage: data.prediction_usage_count,
+          images_predicted: data.images_predicted_count,
+          visits: data.visit_count
+        }));
+      } catch (error) {
+        console.error('Failed to fetch public stats', error);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  const slides = useMemo(
+    () => [
+      {
+        title: t('homepage.hero.title'),
+        subtitle: t('homepage.hero.subtitle'),
+        description: '上传木薯切面图像，进行病变区域分割、人工校正与面积比例量化。',
+        key: 'prediction',
+        image: '/banners/segmentation.png',
+        imageAlt: '木薯横截面智能分割示意',
+        icon: Brain,
+        eyebrow: 'AI Segmentation',
+        panelClass: 'from-emerald-500 via-emerald-400 to-sky-400',
+        chipClass: 'bg-white/18 text-white',
+        action: 'prediction'
+      },
+      {
+        title: t('homepage.hero.title'),
+        subtitle: '科研样本、图像与分析流程集中管理',
+        description: '围绕上传、预测、结果归档建立清晰链路，先浏览公共内容，再按需进入登录操作。',
+        key: 'images',
+        image: '/banners/archive.png',
+        imageAlt: '木薯科研样本图像管理示意',
+        icon: BarChart3,
+        eyebrow: 'Image Archive',
+        panelClass: 'from-slate-900 via-slate-800 to-emerald-700',
+        chipClass: 'bg-[#f7f8fa] text-[#11181c]',
+        action: 'images'
+      },
+      {
+        title: t('homepage.hero.title'),
+        subtitle: '联合实验室成果沉淀为可用平台',
+        description: '把木薯采后腐烂量化研究转化为可视化、可回溯、可协作的检测界面。',
+        key: 'results',
+        image: '/banners/research.png',
+        imageAlt: '木薯样本采集与实验室分析场景示意',
+        icon: Microscope,
+        eyebrow: 'Research Delivery',
+        panelClass: 'from-amber-300 via-emerald-300 to-cyan-300',
+        chipClass: 'bg-white/22 text-white',
+        action: 'results'
+      }
+    ],
+    [t]
+  );
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 5200);
+
+    return () => window.clearInterval(interval);
+  }, [slides.length]);
+
+  useEffect(() => {
+    const timers: number[] = [];
+
+    Object.entries(statsValues).forEach(([key, value]) => {
+      let current = 0;
+      const increment = Math.max(1, value / 40);
+      const timer = window.setInterval(() => {
+        current += increment;
+        if (current >= value) {
+          current = value;
+          window.clearInterval(timer);
+        }
+
+        setAnimatedNumbers((prev) => ({
+          ...prev,
+          [key]: Math.floor(current)
+        }));
+      }, 35);
+
+      timers.push(timer);
+    });
+
+    return () => {
+      timers.forEach((timer) => window.clearInterval(timer));
+    };
+  }, [statsValues]);
+
+  const stats = [
+    { label: t('homepage.stats.visits'), value: animatedNumbers.visits, suffix: '+' },
+    { label: '精度评估', value: '独立验证中', suffix: '' },
+    { label: t('homepage.stats.prediction_usage'), value: animatedNumbers.prediction_usage, suffix: '+' },
+    { label: t('homepage.stats.images_predicted'), value: animatedNumbers.images_predicted, suffix: '+' }
+  ];
+
+  const strengths = [
+    {
+      icon: Brain,
+      title: t('homepage.features.ai.title'),
+      description: '分割结果支持逐像素检查与人工校正；当前精度以独立样本评估为准。'
+    },
+    {
+      icon: BarChart3,
+      title: t('homepage.features.analytics.title'),
+      description: t('homepage.features.analytics.description')
+    },
+    {
+      icon: Shield,
+      title: t('homepage.features.security.title'),
+      description: t('homepage.features.security.description')
+    },
+    {
+      icon: Globe2,
+      title: t('homepage.features.cloud.title'),
+      description: t('homepage.features.cloud.description')
+    }
+  ];
+
+  const researchBlocks = [
+    {
+      icon: Leaf,
+      title: t('homepage.about.team.title'),
+      lead: t('homepage.about.team.leader'),
+      platform: t('homepage.about.team.platform'),
+      details: t('homepage.about.team.project')
+    },
+    {
+      icon: Microscope,
+      title: t('homepage.about.research.title'),
+      lead: t('homepage.about.research.leader'),
+      platform: t('homepage.about.research.platform'),
+      details: `${t('homepage.about.research.project')}\n${t('homepage.about.research.papers')}\n${t('homepage.about.research.patents')}`
+    }
+  ];
+
+  const currentHero = slides[currentSlide];
+
+  return (
+    <div className="bg-[#f4f5f7] text-[#11181c]">
+      {siteAnnouncement && (
+        <div className="border-b border-[#ededf2] bg-[#f7f8fa] px-4 py-3 text-center text-sm text-[#11181c]">
+          <div className="mx-auto flex max-w-6xl items-center justify-center gap-2">
+            <Sparkles className="h-4 w-4" />
+            <span>{siteAnnouncement}</span>
+          </div>
+        </div>
+      )}
+
+      <section className="relative overflow-hidden px-4 pb-8 pt-6 sm:px-6 lg:px-8">
+        
+        <div className="relative mx-auto grid max-w-[1440px] items-start gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="flex flex-col gap-10 rounded-[24px] border border-[#ededf2] bg-white px-6 py-8 text-[#11181c] shadow-[0_10px_30px_rgba(17,17,26,0.045)] sm:px-8 sm:py-10 lg:px-10">
+            <div>
+              <div className="inline-flex items-center gap-3 rounded-full border border-[#ededf2] bg-[#f7f8fa] px-4 py-2 text-sm text-[#3f4650]">
+                <Leaf className="h-4 w-4 text-[#0a84ff]" />
+                {t('homepage.hero.tagline')}
+              </div>
+
+              <h1 className="mt-7 max-w-3xl text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl lg:text-[56px]">
+                {currentHero.title}
+              </h1>
+              <p className="mt-5 max-w-2xl text-lg leading-8 text-[#3f4650] sm:text-xl">
+                {currentHero.subtitle}
+              </p>
+              <p className="mt-4 max-w-2xl text-base leading-8 text-[#687076]">
+                {currentHero.description}
+              </p>
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <button
+                  onClick={() => onSectionChange(currentHero.action)}
+                  className="inline-flex h-12 items-center justify-center rounded-full bg-[#0070e0] px-6 text-sm font-semibold text-white transition hover:bg-[#005cb8]"
+                >
+                  {t('homepage.hero.action')}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => onSectionChange('contact')}
+                  className="inline-flex h-12 items-center justify-center rounded-full border border-[#e4e5eb] bg-white px-6 text-sm font-medium text-[#3f4650] transition hover:bg-[#f7f8fa]"
+                >
+                  {t('homepage.hero.demo')}
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-8">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {stats.map((stat) => (
+                  <div key={stat.label} className="rounded-[12px] border border-[#ededf2] bg-[#f7f8fa] px-3.5 py-3.5">
+                    <div className="text-xl font-semibold tabular-nums text-[#11181c]">
+                      {stat.value}
+                      {stat.suffix}
+                    </div>
+                    <div className="mt-1 text-[11px] text-[#687076]">{stat.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-5 flex gap-2">
+                {slides.map((slide, index) => (
+                  <button
+                    key={slide.key}
+                    onClick={() => setCurrentSlide(index)}
+                    className={`h-1.5 rounded-full transition-all ${
+                      currentSlide === index ? 'w-12 bg-[#0070e0]' : 'w-6 bg-[#e4e5eb]'
+                    }`}
+                    aria-label={slide.title}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-6">
+            <div className="relative min-h-[360px] overflow-hidden rounded-[24px] border border-[#ededf2] bg-white shadow-[0_4px_16px_rgba(17,24,28,0.05)]">
+              {slides.map((slide, index) => (
+                <div
+                  key={slide.key}
+                  className={`absolute inset-0 transition-all duration-700 ${
+                    currentSlide === index
+                      ? 'translate-y-0 opacity-100'
+                      : 'pointer-events-none translate-y-4 opacity-0'
+                  }`}
+                >
+                  <img
+                    src={slide.image}
+                    alt={slide.imageAlt}
+                    className="absolute inset-0 h-full w-full object-cover"
+                    style={{ objectPosition: 'center top' }}
+                    loading={index === 0 ? 'eager' : 'lazy'}
+                    decoding="async"
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              {strengths.map((item) => (
+                <div
+                  key={item.title}
+                  className="rounded-[16px] border border-[#ededf2] bg-white p-5"
+                >
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(10,132,255,0.08)] text-[#0a84ff]">
+                    <item.icon className="h-5 w-5" />
+                  </div>
+                  <h3 className="mt-4 text-base font-semibold text-[#11181c]">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-[#3f4650]">{item.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto grid max-w-[1440px] gap-6 lg:grid-cols-[0.82fr_1.18fr]">
+          <div className="rounded-[24px] border border-[#ededf2] bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.06)] sm:p-8">
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#0a84ff]">
+              {t('homepage.advantages.title')}
+            </p>
+            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-[#11181c]">
+              {t('homepage.advantages.subtitle')}
+            </h2>
+            <div className="mt-8 space-y-5">
+              {[
+                t('homepage.advantages.background_desc'),
+                t('homepage.advantages.highlights_desc'),
+                '模型精度与PPD误差需要通过独立样本验证；人工校正结果保留独立版本。'
+              ].map((text, index) => (
+                <div key={index} className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-[#0a84ff]" />
+                  <p className="text-sm leading-7 text-[#3f4650]">{text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            {researchBlocks.map((block) => (
+              <article
+                key={block.title}
+                className="rounded-[24px] border border-[#ededf2] bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.06)] sm:p-8"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0070e0] text-white">
+                  <block.icon className="h-5 w-5" />
+                </div>
+                <h3 className="mt-6 text-2xl font-semibold tracking-tight text-[#11181c]">
+                  {block.title}
+                </h3>
+                <div className="mt-6 space-y-5 text-sm leading-7 text-[#3f4650]">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.22em] text-[#687076]">
+                      {t('homepage.about.labels.leader')}
+                    </p>
+                    <p className="mt-2">{block.lead}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.22em] text-[#687076]">
+                      {t('homepage.about.labels.platform')}
+                    </p>
+                    <p className="mt-2 whitespace-pre-line">{block.platform}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.22em] text-[#687076]">
+                      {t('homepage.about.labels.project')}
+                    </p>
+                    <p className="mt-2 whitespace-pre-line">{block.details}</p>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="px-4 pb-10 pt-2 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1440px] rounded-[24px] bg-[#0070e0] px-6 py-8 text-white shadow-[0_4px_16px_rgba(17,24,28,0.05)] sm:px-8 sm:py-10">
+          <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-emerald-200">
+                {t('homepage.cta.title')}
+              </p>
+              <h2 className="mt-4 max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl">
+                {t('homepage.cta.subtitle')}
+              </h2>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <button
+                onClick={() => onSectionChange('prediction')}
+                className="inline-flex h-12 items-center justify-center rounded-full bg-[#0070e0] px-6 text-sm font-semibold text-white transition hover:bg-[#005cb8]"
+              >
+                {t('homepage.cta.action')}
+                <ChevronRight className="ml-2 h-4 w-4" />
+              </button>
+              <button
+                onClick={() => onSectionChange('contact')}
+                className="inline-flex h-12 items-center justify-center rounded-full border border-white/16 bg-white/8 px-6 text-sm font-medium text-white transition hover:bg-white/14"
+              >
+                {t('homepage.cta.contact')}
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+};
+
+export default HomePage;

@@ -1,0 +1,59 @@
+/* ------------------------------------------------------------------
+ * antd 浮层的磨砂玻璃补丁
+ * 说明：antd 5 的浮层底色由 token 控制（见 src/App.tsx 的 ConfigProvider），
+ * 但 backdrop-filter 不在 token 体系里，只能用 CSS 补。
+ * 这里的选择器刻意保持最少，避免与 antd 内部样式打架。
+ * ------------------------------------------------------------------ */
+
+.ant-modal-content,
+.ant-dropdown-menu,
+.ant-select-dropdown,
+.ant-picker-panel-container,
+.ant-table-thead > tr > th,
+.ant-message-notice-content,
+.ant-popover-inner,
+.ant-drawer-content {
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.12) !important;
+}
+
+/* 遮罩：默认的纯黑半透明会把背景色斑压死，改用冷调薄雾 + 轻模糊 */
+.ant-modal-mask {
+  -webkit-backdrop-filter: blur(2px) !important;
+  backdrop-filter: blur(2px) !important;
+  background: rgba(15, 23, 42, 0.28) !important;
+}
+
+/* 表格表头吸顶时不要出现白色断层 */
+.ant-table-thead > tr > th {
+  background: rgba(255, 255, 255, 0.55) !important;
+}
+
+/* 弹窗头部与内容底色统一为同一张玻璃 */
+.ant-modal-content,
+.ant-drawer-content {
+  background: rgba(255, 255, 255, 0.82) !important;
+}
+
+/* popover 箭头与主体同色，否则会出现白色小尖角 */
+.ant-popover-arrow::before {
+  background: rgba(255, 255, 255, 0.82) !important;
+}
+
+/* ---- 降级：不支持 backdrop-filter 的浏览器直接给不透明底，绝不留半透明糊字 ---- */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .ant-modal-content,
+  .ant-dropdown-menu,
+  .ant-select-dropdown,
+  .ant-picker-panel-container,
+  .ant-table-thead > tr > th,
+  .ant-message-notice-content,
+  .ant-popover-inner,
+  .ant-drawer-content {
+    background: rgba(255, 255, 255, 0.92) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}

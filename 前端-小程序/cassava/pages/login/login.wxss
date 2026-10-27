@@ -1,0 +1,98 @@
+/* pages/login/login.wxss */
+.login-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #E8F5E9 0%, #F5F7F5 40%);
+  padding: 0 48rpx;
+  box-sizing: border-box;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 100rpx 0 60rpx;
+}
+.brand-logo {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 40rpx;
+  background: linear-gradient(135deg, #43A047, #2E7D32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 72rpx;
+  box-shadow: 0 12rpx 30rpx rgba(46, 125, 50, 0.3);
+  margin-bottom: 32rpx;
+}
+.brand-title {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #1B5E20;
+}
+.brand-sub {
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  color: #607D8B;
+}
+
+.form-card {
+  background: #fff;
+  border-radius: 28rpx;
+  padding: 48rpx 40rpx;
+  box-shadow: 0 8rpx 30rpx rgba(38, 50, 56, 0.06);
+}
+
+.field {
+  position: relative;
+  margin-bottom: 36rpx;
+}
+.field-label {
+  font-size: 26rpx;
+  color: #607D8B;
+  margin-bottom: 14rpx;
+}
+.field-input {
+  height: 92rpx;
+  background: #F5F7F5;
+  border-radius: 16rpx;
+  padding: 0 28rpx;
+  font-size: 30rpx;
+  color: #263238;
+  box-sizing: border-box;
+}
+.ph {
+  color: #B0BEC5;
+}
+.pwd-toggle {
+  position: absolute;
+  right: 28rpx;
+  bottom: 0;
+  height: 92rpx;
+  line-height: 92rpx;
+  font-size: 26rpx;
+  color: #2E7D32;
+}
+
+.login-btn {
+  margin-top: 20rpx;
+  height: 92rpx;
+  line-height: 92rpx;
+}
+
+.to-register {
+  margin-top: 32rpx;
+  text-align: center;
+  font-size: 28rpx;
+  color: #607D8B;
+}
+.link {
+  color: #2E7D32;
+  font-weight: 600;
+}
+
+.footer-note {
+  margin-top: 60rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: #B0BEC5;
+}

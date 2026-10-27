@@ -1,0 +1,289 @@
+- generic [ref=e3]:
+  - navigation [ref=e4]:
+    - generic [ref=e6]:
+      - button [ref=e25] [cursor=pointer]:
+        - img "木薯腐烂面积精准量化系统" [ref=e9]
+        - generic [ref=e10]:
+          - paragraph [ref=e11]: CASSAVA LAB
+          - heading "Cassava System" [level=1] [ref=e26]
+      - generic [ref=e27]:
+        - button "首页" [ref=e28] [cursor=pointer]
+        - button "图片管理" [active] [ref=e29] [cursor=pointer]
+        - button "联系我们" [ref=e30] [cursor=pointer]
+        - button "智能分析" [ref=e32] [cursor=pointer]
+      - generic [ref=e45]:
+        - button "中文" [ref=e47] [cursor=pointer]
+        - button "admin" [ref=e261] [cursor=pointer]
+  - generic [ref=e411]:
+    - generic [ref=e412]:
+      - generic [ref=e413]:
+        - heading "文件夹" [level=3] [ref=e414]
+        - button "新建文件夹" [ref=e417] [cursor=pointer]
+        - generic [ref=e419]:
+          - generic [ref=e422]:
+            - combobox [ref=e424]
+            - generic "根目录" [ref=e425]
+          - generic [ref=e426]:
+            - textbox "请输入文件夹名称" [ref=e427]
+            - button "创 建" [ref=e428] [cursor=pointer]
+      - generic [ref=e430]:
+        - button "所有图片 15" [ref=e431] [cursor=pointer]:
+          - generic [ref=e432]:
+            - generic [ref=e433]: 所有图片
+            - generic [ref=e434]: "15"
+        - button "未归类 10" [ref=e435] [cursor=pointer]:
+          - generic [ref=e436]:
+            - generic [ref=e437]: 未归类
+            - generic [ref=e438]: "10"
+        - button "与我共享" [ref=e439] [cursor=pointer]
+        - button "我共享的" [ref=e447] [cursor=pointer]
+        - textbox "搜索图片..." [ref=e459]
+        - generic [ref=e462]:
+          - generic:
+            - textbox "for screen reader"
+          - tree [ref=e463]:
+            - generic [ref=e466]:
+              - treeitem "holder demo 5" [ref=e467]:
+                - img "holder" [ref=e469]
+                - generic "demo" [ref=e473] [cursor=pointer]:
+                  - generic [ref=e475]:
+                    - generic [ref=e476]: demo
+                    - generic [ref=e480]:
+                      - generic [ref=e481]: "5"
+                      - generic [ref=e482]:
+                        - button [ref=e483]
+                        - button [ref=e486]
+                        - button [ref=e490]
+              - treeitem "holder test 0" [ref=e494]:
+                - img "holder" [ref=e496]
+                - generic "test" [ref=e500] [cursor=pointer]:
+                  - generic [ref=e502]:
+                    - generic [ref=e503]: test
+                    - generic [ref=e507]:
+                      - generic [ref=e508]: "0"
+                      - generic [ref=e509]:
+                        - button [ref=e510]
+                        - button [ref=e513]
+                        - button [ref=e517]
+    - generic [ref=e521]:
+      - generic [ref=e522]:
+        - generic [ref=e523]:
+          - heading "图片管理" [level=2] [ref=e525] [cursor=pointer]
+          - generic [ref=e527]:
+            - button [ref=e528] [cursor=pointer]
+            - button [ref=e531] [cursor=pointer]
+        - generic [ref=e533]:
+          - generic [ref=e534]:
+            - textbox "搜索图片..." [ref=e539]
+            - generic [ref=e540]:
+              - combobox [ref=e541]:
+                - option "按日期排序" [selected]
+                - option "拍摄时间"
+                - option "按名称排序"
+                - option "按文件夹排序"
+                - option "按大小排序"
+              - combobox [ref=e542]:
+                - option "按年分组" [selected]
+                - option "按月分组"
+                - option "按日分组"
+              - button [ref=e543] [cursor=pointer]
+          - button "上传图片/文件夹" [ref=e547] [cursor=pointer]
+      - generic [ref=e552]:
+        - generic [ref=e553]:
+          - generic [ref=e554]:
+            - generic [ref=e555] [cursor=pointer]:
+              - checkbox "全选 (15 项)" [ref=e556]
+              - generic [ref=e557]: 全选 (15 项)
+            - generic [ref=e558]: 共 15 项
+          - generic [ref=e559]:
+            - heading "文件夹" [level=3] [ref=e560]
+            - generic [ref=e561]:
+              - generic [ref=e562] [cursor=pointer]:
+                - generic [ref=e571]: demo
+                - generic [ref=e572]: 5 items
+              - generic [ref=e573] [cursor=pointer]:
+                - generic [ref=e582]: test
+                - generic [ref=e583]: 0 items
+          - generic [ref=e585]:
+            - generic [ref=e586]: "2026"
+            - generic [ref=e590]:
+              - generic [ref=e591]:
+                - img "图片9.png" [ref=e592] [cursor=pointer]
+                - generic [ref=e593]:
+                  - button
+              - generic [ref=e594]:
+                - paragraph [ref=e595]: 图片9.png
+                - generic [ref=e596]:
+                  - paragraph [ref=e597]: 2026/10/15 09:04:45
+                  - paragraph [ref=e601]: "大小: 0.19 MB"
+              - checkbox [ref=e603]
+              - button "编辑" [ref=e605] [cursor=pointer]
+            - generic [ref=e609]:
+              - generic [ref=e610]:
+                - img "图片8.png" [ref=e611] [cursor=pointer]
+                - generic [ref=e612]:
+                  - button
+              - generic [ref=e613]:
+                - paragraph [ref=e614]: 图片8.png
+                - generic [ref=e615]:
+                  - paragraph [ref=e616]: 2026/10/14 12:17:47
+                  - paragraph [ref=e620]: "大小: 0.19 MB"
+              - checkbox [ref=e622]
+              - button "编辑" [ref=e624] [cursor=pointer]
+            - generic [ref=e628]:
+              - generic [ref=e629]:
+                - img "图片7.png" [ref=e630] [cursor=pointer]
+                - generic [ref=e631]:
+                  - button
+              - generic [ref=e632]:
+                - paragraph [ref=e633]: 图片7.png
+                - generic [ref=e634]:
+                  - paragraph [ref=e635]: 2026/10/14 08:54:06
+                  - paragraph [ref=e639]: "大小: 0.43 MB"
+              - checkbox [ref=e641]
+              - button "编辑" [ref=e643] [cursor=pointer]
+            - generic [ref=e647]:
+              - generic [ref=e648]:
+                - img "图片6.png" [ref=e649] [cursor=pointer]
+                - generic [ref=e650]:
+                  - button
+              - generic [ref=e651]:
+                - paragraph [ref=e652]: 图片6.png
+                - generic [ref=e653]:
+                  - paragraph [ref=e654]: 2026/10/14 08:54:06
+                  - paragraph [ref=e658]: "大小: 0.30 MB"
+              - checkbox [ref=e660]
+              - button "编辑" [ref=e662] [cursor=pointer]
+            - generic [ref=e666]:
+              - generic [ref=e667]:
+                - img "图片5.png" [ref=e668] [cursor=pointer]
+                - generic [ref=e669]:
+                  - button
+              - generic [ref=e670]:
+                - paragraph [ref=e671]: 图片5.png
+                - generic [ref=e672]:
+                  - paragraph [ref=e673]: 2026/10/14 08:54:06
+                  - paragraph [ref=e677]: "大小: 0.26 MB"
+              - checkbox [ref=e679]
+              - button "编辑" [ref=e681] [cursor=pointer]
+            - generic [ref=e685]:
+              - generic [ref=e686]:
+                - img "图片4.png" [ref=e687] [cursor=pointer]
+                - generic [ref=e688]:
+                  - button
+              - generic [ref=e689]:
+                - paragraph [ref=e690]: 图片4.png
+                - generic [ref=e691]:
+                  - paragraph [ref=e692]: 2026/10/13 17:44:28
+                  - paragraph [ref=e696]: "大小: 0.30 MB"
+              - checkbox [ref=e698]
+              - button "编辑" [ref=e700] [cursor=pointer]
+            - generic [ref=e704]:
+              - generic [ref=e705]:
+                - img "图片3.png" [ref=e706] [cursor=pointer]
+                - generic [ref=e707]:
+                  - button
+              - generic [ref=e708]:
+                - paragraph [ref=e709]: 图片3.png
+                - generic [ref=e710]:
+                  - paragraph [ref=e711]: 2026/10/13 17:44:28
+                  - paragraph [ref=e715]: "大小: 0.48 MB"
+              - checkbox [ref=e717]
+              - button "编辑" [ref=e719] [cursor=pointer]
+            - generic [ref=e723]:
+              - generic [ref=e724]:
+                - img "图片2.png" [ref=e725] [cursor=pointer]
+                - generic [ref=e726]:
+                  - button
+              - generic [ref=e727]:
+                - paragraph [ref=e728]: 图片2.png
+                - generic [ref=e729]:
+                  - paragraph [ref=e730]: 2026/10/13 17:44:28
+                  - paragraph [ref=e734]: "大小: 0.24 MB"
+              - checkbox [ref=e736]
+              - button "编辑" [ref=e738] [cursor=pointer]
+            - generic [ref=e742]:
+              - generic [ref=e743]:
+                - img "图片1.png" [ref=e744] [cursor=pointer]
+                - generic [ref=e745]:
+                  - button
+              - generic [ref=e746]:
+                - paragraph [ref=e747]: 图片1.png
+                - generic [ref=e748]:
+                  - paragraph [ref=e749]: 2026/10/13 17:44:28
+                  - paragraph [ref=e753]: "大小: 0.57 MB"
+              - checkbox [ref=e755]
+              - button "编辑" [ref=e757] [cursor=pointer]
+            - generic [ref=e761]:
+              - generic [ref=e762]:
+                - img "s7-d1-3.jpg" [ref=e763] [cursor=pointer]
+                - generic [ref=e764]:
+                  - button
+              - generic [ref=e765]:
+                - paragraph [ref=e766]: s7-d1-3.jpg
+                - generic [ref=e767]:
+                  - paragraph [ref=e768]: 2026/7/13 14:34:13
+                  - paragraph [ref=e772]: "大小: 0.59 MB"
+              - checkbox [ref=e774]
+              - button "编辑" [ref=e776] [cursor=pointer]
+            - generic [ref=e780]:
+              - generic [ref=e781]:
+                - img "S15__4__2.jpg" [ref=e782] [cursor=pointer]
+                - generic [ref=e783]:
+                  - button
+              - generic [ref=e784]:
+                - paragraph [ref=e785]: S15__4__2.jpg
+                - generic [ref=e786]:
+                  - paragraph [ref=e787]: 2026/1/20 21:37:29
+                  - paragraph [ref=e791]: "大小: 0.07 MB"
+              - checkbox [ref=e793]
+              - button "编辑" [ref=e795] [cursor=pointer]
+            - generic [ref=e799]:
+              - generic [ref=e800]:
+                - img "S19 (1).jpg" [ref=e801] [cursor=pointer]
+                - generic [ref=e802]:
+                  - button
+              - generic [ref=e803]:
+                - paragraph [ref=e804]: S19 (1).jpg
+                - generic [ref=e805]:
+                  - paragraph [ref=e806]: 2026/1/20 17:50:02
+                  - paragraph [ref=e810]: "大小: 1.41 MB"
+              - checkbox [ref=e812]
+              - button "编辑" [ref=e814] [cursor=pointer]
+            - generic [ref=e818]:
+              - generic [ref=e819]:
+                - img "S15 (4).jpg" [ref=e820] [cursor=pointer]
+                - generic [ref=e821]:
+                  - button
+              - generic [ref=e822]:
+                - paragraph [ref=e823]: S15 (4).jpg
+                - generic [ref=e824]:
+                  - paragraph [ref=e825]: 2026/1/20 17:50:01
+                  - paragraph [ref=e829]: "大小: 1.07 MB"
+              - checkbox [ref=e831]
+              - button "编辑" [ref=e833] [cursor=pointer]
+            - generic [ref=e837]:
+              - generic [ref=e838]:
+                - img "S15 (3).jpg" [ref=e839] [cursor=pointer]
+                - generic [ref=e840]:
+                  - button
+              - generic [ref=e841]:
+                - paragraph [ref=e842]: S15 (3).jpg
+                - generic [ref=e843]:
+                  - paragraph [ref=e844]: 2026/1/20 17:50:01
+                  - paragraph [ref=e848]: "大小: 1.44 MB"
+              - checkbox [ref=e850]
+              - button "编辑" [ref=e852] [cursor=pointer]
+            - generic [ref=e856]:
+              - generic [ref=e857]:
+                - img "S15 (1).jpg" [ref=e858] [cursor=pointer]
+                - generic [ref=e859]:
+                  - button
+              - generic [ref=e860]:
+                - paragraph [ref=e861]: S15 (1).jpg
+                - generic [ref=e862]:
+                  - paragraph [ref=e863]: 2026/1/20 17:50:01
+                  - paragraph [ref=e867]: "大小: 1.15 MB"
+              - checkbox [ref=e869]
+              - button "编辑" [ref=e871] [cursor=pointer]
+        - button "2026" [ref=e876] [cursor=pointer]

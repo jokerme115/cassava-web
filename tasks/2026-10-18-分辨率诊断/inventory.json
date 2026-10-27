@@ -1,0 +1,1045 @@
+[
+  {
+    "image_id": 41,
+    "name": "S15 (1).jpg",
+    "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\images\\5\\S15 (1).jpg",
+    "width": null,
+    "height": null,
+    "predictions": [],
+    "latest_crops": [],
+    "corrections": []
+  },
+  {
+    "image_id": 42,
+    "name": "S15 (3).jpg",
+    "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\images\\5\\S15 (3).jpg",
+    "width": null,
+    "height": null,
+    "predictions": [],
+    "latest_crops": [],
+    "corrections": []
+  },
+  {
+    "image_id": 43,
+    "name": "S15 (4).jpg",
+    "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\images\\5\\S15 (4).jpg",
+    "width": 4032,
+    "height": 2268,
+    "predictions": [
+      {
+        "id": 44,
+        "ppd_value": 58.83009365379823,
+        "ppd_unit": "percent",
+        "single_model_type": "ensemble",
+        "is_ensemble": 1,
+        "vis_images": "{\"cut2_1\": \"segmentations/ebfe6360-ada3-4de1-bbcc-a03182b2e00a.png\", \"cut2_2\": \"segmentations/828535c9-6a76-4f85-af1e-9da61901fed7.png\", \"cut2_3\": \"segmentations/be0063e9-8ca2-4822-9ac9-130477f82041.png\", \"disagreement\": \"prediction_masks/disagreement/ff06c093-7567-46df-8f1c-51daf87e661e.png\", \"member_resnet101\": \"prediction_masks/resnet101/0f24cc5b-dccc-42a1-96b7-db40cb398f78.png\", \"member_m6_best\": \"prediction_masks/m6_best/9cdd9a95-3ef1-48e3-a8c0-ddcac34760a4.png\", \"pred_1\": \"predictions/48819940-0b1d-4fd6-b148-d10abbb37b08.jpg\", \"pred_2\": \"predictions/c5274f66-c9c5-4e48-ac59-313c7816b853.jpg\", \"pred_3\": \"predictions/8ac55020-03ec-429f-be3f-03cce7568b9d.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/d566cec0-7e5b-4d33-92bb-dfcb540b873f.png",
+        "rotten_mask_key": "prediction_masks/rotten/dc509a2f-951f-46ad-9e40-c9239193888c.png",
+        "confidence_map_key": "prediction_confidence/c0fba41f-d660-4617-a217-d8c9324538b0.png"
+      },
+      {
+        "id": 13,
+        "ppd_value": 59.661566285277466,
+        "ppd_unit": "percent",
+        "single_model_type": "m6_best",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/51d4214a-72ec-443d-b39e-97ecdfede2b3.png\", \"cut2_2\": \"segmentations/163b3219-bdc9-4dac-b7c9-3946cc470068.png\", \"cut2_3\": \"segmentations/484271ee-daa1-4e1f-aaba-de3ac4613785.png\", \"pred_1\": \"predictions/2d69ce8d-ee80-42a0-9671-277d3ac8a984.jpg\", \"pred_2\": \"predictions/c1dd4b8f-b43f-443c-9f9e-eb50df484c70.jpg\", \"pred_3\": \"predictions/4d2675fa-ec63-4110-9a25-ef76df33d644.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/d00abf2a-4fb9-4804-94e6-723fcd4c87f2.png",
+        "rotten_mask_key": "prediction_masks/rotten/2dfd98d7-3710-46bc-9adf-4be452086598.png",
+        "confidence_map_key": null
+      },
+      {
+        "id": 11,
+        "ppd_value": 38.079619398022416,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/7646750a-e36d-4c3c-adf8-374f901855b1.png\", \"cut2_2\": \"segmentations/503bd0eb-63a4-4c41-993b-114734090d7a.png\", \"cut2_3\": \"segmentations/1b8bb2ae-91ff-4278-b5ba-639ed98ba210.png\", \"pred_1\": \"predictions/a910b0d0-9f49-4941-9aba-24e6148d9e99.jpg\", \"pred_2\": \"predictions/dfe391a9-a8d5-45f0-bbc8-51e0cc3c1755.jpg\", \"pred_3\": \"predictions/1b2de5d9-eb22-44a7-8133-daae5db00e25.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/9233a98e-e180-4e84-a487-b0b9cbfa8dd4.png",
+        "rotten_mask_key": "prediction_masks/rotten/befb3b65-7e63-490e-b3b6-5d548ac9d185.png",
+        "confidence_map_key": null
+      }
+    ],
+    "latest_crops": [
+      {
+        "key": "cut2_1",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\ebfe6360-ada3-4de1-bbcc-a03182b2e00a.png",
+        "width": 506,
+        "height": 595,
+        "bbox": [
+          1016,
+          577,
+          1522,
+          1172
+        ]
+      },
+      {
+        "key": "cut2_2",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\828535c9-6a76-4f85-af1e-9da61901fed7.png",
+        "width": 575,
+        "height": 572,
+        "bbox": [
+          1629,
+          559,
+          2204,
+          1131
+        ]
+      },
+      {
+        "key": "cut2_3",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\be0063e9-8ca2-4822-9ac9-130477f82041.png",
+        "width": 491,
+        "height": 525,
+        "bbox": [
+          2362,
+          590,
+          2853,
+          1115
+        ]
+      }
+    ],
+    "corrections": []
+  },
+  {
+    "image_id": 44,
+    "name": "S19 (1).jpg",
+    "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\images\\5\\S19 (1).jpg",
+    "width": 4032,
+    "height": 2268,
+    "predictions": [
+      {
+        "id": 12,
+        "ppd_value": 8.660248499017168,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/0a1a41c4-0201-4448-b9b4-ddededb9634e.png\", \"cut2_2\": \"segmentations/cd5013f9-56ff-49bb-b3e7-ee3aa925a5b0.png\", \"cut2_3\": \"segmentations/543c5c7f-4cc0-4b8f-8705-65d6681a96de.png\", \"pred_1\": \"predictions/572aeb4d-12b0-4f56-be8a-a93a6e4e4322.jpg\", \"pred_2\": \"predictions/8008eecc-0a59-4e8b-8c40-e52dfa1d3034.jpg\", \"pred_3\": \"predictions/955aa614-9231-4d04-bd64-e5cb18628f67.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/d764e017-4bbf-4ee6-913e-922cc2c67d65.png",
+        "rotten_mask_key": "prediction_masks/rotten/2ddc866c-718b-4178-b30b-e3c823b23287.png",
+        "confidence_map_key": null
+      }
+    ],
+    "latest_crops": [
+      {
+        "key": "cut2_1",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\0a1a41c4-0201-4448-b9b4-ddededb9634e.png",
+        "width": 635,
+        "height": 679,
+        "bbox": [
+          997,
+          346,
+          1632,
+          1025
+        ]
+      },
+      {
+        "key": "cut2_2",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\cd5013f9-56ff-49bb-b3e7-ee3aa925a5b0.png",
+        "width": 782,
+        "height": 776,
+        "bbox": [
+          1767,
+          303,
+          2549,
+          1079
+        ]
+      },
+      {
+        "key": "cut2_3",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\543c5c7f-4cc0-4b8f-8705-65d6681a96de.png",
+        "width": 597,
+        "height": 594,
+        "bbox": [
+          2774,
+          354,
+          3371,
+          948
+        ]
+      }
+    ],
+    "corrections": []
+  },
+  {
+    "image_id": 45,
+    "name": "S15__4__2.jpg",
+    "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\images\\5\\S15__4__2.jpg",
+    "width": null,
+    "height": null,
+    "predictions": [],
+    "latest_crops": [],
+    "corrections": []
+  },
+  {
+    "image_id": 46,
+    "name": "s7-d1-3.jpg",
+    "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\images\\637de9ff85334769bd5f16e55f04ef93.jpg",
+    "width": 3072,
+    "height": 4096,
+    "predictions": [
+      {
+        "id": 16,
+        "ppd_value": 1.4334147298652595,
+        "ppd_unit": "percent",
+        "single_model_type": "m6_best",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/e2ff18ea-8736-4c39-97de-ce0ec9120649.png\", \"cut2_2\": \"segmentations/b5006f09-ed2e-4a7c-a994-7acefc9b0816.png\", \"cut2_3\": \"segmentations/aec98b0a-a949-4200-924b-6d25d73474e4.png\", \"pred_1\": \"predictions/6a5f3d46-3b2a-4825-b9ad-4223374e86b0.jpg\", \"pred_2\": \"predictions/476eb8a2-62cb-4767-9c3f-25073e2876b0.jpg\", \"pred_3\": \"predictions/7019e671-0b31-4135-a82a-ddfd0f25bd08.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/4a66fc0e-c2a8-4d0a-a508-2c405c4e03b0.png",
+        "rotten_mask_key": "prediction_masks/rotten/35e527d3-a9fb-41b6-9219-64840aff84a8.png",
+        "confidence_map_key": "prediction_confidence/50050aae-a009-4838-9aaf-2be6f6341c6b.png"
+      },
+      {
+        "id": 15,
+        "ppd_value": 3.86931496097327,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/b7d8b8fe-e195-4a23-96d9-8ba79c71e2d0.png\", \"cut2_2\": \"segmentations/1fa39429-95c6-410e-924b-8da7990753d7.png\", \"cut2_3\": \"segmentations/1da65915-d699-4d50-ab13-9c56f1a7977c.png\", \"pred_1\": \"predictions/006803b8-069f-42c1-bb4e-71cbc90aeca3.jpg\", \"pred_2\": \"predictions/28b26d56-a113-4011-bb5e-7a0c2e54faa8.jpg\", \"pred_3\": \"predictions/4e12d09e-7cf1-4197-a870-5d9669ca464f.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/ab91df52-25ac-444a-9c54-9994666933e1.png",
+        "rotten_mask_key": "prediction_masks/rotten/8fae7f45-3e9b-48bb-b569-98712436b55c.png",
+        "confidence_map_key": "prediction_confidence/cdccb4f3-9f03-4040-9f6b-5e23daaeb602.png"
+      },
+      {
+        "id": 14,
+        "ppd_value": 3.86931496097327,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/e3001ce0-e003-4081-ba00-676f1d134a18.png\", \"cut2_2\": \"segmentations/6cdc959f-80c6-46a0-bc69-a197210dec38.png\", \"cut2_3\": \"segmentations/03e21dbd-559f-4cc7-a6a0-9c3c5c6201f1.png\", \"pred_1\": \"predictions/2a75e1c6-7fb0-46f9-9ae8-c9b8691ae78c.jpg\", \"pred_2\": \"predictions/48bd41eb-feda-49ca-966a-08a8b7def680.jpg\", \"pred_3\": \"predictions/41179808-8870-4c38-b3c2-4590642eb7f7.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/b82662a2-ab72-4a61-a859-d5febf6b7f3b.png",
+        "rotten_mask_key": "prediction_masks/rotten/c3fbb10b-3a8e-4f1a-870f-8db71290d232.png",
+        "confidence_map_key": "prediction_confidence/7588c929-293f-4bb3-9151-0409640ad054.png"
+      }
+    ],
+    "latest_crops": [
+      {
+        "key": "cut2_1",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\e2ff18ea-8736-4c39-97de-ce0ec9120649.png",
+        "width": 496,
+        "height": 541,
+        "bbox": [
+          1794,
+          1069,
+          2290,
+          1610
+        ]
+      },
+      {
+        "key": "cut2_2",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\b5006f09-ed2e-4a7c-a994-7acefc9b0816.png",
+        "width": 542,
+        "height": 559,
+        "bbox": [
+          2026,
+          2593,
+          2568,
+          3152
+        ]
+      },
+      {
+        "key": "cut2_3",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\aec98b0a-a949-4200-924b-6d25d73474e4.png",
+        "width": 583,
+        "height": 594,
+        "bbox": [
+          1944,
+          1808,
+          2527,
+          2402
+        ]
+      }
+    ],
+    "corrections": [
+      {
+        "id": 2,
+        "prediction_id": 16,
+        "version": 1,
+        "ppd_percent": 1.4334147298652595,
+        "cassava_pixels": 917320,
+        "rotten_pixels": 13149
+      }
+    ]
+  },
+  {
+    "image_id": 47,
+    "name": "图片1.png",
+    "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\images\\a37fac2bd6f44639b9492f858e736c23.png",
+    "width": 935,
+    "height": 604,
+    "predictions": [
+      {
+        "id": 24,
+        "ppd_value": 0.0,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/dff8765a-8143-4e55-8de1-2246fb844d38.png\", \"cut2_2\": \"segmentations/503212f9-5915-45b2-b4ce-49b9a7082bbe.png\", \"cut2_3\": \"segmentations/1977733f-b899-4574-980b-e23543b417ae.png\", \"pred_1\": \"predictions/0dbbf5ca-f4e8-43ea-b189-c0425b7560ec.jpg\", \"pred_2\": \"predictions/13d6c011-aefa-4b26-8188-4c95da9d0747.jpg\", \"pred_3\": \"predictions/ada17815-2513-454a-9a2c-65df528628b1.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/cfaa6124-71de-48e7-8da5-3391eba0cb0a.png",
+        "rotten_mask_key": "prediction_masks/rotten/8ac61d96-f095-401f-81c5-a0e52f1ee741.png",
+        "confidence_map_key": "prediction_confidence/d7dccc59-266c-470c-920e-a1dcb97838d2.png"
+      },
+      {
+        "id": 20,
+        "ppd_value": 0.0,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/9577c6b7-8b28-46ec-b154-ef2e33ee10f6.png\", \"cut2_2\": \"segmentations/71e38788-5bd7-4c03-8d1b-9a5f36a0a2c4.png\", \"cut2_3\": \"segmentations/003850db-b4c2-413a-91e1-98299b64e35f.png\", \"pred_1\": \"predictions/6edddce6-f581-40d2-96d6-84544bcd7a9b.jpg\", \"pred_2\": \"predictions/21c9a7ad-697c-4ad7-aa60-11152ebb6eb9.jpg\", \"pred_3\": \"predictions/34ff9de0-1c9f-45ad-a7ca-c8723edd4c59.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/65de214f-8c37-427b-8eb2-ae2c5b6d6a33.png",
+        "rotten_mask_key": "prediction_masks/rotten/0bf92797-d09d-4637-b70e-e9844f55fc01.png",
+        "confidence_map_key": "prediction_confidence/f22c791a-31e8-493a-a6f6-e793f8caca98.png"
+      }
+    ],
+    "latest_crops": [
+      {
+        "key": "cut2_1",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\dff8765a-8143-4e55-8de1-2246fb844d38.png",
+        "width": 124,
+        "height": 133,
+        "bbox": [
+          370,
+          291,
+          494,
+          424
+        ]
+      },
+      {
+        "key": "cut2_2",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\503212f9-5915-45b2-b4ce-49b9a7082bbe.png",
+        "width": 124,
+        "height": 128,
+        "bbox": [
+          202,
+          294,
+          326,
+          422
+        ]
+      },
+      {
+        "key": "cut2_3",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\1977733f-b899-4574-980b-e23543b417ae.png",
+        "width": 113,
+        "height": 119,
+        "bbox": [
+          544,
+          295,
+          657,
+          414
+        ]
+      }
+    ],
+    "corrections": []
+  },
+  {
+    "image_id": 48,
+    "name": "图片2.png",
+    "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\images\\b21adf79d8ee4bc89c4ad2e032c8fa91.png",
+    "width": 903,
+    "height": 514,
+    "predictions": [
+      {
+        "id": 43,
+        "ppd_value": 2.399244073784972,
+        "ppd_unit": "percent",
+        "single_model_type": "ensemble",
+        "is_ensemble": 1,
+        "vis_images": "{\"cut2_1\": \"segmentations/977a68c8-106b-4813-ab74-56affd9cec27.png\", \"cut2_2\": \"segmentations/d9a7bed4-15a9-411e-aff5-8d8c65aa2013.png\", \"cut2_3\": \"segmentations/f3331ead-1963-40aa-89d4-98953ead0f0b.png\", \"disagreement\": \"prediction_masks/disagreement/0f7a3933-9c29-4bfc-b0d8-c622b15100e0.png\", \"member_resnet101\": \"prediction_masks/resnet101/117f1ebe-32c1-4b14-96fa-3f95398e5f30.png\", \"member_m6_best\": \"prediction_masks/m6_best/9567ae13-ae1b-4b34-aa41-9b8d95485ebd.png\", \"pred_1\": \"predictions/fe1857a2-f9e9-4566-9b94-ddf5f2ee0a01.jpg\", \"pred_2\": \"predictions/b8cddc7f-41a3-4d21-af54-ce5e24e42235.jpg\", \"pred_3\": \"predictions/182b22f5-3e60-4181-a226-f2044e4198d0.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/6bfa657d-f455-49a3-a8fe-a87ddd3d6ac8.png",
+        "rotten_mask_key": "prediction_masks/rotten/23158b58-19f5-428d-8ffc-9e0468b162c5.png",
+        "confidence_map_key": "prediction_confidence/5bcbc678-1023-4a86-8429-4a3014052679.png"
+      },
+      {
+        "id": 23,
+        "ppd_value": 0.0,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/87a4a74f-3584-4d4c-89e4-3a03f9573b7f.png\", \"cut2_2\": \"segmentations/f554bb75-e8ca-414a-b4a3-ffbfd29a9e5a.png\", \"cut2_3\": \"segmentations/619af7a0-bdb4-47cb-8a3e-4f6cd7c652a0.png\", \"pred_1\": \"predictions/bdd19061-5c4b-4764-b36f-a640d433a723.jpg\", \"pred_2\": \"predictions/e5191694-2a49-4c35-adf2-9ff21813202e.jpg\", \"pred_3\": \"predictions/b8dd62a0-1072-4b74-bef0-2e1dfbbef6b3.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/aa64f9ab-f0b4-4c2c-ab87-e80b63f796cb.png",
+        "rotten_mask_key": "prediction_masks/rotten/6ffd0991-22f0-411d-8e9f-5f1485f463ec.png",
+        "confidence_map_key": "prediction_confidence/bc280624-abc8-4cbe-9b03-e36f73780b38.png"
+      },
+      {
+        "id": 19,
+        "ppd_value": 0.0,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/d6bdaa02-a2b0-47ac-b4db-0943b062d7d7.png\", \"cut2_2\": \"segmentations/1c82be56-3c39-42ee-91e1-e60776fc8c7f.png\", \"cut2_3\": \"segmentations/cf228158-2d08-40f3-9b5a-dbfddfb46793.png\", \"pred_1\": \"predictions/6975c590-2c10-4275-9f35-9a2a1995d051.jpg\", \"pred_2\": \"predictions/5f304ebe-2147-4c9e-8a4e-a57b937550d6.jpg\", \"pred_3\": \"predictions/b7caa658-13db-40a3-ae64-89c33f9466f6.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/e0425f55-5f58-465b-aa78-c34cb4710b19.png",
+        "rotten_mask_key": "prediction_masks/rotten/628c8fc5-948a-4faf-b2ae-49280ea2bc4e.png",
+        "confidence_map_key": "prediction_confidence/c33888ec-ced9-463d-bfac-918412351898.png"
+      }
+    ],
+    "latest_crops": [
+      {
+        "key": "cut2_1",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\977a68c8-106b-4813-ab74-56affd9cec27.png",
+        "width": 103,
+        "height": 101,
+        "bbox": [
+          390,
+          254,
+          493,
+          355
+        ]
+      },
+      {
+        "key": "cut2_2",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\d9a7bed4-15a9-411e-aff5-8d8c65aa2013.png",
+        "width": 106,
+        "height": 105,
+        "bbox": [
+          198,
+          254,
+          304,
+          359
+        ]
+      },
+      {
+        "key": "cut2_3",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\f3331ead-1963-40aa-89d4-98953ead0f0b.png",
+        "width": 103,
+        "height": 89,
+        "bbox": [
+          553,
+          265,
+          656,
+          354
+        ]
+      }
+    ],
+    "corrections": [
+      {
+        "id": 3,
+        "prediction_id": 19,
+        "version": 1,
+        "ppd_percent": 49.35602575896964,
+        "cassava_pixels": 23914,
+        "rotten_pixels": 11803
+      }
+    ]
+  },
+  {
+    "image_id": 49,
+    "name": "图片3.png",
+    "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\images\\e474f213370b42cdbd02cf8564f82b46.png",
+    "width": 795,
+    "height": 604,
+    "predictions": [
+      {
+        "id": 22,
+        "ppd_value": 0.0,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/c39786c6-6577-4dfc-a2e6-6e3cfadf2ad3.png\", \"cut2_2\": \"segmentations/487b4e43-420c-4da5-9778-254c251c3eea.png\", \"cut2_3\": \"segmentations/4985fb43-9b41-4c64-a364-9e3af5f53daa.png\", \"pred_1\": \"predictions/6469bba2-d223-4fd6-a375-2b25b4f9b725.jpg\", \"pred_2\": \"predictions/65b3289b-01e1-462b-93d2-f4ff2b976203.jpg\", \"pred_3\": \"predictions/d5756c2a-1f3f-495b-b443-8b0d0cf5c953.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/341fcb81-99bd-4338-b0e0-8fd32d543575.png",
+        "rotten_mask_key": "prediction_masks/rotten/980e3813-b1ea-45d8-b6ab-0a6aaa9b2b4f.png",
+        "confidence_map_key": "prediction_confidence/837c95bf-fb96-4368-a32c-c77abe7866bf.png"
+      },
+      {
+        "id": 18,
+        "ppd_value": 0.0,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/2b96b541-3ef6-4689-b03a-8f22cc443bc4.png\", \"cut2_2\": \"segmentations/2e03948d-72da-4f9e-b5c9-e4ca3ad57a76.png\", \"cut2_3\": \"segmentations/ea429af6-00c5-4828-9693-a83beb00b506.png\", \"pred_1\": \"predictions/4404cc02-3acb-405c-8311-e11eed3e0772.jpg\", \"pred_2\": \"predictions/5ab7ba14-3f22-4b13-b050-61d7fa9dfc67.jpg\", \"pred_3\": \"predictions/57b032a2-de09-4690-9045-ac920e3dc7e3.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/e43ab369-fc0d-4bdd-be7b-2d690cd42a20.png",
+        "rotten_mask_key": "prediction_masks/rotten/e296a714-cde8-42c3-8cd7-7b7016e035a5.png",
+        "confidence_map_key": "prediction_confidence/ac8656e0-14ee-4d2c-ba43-e005bd8b0a87.png"
+      }
+    ],
+    "latest_crops": [
+      {
+        "key": "cut2_1",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\c39786c6-6577-4dfc-a2e6-6e3cfadf2ad3.png",
+        "width": 105,
+        "height": 104,
+        "bbox": [
+          162,
+          304,
+          267,
+          408
+        ]
+      },
+      {
+        "key": "cut2_2",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\487b4e43-420c-4da5-9778-254c251c3eea.png",
+        "width": 101,
+        "height": 113,
+        "bbox": [
+          352,
+          298,
+          453,
+          411
+        ]
+      },
+      {
+        "key": "cut2_3",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\4985fb43-9b41-4c64-a364-9e3af5f53daa.png",
+        "width": 73,
+        "height": 73,
+        "bbox": [
+          560,
+          324,
+          633,
+          397
+        ]
+      }
+    ],
+    "corrections": []
+  },
+  {
+    "image_id": 50,
+    "name": "图片4.png",
+    "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\images\\6a65a80156304efd906ea0bcc2eb7421.png",
+    "width": 953,
+    "height": 563,
+    "predictions": [
+      {
+        "id": 21,
+        "ppd_value": 22.851276034027574,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/f78b669d-3f5c-4752-a2f2-0888d5bf0b05.png\", \"cut2_2\": \"segmentations/3b9ea535-bb7b-4b97-acd3-ee24d2238205.png\", \"cut2_3\": \"segmentations/d9825fa1-db27-4087-964c-a00c63d0facb.png\", \"pred_1\": \"predictions/d7cc7f2c-76a7-43ea-b310-64a18e4c09e4.jpg\", \"pred_2\": \"predictions/04609ddc-38eb-4697-9334-e45908d69116.jpg\", \"pred_3\": \"predictions/2192cb8f-b1ea-49c4-95ba-25a35d4d82b8.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/ad7a7937-d814-4686-9cee-ca842b9ab120.png",
+        "rotten_mask_key": "prediction_masks/rotten/329aa2d0-697d-47f7-9937-1f4d1ff16349.png",
+        "confidence_map_key": "prediction_confidence/4b563b7f-09a4-470c-b76c-35763a994dcc.png"
+      },
+      {
+        "id": 17,
+        "ppd_value": 22.851276034027574,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/b82db125-5e87-4399-b9a2-3b851bd83c44.png\", \"cut2_2\": \"segmentations/f23343ae-c384-4f71-9b5f-d2ed0c0482bc.png\", \"cut2_3\": \"segmentations/126cdf60-9138-431d-a7b4-6b3d2f410a01.png\", \"pred_1\": \"predictions/99346e8f-1078-4bd0-868e-f3e710be8f9a.jpg\", \"pred_2\": \"predictions/135eaac5-0e91-4fda-848b-bad3720fada6.jpg\", \"pred_3\": \"predictions/ce732e3b-612e-429c-ad65-f79d12cdcaf4.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/39181a4f-1c50-4c08-85b3-d7a4bff93a48.png",
+        "rotten_mask_key": "prediction_masks/rotten/532856b6-c372-4fe4-9256-c9377209f6b4.png",
+        "confidence_map_key": "prediction_confidence/1f9f16ea-7631-4811-984d-a785118e3ff4.png"
+      }
+    ],
+    "latest_crops": [
+      {
+        "key": "cut2_1",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\f78b669d-3f5c-4752-a2f2-0888d5bf0b05.png",
+        "width": 92,
+        "height": 96,
+        "bbox": [
+          606,
+          297,
+          698,
+          393
+        ]
+      },
+      {
+        "key": "cut2_2",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\3b9ea535-bb7b-4b97-acd3-ee24d2238205.png",
+        "width": 123,
+        "height": 124,
+        "bbox": [
+          207,
+          271,
+          330,
+          395
+        ]
+      },
+      {
+        "key": "cut2_3",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\d9825fa1-db27-4087-964c-a00c63d0facb.png",
+        "width": 120,
+        "height": 125,
+        "bbox": [
+          410,
+          272,
+          530,
+          397
+        ]
+      }
+    ],
+    "corrections": [
+      {
+        "id": 4,
+        "prediction_id": 17,
+        "version": 1,
+        "ppd_percent": 58.96809100094521,
+        "cassava_pixels": 30681,
+        "rotten_pixels": 18092
+      }
+    ]
+  },
+  {
+    "image_id": 51,
+    "name": "图片5.png",
+    "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\images\\8365efc415724519925f659a4212b0c3.png",
+    "width": 759,
+    "height": 519,
+    "predictions": [
+      {
+        "id": 27,
+        "ppd_value": 7.9817020269737355,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/35a85a6e-9562-49b6-9c05-3aaddb892f81.png\", \"cut2_2\": \"segmentations/38c1f12f-f56a-4b02-9825-5ab19b6ba5fd.png\", \"cut2_3\": \"segmentations/fc62970d-44b8-4541-b59e-7b8ffa52a593.png\", \"pred_1\": \"predictions/550577df-3ae0-4db3-8952-7f706d85f243.jpg\", \"pred_2\": \"predictions/5eba7e51-07fc-484f-986d-80ef9f01c78a.jpg\", \"pred_3\": \"predictions/dfa6dee2-4ad1-4a1f-b944-49f2f7b0c44f.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/119764ac-74d7-4220-b270-64cf1bc1277a.png",
+        "rotten_mask_key": "prediction_masks/rotten/78b51924-730a-4222-bb00-bb9ea230251b.png",
+        "confidence_map_key": "prediction_confidence/efcf851b-5436-4730-8cf9-fa2644de655b.png"
+      }
+    ],
+    "latest_crops": [
+      {
+        "key": "cut2_1",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\35a85a6e-9562-49b6-9c05-3aaddb892f81.png",
+        "width": 102,
+        "height": 111,
+        "bbox": [
+          496,
+          219,
+          598,
+          330
+        ]
+      },
+      {
+        "key": "cut2_2",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\38c1f12f-f56a-4b02-9825-5ab19b6ba5fd.png",
+        "width": 111,
+        "height": 108,
+        "bbox": [
+          322,
+          242,
+          433,
+          350
+        ]
+      },
+      {
+        "key": "cut2_3",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\fc62970d-44b8-4541-b59e-7b8ffa52a593.png",
+        "width": 96,
+        "height": 99,
+        "bbox": [
+          173,
+          251,
+          269,
+          350
+        ]
+      }
+    ],
+    "corrections": [
+      {
+        "id": 6,
+        "prediction_id": 27,
+        "version": 1,
+        "ppd_percent": 33.70533953781844,
+        "cassava_pixels": 25358,
+        "rotten_pixels": 8547
+      }
+    ]
+  },
+  {
+    "image_id": 52,
+    "name": "图片6.png",
+    "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\images\\4ee5ac607e814203b95af3e334a0e2f7.png",
+    "width": 794,
+    "height": 436,
+    "predictions": [
+      {
+        "id": 26,
+        "ppd_value": 0.0,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/394a1310-ff29-47a1-b1cb-8d44c6058cdb.png\", \"cut2_2\": \"segmentations/f3286811-29f0-4aa6-abdd-0a127f482947.png\", \"cut2_3\": \"segmentations/d421ee90-0222-43b9-be61-d262806724bc.png\", \"pred_1\": \"predictions/72ab52d7-6ce5-46fc-af1e-014520461a81.jpg\", \"pred_2\": \"predictions/bab33fa6-9441-464d-9724-077022e15ae8.jpg\", \"pred_3\": \"predictions/3c30285e-b4a2-40da-ab95-4be7e2417e51.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/a8cc0f4d-280c-421f-a17c-907cbf925e7f.png",
+        "rotten_mask_key": "prediction_masks/rotten/455d948e-3125-4b40-a88c-1ecd398cfee2.png",
+        "confidence_map_key": "prediction_confidence/c9785585-ce2d-4ac2-810c-aa72ab80e83a.png"
+      }
+    ],
+    "latest_crops": [
+      {
+        "key": "cut2_1",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\394a1310-ff29-47a1-b1cb-8d44c6058cdb.png",
+        "width": 78,
+        "height": 81,
+        "bbox": [
+          363,
+          201,
+          441,
+          282
+        ]
+      },
+      {
+        "key": "cut2_2",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\f3286811-29f0-4aa6-abdd-0a127f482947.png",
+        "width": 75,
+        "height": 69,
+        "bbox": [
+          532,
+          219,
+          607,
+          288
+        ]
+      },
+      {
+        "key": "cut2_3",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\d421ee90-0222-43b9-be61-d262806724bc.png",
+        "width": 72,
+        "height": 72,
+        "bbox": [
+          237,
+          206,
+          309,
+          278
+        ]
+      }
+    ],
+    "corrections": [
+      {
+        "id": 5,
+        "prediction_id": 26,
+        "version": 1,
+        "ppd_percent": 10.668238414499374,
+        "cassava_pixels": 13573,
+        "rotten_pixels": 1448
+      }
+    ]
+  },
+  {
+    "image_id": 53,
+    "name": "图片7.png",
+    "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\images\\c416009ddddc42ca813ae75a600f203d.png",
+    "width": 803,
+    "height": 448,
+    "predictions": [
+      {
+        "id": 41,
+        "ppd_value": 0.0,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/4d7a0192-d1f5-45d0-9cba-223ae1768b9d.png\", \"cut2_2\": \"segmentations/21466915-71a1-4a4d-ad4d-89535436dc6b.png\", \"cut2_3\": \"segmentations/34067a68-7608-47c3-8967-084b907a3c02.png\", \"pred_1\": \"predictions/10269741-5bfd-4488-85e3-0a521344da84.jpg\", \"pred_2\": \"predictions/46ff00d4-1fc6-4951-bf17-c3b57772280b.jpg\", \"pred_3\": \"predictions/7ff4ca0a-4b94-4bd8-a630-a8edf07965f2.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/59bc2f62-d637-4894-b00f-c889e04ed3d2.png",
+        "rotten_mask_key": "prediction_masks/rotten/c281dee3-c981-41ab-bb81-fd010eccfb2e.png",
+        "confidence_map_key": "prediction_confidence/01d795f9-7b83-4064-9761-d82f59129ce7.png"
+      },
+      {
+        "id": 38,
+        "ppd_value": 0.0,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/6bbd12d0-8a28-4df5-916d-f7a1f5122ecf.png\", \"cut2_2\": \"segmentations/10e918dc-2cfa-4a9d-9e98-4b511fbb198a.png\", \"cut2_3\": \"segmentations/5d3f56e1-9584-480d-94e6-0e19bbe4eb0f.png\", \"pred_1\": \"predictions/e5dbc7f1-1f3f-4f12-9ff3-6dc10ed00bd8.jpg\", \"pred_2\": \"predictions/98b291ae-825d-42bf-a053-d54349028356.jpg\", \"pred_3\": \"predictions/d6970356-10f9-4785-b482-76f2c8476b93.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/e1566f01-5dae-4cda-aca8-81c8844e665b.png",
+        "rotten_mask_key": "prediction_masks/rotten/d06bf81b-570a-4306-aec0-501230ece9ae.png",
+        "confidence_map_key": "prediction_confidence/19351a8f-0d6b-49e3-8874-afa9802c84c3.png"
+      },
+      {
+        "id": 35,
+        "ppd_value": 0.0,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/029771f6-44a4-4881-a2f0-21c50208c8b0.png\", \"cut2_2\": \"segmentations/c3582b35-c95b-48e1-abc3-3c67032447bc.png\", \"cut2_3\": \"segmentations/df20e06d-20d9-48e0-af2c-bbecba6e3db4.png\", \"pred_1\": \"predictions/0593ecd1-324a-425a-9480-a8cd2ef20b26.jpg\", \"pred_2\": \"predictions/89b68a66-e9c1-4abf-b253-1d747d9e9c45.jpg\", \"pred_3\": \"predictions/7d3f78df-b22a-4803-ac6b-005e87d30ab1.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/4fbf8b19-c459-4ee9-ba4c-309d90f1cd8e.png",
+        "rotten_mask_key": "prediction_masks/rotten/9d85d136-7f20-43f6-8077-bfb49f27fd1b.png",
+        "confidence_map_key": "prediction_confidence/ba7a46a1-7512-45b8-8007-a0a4a8867e6b.png"
+      },
+      {
+        "id": 32,
+        "ppd_value": 0.0,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/177927d7-9aa9-4cf1-80cf-15874c9e2bbb.png\", \"cut2_2\": \"segmentations/f28a36a2-c8ca-4cde-9876-12683076ef76.png\", \"cut2_3\": \"segmentations/47660c67-bd07-4c50-a094-3055da75494d.png\", \"pred_1\": \"predictions/b461c36a-3ec8-4809-a5a1-1fd5457aaa16.jpg\", \"pred_2\": \"predictions/bd449c4c-59b3-4c27-84a9-0f8afd5fd707.jpg\", \"pred_3\": \"predictions/e40f1370-67dc-4a1b-8456-4db279948f1e.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/835c2d49-257e-4a7f-a0d3-2207687afc39.png",
+        "rotten_mask_key": "prediction_masks/rotten/c5373cec-cf2e-49ab-aabc-955c51c3ab43.png",
+        "confidence_map_key": "prediction_confidence/47c29aa1-502f-4efb-911f-9ce8b1998bee.png"
+      },
+      {
+        "id": 25,
+        "ppd_value": 0.0,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/95372ddc-f5d9-4a61-ba77-41f624ab5d88.png\", \"cut2_2\": \"segmentations/d86739cd-dc21-4812-8b9b-622e3b5dec95.png\", \"cut2_3\": \"segmentations/274e8f29-e290-470d-971b-0c464ffa85f0.png\", \"pred_1\": \"predictions/728f004c-70f3-44b1-ab92-d52eb31321fd.jpg\", \"pred_2\": \"predictions/c32076fb-060a-4b93-a85d-76d1a1fef625.jpg\", \"pred_3\": \"predictions/a6196f33-98b2-49ae-9cd1-36ad8439ffa1.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/4572b6a7-7c63-4261-a496-6ec90870c80f.png",
+        "rotten_mask_key": "prediction_masks/rotten/37d06be5-b1fc-46c0-a67b-4df4d1537753.png",
+        "confidence_map_key": "prediction_confidence/79be8db6-d338-4fa9-936e-c6157ac0a396.png"
+      }
+    ],
+    "latest_crops": [
+      {
+        "key": "cut2_1",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\4d7a0192-d1f5-45d0-9cba-223ae1768b9d.png",
+        "width": 62,
+        "height": 64,
+        "bbox": [
+          509,
+          198,
+          571,
+          262
+        ]
+      },
+      {
+        "key": "cut2_2",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\21466915-71a1-4a4d-ad4d-89535436dc6b.png",
+        "width": 89,
+        "height": 90,
+        "bbox": [
+          160,
+          179,
+          249,
+          269
+        ]
+      },
+      {
+        "key": "cut2_3",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\34067a68-7608-47c3-8967-084b907a3c02.png",
+        "width": 89,
+        "height": 97,
+        "bbox": [
+          326,
+          176,
+          415,
+          273
+        ]
+      }
+    ],
+    "corrections": []
+  },
+  {
+    "image_id": 54,
+    "name": "图片8.png",
+    "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\images\\320ac7a5896a43e19861edfb553af9ae.png",
+    "width": 791,
+    "height": 442,
+    "predictions": [
+      {
+        "id": 40,
+        "ppd_value": 0.0,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/5d0e0476-3f3d-4fcd-8163-e20ee01f7ec9.png\", \"cut2_2\": \"segmentations/287641dd-d540-4312-8360-70a505bf33ed.png\", \"cut2_3\": \"segmentations/403eeaef-b471-4d32-94c9-993ed6780997.png\", \"pred_1\": \"predictions/1d974b6b-3d72-42c8-9d80-6fd1f4b83453.jpg\", \"pred_2\": \"predictions/b3ef5c0e-5107-42f0-937b-a6268217029f.jpg\", \"pred_3\": \"predictions/6ed9d209-31b8-4f82-873e-bf253942f265.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/399b48e6-64e5-4c5a-a0d2-0bd9256fc3ee.png",
+        "rotten_mask_key": "prediction_masks/rotten/c16d20e8-de22-463b-aaa9-2729190cedb6.png",
+        "confidence_map_key": "prediction_confidence/6866f3f2-dfb4-49a4-809e-600839ee4447.png"
+      },
+      {
+        "id": 37,
+        "ppd_value": 0.0,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/1d5eadfd-ab71-4298-b9dd-6015d08ac4db.png\", \"cut2_2\": \"segmentations/abaf6d94-c5e4-4f39-b286-61ba307af737.png\", \"cut2_3\": \"segmentations/1cd52c37-f51b-4b8d-9acf-ae7eaf65d023.png\", \"pred_1\": \"predictions/45d795e0-1204-480f-b6bd-980246db1289.jpg\", \"pred_2\": \"predictions/ba2ae9b5-be1d-45d5-9b85-4f3e5d897a0a.jpg\", \"pred_3\": \"predictions/48c0c7c0-d749-4e1c-bee3-5bd71d1272d7.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/bf39373d-0f1c-44bc-84b6-63d5c6a9f943.png",
+        "rotten_mask_key": "prediction_masks/rotten/99cd3ac9-7cdf-4caa-890e-7c162a8b6d51.png",
+        "confidence_map_key": "prediction_confidence/39422631-bf78-4c44-8e0a-880e3ac81657.png"
+      },
+      {
+        "id": 34,
+        "ppd_value": 0.0,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/7baf2f9e-dfb7-4c11-b0b3-2bc14514febe.png\", \"cut2_2\": \"segmentations/f26c3887-2bec-49a7-88cc-34633bac7fc8.png\", \"cut2_3\": \"segmentations/3b809d63-f549-4f6b-bcc3-cfc00a02b53a.png\", \"pred_1\": \"predictions/4a8614c2-4b10-4ad1-8d39-5f5e64e603fe.jpg\", \"pred_2\": \"predictions/9a4622f0-1218-4576-b0b2-9ee80ec3607a.jpg\", \"pred_3\": \"predictions/66dbd31d-44d9-4d28-8b7d-9b5554a0df49.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/2a082d57-1ded-4f3e-a2a1-4c407c31e58c.png",
+        "rotten_mask_key": "prediction_masks/rotten/e93b71aa-e95e-43e9-931f-d4576fde3905.png",
+        "confidence_map_key": "prediction_confidence/bf31950d-5008-4999-866c-e06b8a535b3a.png"
+      },
+      {
+        "id": 31,
+        "ppd_value": 0.0,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/c520ba57-0393-4529-b8f6-e4f388c57522.png\", \"cut2_2\": \"segmentations/1f92f99c-a74d-445e-ad27-756303877c83.png\", \"cut2_3\": \"segmentations/4996c38e-0618-47b4-9aba-ba2db849b323.png\", \"pred_1\": \"predictions/61516568-3595-4b08-ade8-ce005b0c83e4.jpg\", \"pred_2\": \"predictions/28965c8a-7d19-4f6a-b0bf-ed3c5c5a1cde.jpg\", \"pred_3\": \"predictions/a327dae0-658b-432a-99b4-ef2c0eb31cea.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/6dfb6c1f-7513-4498-8094-e8ba2c06db24.png",
+        "rotten_mask_key": "prediction_masks/rotten/4fb9c046-e1ed-4c4c-86e2-8b5335a0ec19.png",
+        "confidence_map_key": "prediction_confidence/77b2956a-0a8e-4ce5-b8c6-ba27a7b6baf6.png"
+      },
+      {
+        "id": 28,
+        "ppd_value": 0.0,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/06433046-7cf1-4335-9946-6964d890cfb7.png\", \"cut2_2\": \"segmentations/2bd84468-fb19-4c9c-96fc-5b98551fff22.png\", \"cut2_3\": \"segmentations/cc1cbd40-08e0-49c5-bb42-5df96eaec42c.png\", \"pred_1\": \"predictions/a31758da-4fab-450d-851c-3240fc3239d9.jpg\", \"pred_2\": \"predictions/3a719c14-2f8c-4f08-8d19-3a1f0568d17b.jpg\", \"pred_3\": \"predictions/6e32225a-4a94-421b-8011-60f185324911.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/82376ee5-44f3-43ed-8fbf-4e0ffd252509.png",
+        "rotten_mask_key": "prediction_masks/rotten/94b637ea-1caf-4b65-b172-a2d9f3a6db6f.png",
+        "confidence_map_key": "prediction_confidence/a005afe4-80ba-4035-b894-1ce735dda519.png"
+      }
+    ],
+    "latest_crops": [
+      {
+        "key": "cut2_1",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\5d0e0476-3f3d-4fcd-8163-e20ee01f7ec9.png",
+        "width": 74,
+        "height": 69,
+        "bbox": [
+          530,
+          222,
+          604,
+          291
+        ]
+      },
+      {
+        "key": "cut2_2",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\287641dd-d540-4312-8360-70a505bf33ed.png",
+        "width": 77,
+        "height": 81,
+        "bbox": [
+          362,
+          204,
+          439,
+          285
+        ]
+      },
+      {
+        "key": "cut2_3",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\403eeaef-b471-4d32-94c9-993ed6780997.png",
+        "width": 71,
+        "height": 73,
+        "bbox": [
+          236,
+          209,
+          307,
+          282
+        ]
+      }
+    ],
+    "corrections": [
+      {
+        "id": 7,
+        "prediction_id": 28,
+        "version": 1,
+        "ppd_percent": 45.94412907080968,
+        "cassava_pixels": 13388,
+        "rotten_pixels": 6151
+      }
+    ]
+  },
+  {
+    "image_id": 55,
+    "name": "图片9.png",
+    "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\images\\9f6fa463eede437e82893cd9809419e1.png",
+    "width": 791,
+    "height": 442,
+    "predictions": [
+      {
+        "id": 42,
+        "ppd_value": 0.0,
+        "ppd_unit": "percent",
+        "single_model_type": "ensemble",
+        "is_ensemble": 1,
+        "vis_images": "{\"cut2_1\": \"segmentations/4c6c8755-cdac-407e-ad53-b01a8b6d4bff.png\", \"cut2_2\": \"segmentations/9c0a4b9f-dde8-4ff4-8c87-c2a6add1685f.png\", \"cut2_3\": \"segmentations/fca9deaa-de57-44ad-9113-8897804cb83a.png\", \"disagreement\": \"prediction_masks/disagreement/fef0f166-3487-4e05-8dbe-aed0f64d998a.png\", \"member_resnet101\": \"prediction_masks/resnet101/f6df6bb9-3d00-477d-9058-140846a33474.png\", \"member_m6_best\": \"prediction_masks/m6_best/edc53b3e-a156-420e-8d21-1570230730fb.png\", \"pred_1\": \"predictions/da6b9b17-2c85-4827-9caf-568eb336fd4f.jpg\", \"pred_2\": \"predictions/22422653-9dd3-4a9a-bcd6-ad3b124e3e60.jpg\", \"pred_3\": \"predictions/4ecb8c38-acc8-4fb7-aa78-2a2815b34fdb.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/dfff2731-77d8-4aa1-935a-e818f7aecc47.png",
+        "rotten_mask_key": "prediction_masks/rotten/75314e01-0ed5-42e1-b2b5-9e23b64df17b.png",
+        "confidence_map_key": "prediction_confidence/fcb3c904-51d6-4637-ab9e-aa5bc490865d.png"
+      },
+      {
+        "id": 39,
+        "ppd_value": 0.0,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/ed7aac07-7283-46ab-bdbd-ef879bf1538a.png\", \"cut2_2\": \"segmentations/80b1532a-f8ac-4732-81d3-51e069a62c4c.png\", \"cut2_3\": \"segmentations/8342128f-e448-4185-aaf7-2cc785518c05.png\", \"pred_1\": \"predictions/6b57ef25-b808-4b74-a495-08d3c3ec5076.jpg\", \"pred_2\": \"predictions/5c61648c-1aac-4814-ab03-f390a0014094.jpg\", \"pred_3\": \"predictions/41dfe09d-8af3-4d64-83f6-14aeba455069.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/184ece8d-645d-4040-a25e-3bb84b464509.png",
+        "rotten_mask_key": "prediction_masks/rotten/87439726-4a99-46c3-a4c7-2bda252afaf0.png",
+        "confidence_map_key": "prediction_confidence/56b597a5-4a9b-4fb2-96a4-0d25b6d85623.png"
+      },
+      {
+        "id": 36,
+        "ppd_value": 0.0,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/336aedf6-d183-4592-bbb4-3706a3164a35.png\", \"cut2_2\": \"segmentations/5dd38ff6-0aac-43b9-a69a-6a659718edb8.png\", \"cut2_3\": \"segmentations/96836e45-49c3-4b12-b32c-67f2ff5b2e97.png\", \"pred_1\": \"predictions/8302f060-f560-4410-b561-be6786f1333e.jpg\", \"pred_2\": \"predictions/4bc2e7a6-2a4f-4807-bc48-22c0a07f5af7.jpg\", \"pred_3\": \"predictions/968e560c-3fe0-49ee-b0aa-d5ea684ae698.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/e780e200-93f0-40b8-bdf6-410d597fb6ea.png",
+        "rotten_mask_key": "prediction_masks/rotten/5a586d9c-a424-4328-b9a9-71e5d315de0f.png",
+        "confidence_map_key": "prediction_confidence/b8336d3d-331f-4f45-84e3-52bb8b7dba72.png"
+      },
+      {
+        "id": 33,
+        "ppd_value": 0.0,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/519befbe-bea0-4d4a-9b16-d5271df09552.png\", \"cut2_2\": \"segmentations/8458a5b4-ad66-4f2a-8cdb-45279622d603.png\", \"cut2_3\": \"segmentations/7ee6f226-481b-4bda-aa9d-a23404df9138.png\", \"pred_1\": \"predictions/401f54da-e257-4d44-ab89-d4b64e7bd000.jpg\", \"pred_2\": \"predictions/a1741e40-169b-4d06-a48d-0ba1abf60c69.jpg\", \"pred_3\": \"predictions/618039b9-1ff7-48f7-885c-575d77338eff.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/deff6e67-e9f1-4853-a551-53263c3393e3.png",
+        "rotten_mask_key": "prediction_masks/rotten/8cdaba90-f6e6-4d26-94e0-db06213fe842.png",
+        "confidence_map_key": "prediction_confidence/c3a45c51-a182-449f-979d-2578dc1a3b13.png"
+      },
+      {
+        "id": 30,
+        "ppd_value": 0.0,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/4636e0cf-2a35-40dc-a0a5-64bc43763425.png\", \"cut2_2\": \"segmentations/c091f7d9-a951-447e-8911-0092768ab853.png\", \"cut2_3\": \"segmentations/5fe108e0-0703-4cba-b0f7-d53a64344471.png\", \"pred_1\": \"predictions/0013f685-358b-4619-baa3-424333a97dc5.jpg\", \"pred_2\": \"predictions/8fddd525-90a6-4ba5-80da-0539a2bb7c63.jpg\", \"pred_3\": \"predictions/73fb6819-36d4-49ef-955d-589ad00cdd5e.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/476a9402-1645-47eb-98f9-c0527cae82c7.png",
+        "rotten_mask_key": "prediction_masks/rotten/2ac27aae-1491-4f61-b283-c25bd90fddea.png",
+        "confidence_map_key": "prediction_confidence/3aefa1ee-6e00-4316-84be-bef6a74fb2cb.png"
+      },
+      {
+        "id": 29,
+        "ppd_value": 0.0,
+        "ppd_unit": "percent",
+        "single_model_type": "resnet101",
+        "is_ensemble": 0,
+        "vis_images": "{\"cut2_1\": \"segmentations/411d4770-2575-4b47-b591-65fe3d3664c6.png\", \"cut2_2\": \"segmentations/d22a7cf4-de68-430e-b4b1-7802506e1a34.png\", \"cut2_3\": \"segmentations/b65cb20f-1726-4360-994f-46c35fd7c078.png\", \"pred_1\": \"predictions/e6e2d4b8-6719-4fba-b10e-4609c6ca72fb.jpg\", \"pred_2\": \"predictions/2373ce2e-e838-433f-9c26-3b53649c4351.jpg\", \"pred_3\": \"predictions/cab0908e-2ae4-48db-853d-f9c0b696fa94.jpg\"}",
+        "cassava_mask_key": "prediction_masks/cassava/377fe8de-8bd1-4653-8f33-7ff199b58ea8.png",
+        "rotten_mask_key": "prediction_masks/rotten/4edb8db8-a6a0-4fc5-b60e-7f6176b187d8.png",
+        "confidence_map_key": "prediction_confidence/409ff99a-36e7-406f-b711-ed8e9c634a85.png"
+      }
+    ],
+    "latest_crops": [
+      {
+        "key": "cut2_1",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\4c6c8755-cdac-407e-ad53-b01a8b6d4bff.png",
+        "width": 74,
+        "height": 69,
+        "bbox": [
+          530,
+          222,
+          604,
+          291
+        ]
+      },
+      {
+        "key": "cut2_2",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\9c0a4b9f-dde8-4ff4-8c87-c2a6add1685f.png",
+        "width": 77,
+        "height": 81,
+        "bbox": [
+          362,
+          204,
+          439,
+          285
+        ]
+      },
+      {
+        "key": "cut2_3",
+        "path": "C:\\Users\\Administrator\\Desktop\\work\\02_农业研究\\木薯图像分割\\木薯网页源代码\\网页\\back\\cassavaBack\\media\\segmentations\\fca9deaa-de57-44ad-9113-8897804cb83a.png",
+        "width": 71,
+        "height": 73,
+        "bbox": [
+          236,
+          209,
+          307,
+          282
+        ]
+      }
+    ],
+    "corrections": [
+      {
+        "id": 8,
+        "prediction_id": 29,
+        "version": 1,
+        "ppd_percent": 12.922019719151479,
+        "cassava_pixels": 13388,
+        "rotten_pixels": 1730
+      }
+    ]
+  }
+]

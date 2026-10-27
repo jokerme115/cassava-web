@@ -1,0 +1,47 @@
+<!--pages/register/register.wxml-->
+<view class="register-page">
+  <view class="head anim-up">
+    <view class="head-title">创建账号</view>
+    <view class="head-sub">注册后即可拍照检测</view>
+  </view>
+
+  <view class="form-card anim-up" style="animation-delay: 0.08s;">
+    <view class="field">
+      <view class="field-label">邮箱</view>
+      <input class="field-input" placeholder="请输入邮箱" placeholder-class="ph"
+        value="{{email}}" bindinput="onEmail" type="text" />
+    </view>
+
+    <view class="field">
+      <view class="field-label">验证码</view>
+      <view class="code-row">
+        <input class="field-input code-input" placeholder="6 位验证码" placeholder-class="ph"
+          value="{{code}}" bindinput="onCode" type="number" maxlength="6" />
+        <view class="code-btn {{countdown > 0 ? 'disabled' : ''}}" bindtap="sendCode">
+          {{countdown > 0 ? countdown + 's' : '发送验证码'}}
+        </view>
+      </view>
+    </view>
+
+    <view class="field">
+      <view class="field-label">用户名（选填，默认同邮箱）</view>
+      <input class="field-input" placeholder="请输入用户名" placeholder-class="ph"
+        value="{{username}}" bindinput="onUsername" />
+    </view>
+
+    <view class="field">
+      <view class="field-label">密码</view>
+      <input class="field-input" placeholder="至少 8 位，含字母和数字" placeholder-class="ph"
+        password="{{!showPwd}}" value="{{password}}" bindinput="onPassword" />
+      <view class="pwd-toggle" bindtap="togglePwd">{{showPwd ? '隐藏' : '显示'}}</view>
+    </view>
+
+    <button class="btn-primary reg-btn" hover-class="press-scale" bindtap="doRegister" disabled="{{loading}}">
+      {{loading ? '注册中…' : '注 册'}}
+    </button>
+
+    <view class="to-login">
+      已有账号？<text class="link" bindtap="goLogin">返回登录</text>
+    </view>
+  </view>
+</view>

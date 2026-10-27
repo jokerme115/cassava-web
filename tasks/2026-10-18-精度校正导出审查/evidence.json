@@ -1,0 +1,778 @@
+{
+  "prediction_count": 31,
+  "zero_predictions": 22,
+  "correction_count": 7,
+  "mask_checks": [
+    {
+      "id": 11,
+      "name": "S15 (4).jpg",
+      "stored_ppd": 38.079619398022416,
+      "model_type": "resnet101",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 643612,
+      "rotten_pixels": 245085,
+      "ppd": 38.079619398022416,
+      "width": 4032,
+      "height": 2268,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 12,
+      "name": "S19 (1).jpg",
+      "stored_ppd": 8.660248499017168,
+      "model_type": "resnet101",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 935054,
+      "rotten_pixels": 80978,
+      "ppd": 8.660248499017168,
+      "width": 4032,
+      "height": 2268,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 13,
+      "name": "S15 (4).jpg",
+      "stored_ppd": 59.661566285277466,
+      "model_type": "m6_best",
+      "single_model_type": "m6_best",
+      "cassava_pixels": 643612,
+      "rotten_pixels": 383989,
+      "ppd": 59.661566285277466,
+      "width": 4032,
+      "height": 2268,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 14,
+      "name": "s7-d1-3.jpg",
+      "stored_ppd": 3.86931496097327,
+      "model_type": "resnet101",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 917320,
+      "rotten_pixels": 35494,
+      "ppd": 3.86931496097327,
+      "width": 3072,
+      "height": 4096,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 15,
+      "name": "s7-d1-3.jpg",
+      "stored_ppd": 3.86931496097327,
+      "model_type": "resnet101",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 917320,
+      "rotten_pixels": 35494,
+      "ppd": 3.86931496097327,
+      "width": 3072,
+      "height": 4096,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 16,
+      "name": "s7-d1-3.jpg",
+      "stored_ppd": 1.4334147298652595,
+      "model_type": "m6_best",
+      "single_model_type": "m6_best",
+      "cassava_pixels": 917320,
+      "rotten_pixels": 13149,
+      "ppd": 1.4334147298652595,
+      "width": 3072,
+      "height": 4096,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 17,
+      "name": "图片4.png",
+      "stored_ppd": 22.851276034027574,
+      "model_type": "YOLOv11",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 30681,
+      "rotten_pixels": 7011,
+      "ppd": 22.851276034027574,
+      "width": 953,
+      "height": 563,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 18,
+      "name": "图片3.png",
+      "stored_ppd": 0.0,
+      "model_type": "YOLOv11",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 20673,
+      "rotten_pixels": 0,
+      "ppd": 0.0,
+      "width": 795,
+      "height": 604,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 19,
+      "name": "图片2.png",
+      "stored_ppd": 0.0,
+      "model_type": "YOLOv11",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 23914,
+      "rotten_pixels": 0,
+      "ppd": 0.0,
+      "width": 903,
+      "height": 514,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 20,
+      "name": "图片1.png",
+      "stored_ppd": 0.0,
+      "model_type": "YOLOv11",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 35143,
+      "rotten_pixels": 0,
+      "ppd": 0.0,
+      "width": 935,
+      "height": 604,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 21,
+      "name": "图片4.png",
+      "stored_ppd": 22.851276034027574,
+      "model_type": "YOLOv11",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 30681,
+      "rotten_pixels": 7011,
+      "ppd": 22.851276034027574,
+      "width": 953,
+      "height": 563,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 22,
+      "name": "图片3.png",
+      "stored_ppd": 0.0,
+      "model_type": "YOLOv11",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 20673,
+      "rotten_pixels": 0,
+      "ppd": 0.0,
+      "width": 795,
+      "height": 604,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 23,
+      "name": "图片2.png",
+      "stored_ppd": 0.0,
+      "model_type": "YOLOv11",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 23914,
+      "rotten_pixels": 0,
+      "ppd": 0.0,
+      "width": 903,
+      "height": 514,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 24,
+      "name": "图片1.png",
+      "stored_ppd": 0.0,
+      "model_type": "YOLOv11",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 35143,
+      "rotten_pixels": 0,
+      "ppd": 0.0,
+      "width": 935,
+      "height": 604,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 25,
+      "name": "图片7.png",
+      "stored_ppd": 0.0,
+      "model_type": "YOLOv11",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 16035,
+      "rotten_pixels": 0,
+      "ppd": 0.0,
+      "width": 803,
+      "height": 448,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 26,
+      "name": "图片6.png",
+      "stored_ppd": 0.0,
+      "model_type": "YOLOv11",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 13573,
+      "rotten_pixels": 0,
+      "ppd": 0.0,
+      "width": 794,
+      "height": 436,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 27,
+      "name": "图片5.png",
+      "stored_ppd": 7.9817020269737355,
+      "model_type": "YOLOv11",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 25358,
+      "rotten_pixels": 2024,
+      "ppd": 7.9817020269737355,
+      "width": 759,
+      "height": 519,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 28,
+      "name": "图片8.png",
+      "stored_ppd": 0.0,
+      "model_type": "YOLOv11",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 13388,
+      "rotten_pixels": 0,
+      "ppd": 0.0,
+      "width": 791,
+      "height": 442,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 29,
+      "name": "图片9.png",
+      "stored_ppd": 0.0,
+      "model_type": "YOLOv11",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 13388,
+      "rotten_pixels": 0,
+      "ppd": 0.0,
+      "width": 791,
+      "height": 442,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 30,
+      "name": "图片9.png",
+      "stored_ppd": 0.0,
+      "model_type": "YOLOv11",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 13388,
+      "rotten_pixels": 0,
+      "ppd": 0.0,
+      "width": 791,
+      "height": 442,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 31,
+      "name": "图片8.png",
+      "stored_ppd": 0.0,
+      "model_type": "YOLOv11",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 13388,
+      "rotten_pixels": 0,
+      "ppd": 0.0,
+      "width": 791,
+      "height": 442,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 32,
+      "name": "图片7.png",
+      "stored_ppd": 0.0,
+      "model_type": "YOLOv11",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 16035,
+      "rotten_pixels": 0,
+      "ppd": 0.0,
+      "width": 803,
+      "height": 448,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 33,
+      "name": "图片9.png",
+      "stored_ppd": 0.0,
+      "model_type": "YOLOv11",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 13388,
+      "rotten_pixels": 0,
+      "ppd": 0.0,
+      "width": 791,
+      "height": 442,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 34,
+      "name": "图片8.png",
+      "stored_ppd": 0.0,
+      "model_type": "YOLOv11",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 13388,
+      "rotten_pixels": 0,
+      "ppd": 0.0,
+      "width": 791,
+      "height": 442,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 35,
+      "name": "图片7.png",
+      "stored_ppd": 0.0,
+      "model_type": "YOLOv11",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 16035,
+      "rotten_pixels": 0,
+      "ppd": 0.0,
+      "width": 803,
+      "height": 448,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 36,
+      "name": "图片9.png",
+      "stored_ppd": 0.0,
+      "model_type": "YOLOv11",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 13388,
+      "rotten_pixels": 0,
+      "ppd": 0.0,
+      "width": 791,
+      "height": 442,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 37,
+      "name": "图片8.png",
+      "stored_ppd": 0.0,
+      "model_type": "YOLOv11",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 13388,
+      "rotten_pixels": 0,
+      "ppd": 0.0,
+      "width": 791,
+      "height": 442,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 38,
+      "name": "图片7.png",
+      "stored_ppd": 0.0,
+      "model_type": "YOLOv11",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 16035,
+      "rotten_pixels": 0,
+      "ppd": 0.0,
+      "width": 803,
+      "height": 448,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 39,
+      "name": "图片9.png",
+      "stored_ppd": 0.0,
+      "model_type": "YOLOv11",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 13388,
+      "rotten_pixels": 0,
+      "ppd": 0.0,
+      "width": 791,
+      "height": 442,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 40,
+      "name": "图片8.png",
+      "stored_ppd": 0.0,
+      "model_type": "YOLOv11",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 13388,
+      "rotten_pixels": 0,
+      "ppd": 0.0,
+      "width": 791,
+      "height": 442,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    },
+    {
+      "id": 41,
+      "name": "图片7.png",
+      "stored_ppd": 0.0,
+      "model_type": "YOLOv11",
+      "single_model_type": "resnet101",
+      "cassava_pixels": 16035,
+      "rotten_pixels": 0,
+      "ppd": 0.0,
+      "width": 803,
+      "height": 448,
+      "outside_rotten": 0,
+      "difference_pp": 0.0
+    }
+  ],
+  "correction_checks": [
+    {
+      "prediction_id": 16,
+      "version": 1,
+      "ppd_percent": 1.4334147298652595,
+      "width": 3072,
+      "height": 4096,
+      "cassava_pixels": 917320,
+      "rotten_pixels": 13149,
+      "ppd": 1.4334147298652595,
+      "difference_pp": 0.0
+    },
+    {
+      "prediction_id": 19,
+      "version": 1,
+      "ppd_percent": 49.35602575896964,
+      "width": 903,
+      "height": 514,
+      "cassava_pixels": 23914,
+      "rotten_pixels": 11803,
+      "ppd": 49.35602575896964,
+      "difference_pp": 0.0
+    },
+    {
+      "prediction_id": 17,
+      "version": 1,
+      "ppd_percent": 58.96809100094521,
+      "width": 953,
+      "height": 563,
+      "cassava_pixels": 30681,
+      "rotten_pixels": 18092,
+      "ppd": 58.96809100094521,
+      "difference_pp": 0.0
+    },
+    {
+      "prediction_id": 26,
+      "version": 1,
+      "ppd_percent": 10.668238414499374,
+      "width": 794,
+      "height": 436,
+      "cassava_pixels": 13573,
+      "rotten_pixels": 1448,
+      "ppd": 10.668238414499374,
+      "difference_pp": 0.0
+    },
+    {
+      "prediction_id": 27,
+      "version": 1,
+      "ppd_percent": 33.70533953781844,
+      "width": 759,
+      "height": 519,
+      "cassava_pixels": 25358,
+      "rotten_pixels": 8547,
+      "ppd": 33.70533953781844,
+      "difference_pp": 0.0
+    },
+    {
+      "prediction_id": 28,
+      "version": 1,
+      "ppd_percent": 45.94412907080968,
+      "width": 791,
+      "height": 442,
+      "cassava_pixels": 13388,
+      "rotten_pixels": 6151,
+      "ppd": 45.94412907080968,
+      "difference_pp": 0.0
+    },
+    {
+      "prediction_id": 29,
+      "version": 1,
+      "ppd_percent": 12.922019719151479,
+      "width": 791,
+      "height": 442,
+      "cassava_pixels": 13388,
+      "rotten_pixels": 1730,
+      "ppd": 12.922019719151479,
+      "difference_pp": 0.0
+    }
+  ],
+  "rgb_bgr_checks": [
+    {
+      "image_id": 46,
+      "name": "s7-d1-3.jpg",
+      "differing_pixels": 677,
+      "direct_pixels": 12582912,
+      "canonical_pixels": 12582235
+    },
+    {
+      "image_id": 50,
+      "name": "图片4.png",
+      "differing_pixels": 21749,
+      "direct_pixels": 126556,
+      "canonical_pixels": 147633
+    },
+    {
+      "image_id": 49,
+      "name": "图片3.png",
+      "differing_pixels": 24073,
+      "direct_pixels": 116482,
+      "canonical_pixels": 131261
+    },
+    {
+      "image_id": 48,
+      "name": "图片2.png",
+      "differing_pixels": 3728,
+      "direct_pixels": 117244,
+      "canonical_pixels": 120782
+    },
+    {
+      "image_id": 47,
+      "name": "图片1.png",
+      "differing_pixels": 21101,
+      "direct_pixels": 147821,
+      "canonical_pixels": 168922
+    },
+    {
+      "image_id": 53,
+      "name": "图片7.png",
+      "differing_pixels": 25256,
+      "direct_pixels": 84091,
+      "canonical_pixels": 109323
+    },
+    {
+      "image_id": 52,
+      "name": "图片6.png",
+      "differing_pixels": 1512,
+      "direct_pixels": 76512,
+      "canonical_pixels": 76958
+    },
+    {
+      "image_id": 51,
+      "name": "图片5.png",
+      "differing_pixels": 1846,
+      "direct_pixels": 124987,
+      "canonical_pixels": 126555
+    },
+    {
+      "image_id": 54,
+      "name": "图片8.png",
+      "differing_pixels": 4184,
+      "direct_pixels": 62324,
+      "canonical_pixels": 65832
+    },
+    {
+      "image_id": 55,
+      "name": "图片9.png",
+      "differing_pixels": 4184,
+      "direct_pixels": 62324,
+      "canonical_pixels": 65832
+    }
+  ],
+  "synthetic_checks": [
+    {
+      "case": "small_64px",
+      "before_pixels": 64,
+      "after_pixels": 0
+    },
+    {
+      "case": "thin_140px",
+      "before_pixels": 140,
+      "after_pixels": 0
+    },
+    {
+      "case": "ring",
+      "before_pixels": 940,
+      "after_pixels": 304
+    },
+    {
+      "case": "ring_fill_only",
+      "before_pixels": 940,
+      "after_pixels": 3321
+    },
+    {
+      "case": "flat_advanced_parameters",
+      "input": {
+        "confidenceThreshold": 0.91,
+        "minArea": 7,
+        "single_model_type": "m6_best",
+        "useTTA": true,
+        "usePostProcessing": false,
+        "patchSize": [
+          256,
+          256
+        ],
+        "stride": [
+          128,
+          128
+        ]
+      },
+      "parsed": {
+        "confidence": 0.5,
+        "use_ensemble": false,
+        "single_model_type": "m6_best",
+        "model_label": "m6_best",
+        "min_area": 100,
+        "morph_kernel_size": 5,
+        "morph_iterations": 1,
+        "use_post_processing": true,
+        "use_tta": false,
+        "overlap": 0.2,
+        "algorithm": null,
+        "patch_size": [
+          512,
+          512
+        ],
+        "stride": [
+          128,
+          128
+        ],
+        "overlay_opacity": 0.45,
+        "save_probability": false,
+        "stage1_confidence": 0.25,
+        "stage2_confidence": 0.25,
+        "roi_padding": 0.1,
+        "fallback_roi_padding": 0.7,
+        "expected_count": 3,
+        "stage_box_iou": 0.5
+      }
+    },
+    {
+      "case": "no_cassava_uniform_gray",
+      "cassava_pixels": 10000
+    }
+  ],
+  "task_checks": [
+    {
+      "task_id": 20,
+      "selected_model": "resnet101",
+      "resolved_model": "resnet101",
+      "resolved_label": "YOLOv11"
+    },
+    {
+      "task_id": 21,
+      "selected_model": "resnet101",
+      "resolved_model": "resnet101",
+      "resolved_label": "YOLOv11"
+    },
+    {
+      "task_id": 22,
+      "selected_model": "m6_best",
+      "resolved_model": "resnet101",
+      "resolved_label": "YOLOv11"
+    },
+    {
+      "task_id": 24,
+      "selected_model": "resnet101",
+      "resolved_model": "resnet101",
+      "resolved_label": "YOLOv11"
+    },
+    {
+      "task_id": 25,
+      "selected_model": "m6_best",
+      "resolved_model": "m6_best",
+      "resolved_label": "m6_best"
+    },
+    {
+      "task_id": 27,
+      "selected_model": "m6_best",
+      "resolved_model": "resnet101",
+      "resolved_label": "YOLOv11"
+    },
+    {
+      "task_id": 28,
+      "selected_model": "m6_best",
+      "resolved_model": "resnet101",
+      "resolved_label": "YOLOv11"
+    },
+    {
+      "task_id": 29,
+      "selected_model": "resnet101",
+      "resolved_model": "resnet101",
+      "resolved_label": "YOLOv11"
+    },
+    {
+      "task_id": 30,
+      "selected_model": "resnet101",
+      "resolved_model": "resnet101",
+      "resolved_label": "YOLOv11"
+    },
+    {
+      "task_id": 31,
+      "selected_model": "resnet101",
+      "resolved_model": "resnet101",
+      "resolved_label": "YOLOv11"
+    },
+    {
+      "task_id": 32,
+      "selected_model": "m6_best",
+      "resolved_model": "resnet101",
+      "resolved_label": "YOLOv11"
+    },
+    {
+      "task_id": 33,
+      "selected_model": "resnet101",
+      "resolved_model": "resnet101",
+      "resolved_label": "YOLOv11"
+    },
+    {
+      "task_id": 34,
+      "selected_model": "m6_best",
+      "resolved_model": "resnet101",
+      "resolved_label": "YOLOv11"
+    },
+    {
+      "task_id": 35,
+      "selected_model": "m6_best",
+      "resolved_model": "resnet101",
+      "resolved_label": "YOLOv11"
+    },
+    {
+      "task_id": 36,
+      "selected_model": "m6_best",
+      "resolved_model": "resnet101",
+      "resolved_label": "YOLOv11"
+    }
+  ],
+  "summary": {
+    "latest_corrected_mean": 11.28995478614033,
+    "displayed_mean": 12.365116076462911,
+    "affected_zero_entries_after_corrections": 18,
+    "actual_task_model_mismatch_result_ids": [
+      17,
+      18,
+      19,
+      20,
+      29,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41
+    ]
+  }
+}

@@ -1,0 +1,306 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   设计系统：HeroUI 口径（柔和现代 · 单一强调色 · 实底卡片）
+   - 页面底：纯色 #f7f8fa，不铺渐变、不铺色斑
+   - 卡片：纯白实底 + 1px 发丝描边 + 极淡投影 + 大圆角
+   - 强调色：只有 #0a84ff 一支
+   - 状态色：只做圆点、细条、浅底胶囊，不做大面积着色
+   ============================================================ */
+
+:root {
+  color-scheme: light;
+
+  /* 强调色与状态色 */
+  --accent: #0a84ff;
+  --accent-hover: #0070e0;
+  --accent-soft: rgba(10, 132, 255, 0.10);
+  --ok: #17c964;
+  --warn: #f5a524;
+  --danger: #f31260;
+  --ok-soft: rgba(23, 201, 100, 0.12);
+  --warn-soft: rgba(245, 165, 36, 0.14);
+  --danger-soft: rgba(243, 18, 96, 0.12);
+
+  /* 中性色 */
+  --ink: #11181c;
+  --ink-secondary: #3f4650;
+  --muted: #687076;
+  --muted-light: #8b9199;
+  --surface: #ffffff;
+  --surface-muted: #f7f8fa;
+  --surface-sunken: #f2f3f6;
+  --hairline: #ededf2;
+  --hairline-strong: #e4e5eb;
+
+  /* 圆角 */
+  --radius-xl: 28px;
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+
+  /* 投影：只用两层极淡阴影，不要彩色光晕 */
+  --shadow-card: 0 10px 30px rgba(17, 17, 26, 0.045), 0 0 0 1px rgba(17, 17, 26, 0.02);
+  --shadow-float: 0 18px 44px rgba(17, 17, 26, 0.09), 0 0 0 1px rgba(17, 17, 26, 0.03);
+  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  font-family: "SF Pro Text", -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background-color: var(--surface-muted);
+  background-image: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* ------------------------------------------------------------
+   卡片体系
+   历史类名 .glass-panel / .glass-panel-strong / .glass-panel-soft / .glass-pill
+   保留为兼容别名，实现已改为实底卡片；新代码请用 .card / .card-soft / .card-float / .chip
+   ------------------------------------------------------------ */
+
+.card,
+.glass-panel,
+.glass-panel-strong {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--shadow-card);
+  transition: background-color 180ms ease-out, box-shadow 180ms ease-out, border-color 180ms ease-out;
+}
+
+.glass-panel-strong {
+  box-shadow: var(--shadow-float);
+}
+
+.card-soft,
+.glass-panel-soft {
+  background: var(--surface-muted);
+  border: 1px solid var(--hairline);
+  box-shadow: none;
+  transition: background-color 180ms ease-out, border-color 180ms ease-out;
+}
+
+.card-float {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  box-shadow: var(--shadow-float);
+}
+
+.chip,
+.glass-pill {
+  background: var(--surface-sunken);
+  border: 1px solid var(--hairline);
+  transition: background-color 160ms ease-out, color 160ms ease-out;
+}
+
+/* hover：只做极轻微的底色与描边变化，不做位移（位移会让整排卡片抖动） */
+@media (hover: hover) {
+  .card:hover,
+  .glass-panel:not(.glass-no-lift):hover,
+  .glass-panel-strong:hover {
+    border-color: var(--hairline-strong);
+    box-shadow: var(--shadow-float);
+  }
+
+  .card-soft:hover,
+  .glass-panel-soft:not(.glass-no-lift):hover {
+    background: #f2f3f6;
+  }
+
+  .chip:hover,
+  .glass-pill:hover {
+    background: #ecedf1;
+  }
+}
+
+/* 兼容旧类名：HeroUI 口径下不再有高光层与上浮效果 */
+.glass-sheen::before,
+.glass-sheen::after {
+  content: none;
+}
+
+.glass-lift:hover {
+  transform: none;
+}
+
+.glass-no-lift:hover {
+  transform: none;
+}
+
+/* ------------------------------------------------------------
+   常用组合
+   ------------------------------------------------------------ */
+
+.page-shell {
+  background: var(--surface-muted);
+}
+
+.section-title {
+  color: var(--ink);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.text-muted {
+  color: var(--muted);
+}
+
+.text-secondary {
+  color: var(--ink-secondary);
+}
+
+.divider {
+  border-color: var(--hairline);
+}
+
+.accent-dot {
+  display: inline-block;
+  height: 6px;
+  width: 6px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+/* 主按钮 / 次按钮 / 幽灵按钮 */
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  transition: background-color 160ms ease-out, transform 120ms ease-out;
+}
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+.btn-primary:active {
+  transform: scale(0.985);
+}
+.btn-primary:disabled {
+  background: #c9d2dd;
+  transform: none;
+}
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--hairline-strong);
+  transition: background-color 160ms ease-out, border-color 160ms ease-out;
+}
+.btn-secondary:hover {
+  background: var(--surface-sunken);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--muted);
+  transition: background-color 160ms ease-out, color 160ms ease-out;
+}
+.btn-ghost:hover {
+  background: var(--surface-sunken);
+  color: var(--ink);
+}
+
+/* 输入框：白底 + 发丝描边，聚焦只看描边色 */
+.field {
+  background: var(--surface);
+  border: 1px solid var(--hairline-strong);
+  color: var(--ink);
+  transition: border-color 160ms ease-out, box-shadow 160ms ease-out;
+}
+.field::placeholder {
+  color: var(--muted-light);
+}
+.field:focus,
+.field:focus-within {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+/* ------------------------------------------------------------
+   动效（保留原有淡入，都是 1 次性，不影响布局）
+   ------------------------------------------------------------ */
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out forwards;
+}
+
+.animate-fade-in-down {
+  animation: fade-in-down 0.4s ease-out forwards;
+}
+
+.animation-delay-200 {
+  animation-delay: 0.2s;
+  opacity: 0;
+}
+
+.animation-delay-400 {
+  animation-delay: 0.4s;
+  opacity: 0;
+}
+
+.animation-delay-600 {
+  animation-delay: 0.6s;
+  opacity: 0;
+}
+
+.animation-delay-800 {
+  animation-delay: 0.8s;
+  opacity: 0;
+}
+
+/* ------------------------------------------------------------
+   滚动条
+   ------------------------------------------------------------ */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(17, 24, 28, 0.14);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(17, 24, 28, 0.24);
+  background-clip: padding-box;
+}

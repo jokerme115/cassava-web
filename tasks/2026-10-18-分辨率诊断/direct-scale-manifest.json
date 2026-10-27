@@ -1,0 +1,26 @@
+{
+  "type": "direct-size supplementary sensitivity check",
+  "image_ids": [
+    43,
+    44,
+    46
+  ],
+  "crops": "middle section",
+  "long_edge_levels": [
+    96,
+    128,
+    192,
+    256,
+    384,
+    512,
+    "native"
+  ],
+  "reason": "separate information loss at fixed input size from actual input-scale and pixel-filter effects",
+  "accuracy_ground_truth": null,
+  "threshold": 0.5,
+  "postprocess": [
+    100,
+    5,
+    1
+  ]
+}

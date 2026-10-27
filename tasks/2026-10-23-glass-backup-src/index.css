@@ -1,0 +1,212 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --ios-blue: #0a84ff;
+  --ios-green: #34c759;
+  --ios-orange: #ff9500;
+  --ios-red: #ff3b30;
+  --ios-purple: #5856d6;
+  --ios-teal: #30b0c7;
+  /* 玻璃体系：全局唯一定义，组件只引用变量 */
+  --glass-tint: rgba(255, 255, 255, 0.62);
+  --glass-tint-hover: rgba(255, 255, 255, 0.74);
+  --glass-line: rgba(255, 255, 255, 0.72);
+  --glass-shadow: 0 20px 60px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(15, 23, 42, 0.04);
+  --glass-blur: 20px;
+  --glass-saturate: 180%;
+  --glass-row-hover: rgba(255, 255, 255, 0.45);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  color: #0b1220;
+  font-family: "SF Pro Text", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  /* 浅雾白底 + 四个大色斑（直径 44–58vw），保证玻璃卡片后面确实有可模糊的彩色内容 */
+  background-color: #eef1f8;
+  background-image:
+    radial-gradient(52vw 52vw at 8% 4%, rgba(10, 132, 255, 0.34) 0%, rgba(10, 132, 255, 0.12) 42%, rgba(10, 132, 255, 0) 72%),
+    radial-gradient(46vw 46vw at 94% 10%, rgba(255, 149, 0, 0.27) 0%, rgba(255, 149, 0, 0.09) 46%, rgba(255, 149, 0, 0) 74%),
+    radial-gradient(58vw 58vw at 82% 94%, rgba(88, 86, 214, 0.30) 0%, rgba(88, 86, 214, 0.10) 44%, rgba(88, 86, 214, 0) 72%),
+    radial-gradient(44vw 44vw at 18% 98%, rgba(48, 176, 199, 0.26) 0%, rgba(48, 176, 199, 0.08) 46%, rgba(48, 176, 199, 0) 74%);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+
+* {
+  box-sizing: border-box;
+}
+
+/* ---- iOS 26 磨砂玻璃分层（全局唯一实现，组件只加类名） ---- */
+
+.glass-panel,
+.glass-panel-strong,
+.glass-panel-soft {
+  box-shadow: var(--glass-shadow);
+  transition: background-color 180ms ease-out, transform 180ms ease-out, box-shadow 180ms ease-out;
+}
+
+.glass-panel {
+  background: var(--glass-tint);
+  border: 1px solid var(--glass-line);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+
+.glass-panel-strong {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  -webkit-backdrop-filter: blur(24px) saturate(var(--glass-saturate));
+  backdrop-filter: blur(24px) saturate(var(--glass-saturate));
+}
+
+.glass-panel-soft {
+  background: rgba(255, 255, 255, 0.44);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+}
+
+/* hover 只提透明度 + 轻微上移；表格行/下拉项/列表项另用 --glass-row-hover */
+@media (hover: hover) {
+  .glass-panel:not(.glass-no-lift):hover,
+  .glass-panel-soft:not(.glass-no-lift):hover {
+    background: var(--glass-tint-hover);
+    transform: translateY(-2px);
+  }
+}
+
+.glass-no-lift:hover {
+  transform: none;
+}
+
+/* 顶部内高光，玻璃质感的关键一层 */
+.glass-sheen {
+  position: relative;
+}
+.glass-sheen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 46%);
+}
+
+.glass-pill {
+  background: rgba(255, 255, 255, 0.56);
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  backdrop-filter: blur(18px) saturate(170%);
+  transition: background-color 180ms ease-out;
+}
+
+@media (hover: hover) {
+  .glass-pill:hover {
+    background: var(--glass-tint-hover);
+  }
+}
+
+/* ---- 降级：无 backdrop-filter 时用接近不透明的白，避免半透明糊字 ---- */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-panel,
+  .glass-panel-strong,
+  .glass-panel-soft,
+  .glass-pill {
+    background: rgba(255, 255, 255, 0.92);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) skewX(-12deg);
+  }
+  100% {
+    transform: translateX(100%) skewX(-12deg);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s ease-out forwards;
+}
+
+.animate-fade-in-down {
+  animation: fade-in-down 0.45s ease-out forwards;
+}
+
+.animate-shimmer {
+  animation: shimmer 2.8s linear infinite;
+}
+
+.animation-delay-200 {
+  animation-delay: 0.2s;
+  opacity: 0;
+}
+
+.animation-delay-400 {
+  animation-delay: 0.4s;
+  opacity: 0;
+}
+
+.animation-delay-600 {
+  animation-delay: 0.6s;
+  opacity: 0;
+}
+
+.animation-delay-800 {
+  animation-delay: 0.8s;
+  opacity: 0;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.16);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 23, 42, 0.28);
+  background-clip: padding-box;
+}

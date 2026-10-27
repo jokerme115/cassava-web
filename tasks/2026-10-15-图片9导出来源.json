@@ -1,0 +1,10 @@
+[
+  {
+    "image": 9,
+    "prediction_id": 29,
+    "correction_version": 1,
+    "cassava_mask": "prediction_corrections/29/v1/cassava.png",
+    "rotten_mask": "prediction_corrections/29/v1/rotten.png",
+    "ppd_percent": 12.922019719151479
+  }
+]

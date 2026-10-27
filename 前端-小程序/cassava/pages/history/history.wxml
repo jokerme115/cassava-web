@@ -1,0 +1,89 @@
+<!--pages/history/history.wxml-->
+<view class="history-page">
+
+  <!-- 未登录 -->
+  <view class="login-banner" wx:if="{{!loggedIn}}">
+    <view class="login-banner-text">
+      <view class="login-banner-title">登录后查看检测记录</view>
+      <view class="login-banner-sub">云端记录与账号绑定</view>
+    </view>
+    <button class="login-banner-btn" bindtap="goLogin">去登录</button>
+  </view>
+
+  <block wx:if="{{loggedIn}}">
+    <!-- 分段切换 -->
+    <view class="seg">
+      <view class="seg-item {{tab === 'cloud' ? 'active' : ''}}" bindtap="switchTab" data-tab="cloud">云端记录</view>
+      <view class="seg-item {{tab === 'local' ? 'active' : ''}}" bindtap="switchTab" data-tab="local">本地记录</view>
+    </view>
+
+    <!-- 云端记录 -->
+    <view wx:if="{{tab === 'cloud'}}">
+      <!-- 加载骨架 -->
+      <view wx:if="{{cloudLoading && !cloudList.length}}" class="skeleton">
+        <view class="sk-item" wx:for="{{[1,2,3]}}" wx:key="*this">
+          <view class="sk-thumb"></view>
+          <view class="sk-lines">
+            <view class="sk-line w60"></view>
+            <view class="sk-line w40"></view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 错误态 -->
+      <view wx:elif="{{cloudError && !cloudList.length}}" class="empty">
+        <view class="empty-icon">⚠️</view>
+        <view class="empty-text">加载失败，请检查网络</view>
+        <button class="retry-btn" bindtap="retryCloud">重新加载</button>
+      </view>
+
+      <!-- 列表 -->
+      <view wx:elif="{{cloudList.length}}" class="list">
+        <view class="list-item anim-up" wx:for="{{cloudList}}" wx:key="id"
+          bindtap="openResult" data-id="{{item.id}}">
+          <image class="item-thumb" src="{{item.thumb}}" mode="aspectFill" />
+          <view class="item-info">
+            <view class="item-name">{{item.name}}</view>
+            <view class="item-time">{{item.time}}</view>
+          </view>
+          <view class="item-ppd">
+            <text class="ppd-num">{{item.ppd}}%</text>
+            <text class="ppd-label">PPD</text>
+          </view>
+        </view>
+        <view class="list-footer">
+          <text wx:if="{{loadingMore}}">加载中…</text>
+          <text wx:elif="{{!hasMore}}">没有更多了</text>
+        </view>
+      </view>
+
+      <!-- 空态 -->
+      <view wx:else class="empty">
+        <view class="empty-icon">📋</view>
+        <view class="empty-text">暂无云端检测记录</view>
+      </view>
+    </view>
+
+    <!-- 本地记录 -->
+    <view wx:if="{{tab === 'local'}}">
+      <view wx:if="{{localList.length}}" class="list">
+        <view class="list-item" wx:for="{{localList}}" wx:key="id"
+          bindtap="openLocalResult" data-id="{{item.id}}">
+          <image class="item-thumb" src="{{item.thumb}}" mode="aspectFill" />
+          <view class="item-info">
+            <view class="item-name">{{item.imageName}}</view>
+            <view class="item-time">{{item.timeText}}</view>
+          </view>
+          <view class="item-ppd">
+            <text class="ppd-num">{{item.ppd}}%</text>
+            <text class="ppd-label">PPD</text>
+          </view>
+        </view>
+      </view>
+      <view wx:else class="empty">
+        <view class="empty-icon">📋</view>
+        <view class="empty-text">暂无本地记录</view>
+      </view>
+    </view>
+  </block>
+</view>

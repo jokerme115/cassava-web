@@ -1,0 +1,60 @@
+- generic [ref=e3]:
+  - navigation [ref=e4]:
+    - generic [ref=e6]:
+      - button [ref=e25] [cursor=pointer]:
+        - img "木薯腐烂面积精准量化系统" [ref=e9]
+        - generic [ref=e10]:
+          - paragraph [ref=e11]: CASSAVA LAB
+          - heading "Cassava System" [level=1] [ref=e26]
+      - generic [ref=e27]:
+        - button "首页" [ref=e28] [cursor=pointer]
+        - button "图片管理" [ref=e29] [cursor=pointer]
+        - button "联系我们" [ref=e30] [cursor=pointer]
+        - button "智能分析" [ref=e32] [cursor=pointer]
+      - generic [ref=e45]:
+        - button "中文" [ref=e47] [cursor=pointer]
+        - button "用户登录" [active] [ref=e55] [cursor=pointer]
+  - generic [ref=e207]:
+    - generic [ref=e210]:
+      - generic [ref=e211]:
+        - generic [ref=e212]: 中国热带农业科学院&海南师范大学
+        - generic [ref=e215]:
+          - img "木薯腐烂面积精准量化系统" [ref=e217]
+          - generic [ref=e218]:
+            - paragraph [ref=e219]: SMART PLATFORM
+            - heading "木薯腐烂面积精准量化系统" [level=1] [ref=e220]
+        - paragraph [ref=e221]: 1秒预测20张<2.1%像素级分割结果
+      - generic [ref=e222]:
+        - generic [ref=e223]:
+          - paragraph [ref=e224]: PPD预测
+          - paragraph [ref=e225]: AI Segmentation
+        - generic [ref=e226]:
+          - paragraph [ref=e227]: 结果中心
+          - paragraph [ref=e228]: Results Archive
+        - generic [ref=e229]:
+          - paragraph [ref=e230]: 联系我们
+          - paragraph [ref=e231]: Research Support
+    - generic [ref=e233]:
+      - generic [ref=e234]:
+        - paragraph [ref=e235]: Account Access
+        - heading "登录到木薯智能管理系统" [level=2] [ref=e236]
+        - paragraph [ref=e237]: 进入公共首页后，只有在需要操作数据、任务或结果时才需要登录。
+      - generic [ref=e238]:
+        - generic [ref=e239]:
+          - generic [ref=e240]: 用户名或邮箱
+          - textbox "用户名或邮箱" [ref=e242]:
+            - /placeholder: 请输入用户名或邮箱
+        - generic [ref=e243]:
+          - generic [ref=e244]: 密码
+          - textbox "密码" [ref=e246]:
+            - /placeholder: 请输入密码
+        - generic [ref=e247]:
+          - generic [ref=e248]:
+            - checkbox "记住我" [ref=e249]
+            - text: 记住我
+          - button "忘记密码？" [ref=e250] [cursor=pointer]
+        - button "登录" [ref=e251] [cursor=pointer]
+      - generic [ref=e254]: 或
+      - generic [ref=e258]:
+        - button "访客试用" [ref=e259] [cursor=pointer]
+        - button "返回首页继续浏览" [ref=e260] [cursor=pointer]

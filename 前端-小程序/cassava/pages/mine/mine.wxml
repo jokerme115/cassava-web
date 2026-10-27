@@ -1,0 +1,80 @@
+<!--pages/mine/mine.wxml-->
+<view class="mine-page">
+
+  <!-- 用户卡片 -->
+  <view class="user-card">
+    <block wx:if="{{loggedIn}}">
+      <view class="avatar">{{avatarText}}</view>
+      <view class="user-info">
+        <view class="user-name">{{userName}}</view>
+        <view class="user-email">{{userEmail}}</view>
+      </view>
+    </block>
+    <block wx:else>
+      <view class="avatar guest">访</view>
+      <view class="user-info">
+        <view class="user-name">未登录</view>
+        <view class="user-email">登录后可同步检测数据</view>
+      </view>
+    </block>
+  </view>
+
+  <!-- 未登录操作 -->
+  <view class="auth-actions anim-up" wx:if="{{!loggedIn}}">
+    <button class="btn-primary auth-btn" hover-class="press-scale" bindtap="goLogin">登 录</button>
+    <button class="btn-plain auth-btn" hover-class="press-scale" bindtap="goRegister">注 册</button>
+  </view>
+
+  <!-- 平台统计 -->
+  <view class="stats-card">
+    <view class="stats-item">
+      <view class="stats-num">{{stats.images}}</view>
+      <view class="stats-label">累计分析图片</view>
+    </view>
+    <view class="stats-divider"></view>
+    <view class="stats-item">
+      <view class="stats-num">{{stats.predictions}}</view>
+      <view class="stats-label">累计预测次数</view>
+    </view>
+    <view class="stats-divider"></view>
+    <view class="stats-item">
+      <view class="stats-num">{{stats.visits}}</view>
+      <view class="stats-label">平台访问量</view>
+    </view>
+  </view>
+
+  <!-- 菜单 -->
+  <view class="menu-card">
+    <view class="menu-item" bindtap="showIntro">
+      <text class="menu-icon">✨</text>
+      <text class="menu-text">查看介绍</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="showAbout">
+      <text class="menu-icon">🌱</text>
+      <text class="menu-text">关于平台</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="showGuide">
+      <text class="menu-icon">📖</text>
+      <text class="menu-text">使用说明</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="clearCache">
+      <text class="menu-icon">🧹</text>
+      <text class="menu-text">清除缓存</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" wx:if="{{loggedIn}}" bindtap="logout">
+      <text class="menu-icon">🚪</text>
+      <text class="menu-text danger">退出登录</text>
+      <text class="menu-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- 版权信息 -->
+  <view class="footer">
+    <view class="footer-title">木薯腐烂面积精准量化平台</view>
+    <view class="footer-line">海南师范大学 · 中国热带农业科学院</view>
+  </view>
+</view>

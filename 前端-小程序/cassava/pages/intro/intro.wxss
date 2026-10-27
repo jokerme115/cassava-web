@@ -1,0 +1,121 @@
+/* pages/intro/intro.wxss */
+.intro-page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+
+.swiper {
+  flex: 1;
+  height: 0;
+}
+
+.slide {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 80rpx;
+  box-sizing: border-box;
+}
+
+.slide-icon-wrap {
+  opacity: 0;
+  transform: scale(0.6) translateY(40rpx);
+  transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.slide-icon-wrap.anim {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+.slide-icon {
+  width: 260rpx;
+  height: 260rpx;
+}
+
+.slide-title {
+  margin-top: 72rpx;
+  font-size: 44rpx;
+  font-weight: 600;
+  color: #1B5E20;
+  opacity: 0;
+  transform: translateY(30rpx);
+  transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.12s;
+}
+.slide-title.anim {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.slide-desc {
+  margin-top: 24rpx;
+  font-size: 28rpx;
+  color: #607D8B;
+  line-height: 1.7;
+  text-align: center;
+  padding: 0 20rpx;
+  opacity: 0;
+  transform: translateY(30rpx);
+  transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.22s;
+}
+.slide-desc.anim {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.slide-highlight {
+  margin-top: 32rpx;
+  font-size: 40rpx;
+  font-weight: 600;
+  color: #2E7D32;
+  padding: 12rpx 36rpx;
+  background: #E8F5E9;
+  border-radius: 40rpx;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.34s;
+}
+.slide-highlight.anim {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 16rpx;
+  padding: 40rpx 0;
+}
+.dot {
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+  background: #DDE3DD;
+  transition: all 0.3s ease;
+}
+.dot.active {
+  width: 44rpx;
+  border-radius: 7rpx;
+  background: #2E7D32;
+}
+
+.footer {
+  padding: 0 64rpx 80rpx;
+  min-height: 96rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.start-btn {
+  width: 100%;
+  height: 96rpx;
+  line-height: 96rpx;
+  font-size: 32rpx;
+}
+.skip-btn {
+  font-size: 28rpx;
+  color: #90A4AE;
+  padding: 20rpx 40rpx;
+}

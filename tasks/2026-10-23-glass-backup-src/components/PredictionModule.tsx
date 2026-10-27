@@ -1,0 +1,879 @@
+import ImageResolutionLabel from './ImageResolutionLabel';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Brain, Play, Settings, Image as ImageIcon, FolderOpen, Zap, Search, SortAsc, SortDesc } from 'lucide-react';
+import { useImageStore } from '../hooks/useImageStore';
+import { useTaskStore } from '../hooks/useTaskStore';
+import { message, Tree } from 'antd';
+import { useTranslation } from 'react-i18next';
+
+const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
+  const { t } = useTranslation();
+  const {
+    images,
+    folders,
+    loading: imagesLoading,
+    hasMoreImages,
+    loadingMoreImages,
+    loadMoreImages,
+    totalImages,
+  } = useImageStore(Boolean(currentUser?.is_guest));
+  const { createTask } = useTaskStore();
+  const ALL_NODE_VALUE = '__all__';
+  const UNCATEGORIZED_NODE_VALUE = '__uncategorized__';
+  
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const selectionType = 'images';
+  const batchSize = 32;
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [predictionMode, setPredictionMode] = useState<'single' | 'ensemble'>('single');
+  const [modelType, setModelType] = useState('resnet101');
+  const modelOptions = [
+    { value: 'resnet101', label: '有监督模型' },
+    { value: 'm6_best', label: '半监督模型' },
+  ];
+  // Monitor language changes, update model descriptions
+  useEffect(() => {
+  }, [t]);
+
+  const [advancedParams, setAdvancedParams] = useState({
+    confidenceThreshold: 0.5,
+    usePostProcessing: true,
+    useTTA: false,
+    minArea: 100,
+    morphKernelSize: 5,
+    morphIterations: 1,
+    overlayOpacity: 0.3,
+    stage1Confidence: 0.25,
+    stage2Confidence: 0.25,
+    roiPadding: 0.1,
+    fallbackRoiPadding: 0.7,
+    expectedCount: 0,
+    stageBoxIou: 0.5,
+    patchSize: [512, 512] as [number, number],
+    stride: [256, 256] as [number, number],
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'name' | 'date' | 'size'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [taskName, setTaskName] = useState(() => `${t('prediction.task_name')}-${new Date().toLocaleString()}`);
+  const [showNameModal, setShowNameModal] = useState(false);
+  const [pendingPayload, setPendingPayload] = useState<any>(null);
+  const folderTreeRef = useRef<HTMLDivElement | null>(null);
+  // 同步的提交锁：state 更新是异步的，连点时三次点击会读到同一个 loading=false
+  const submittingRef = useRef(false);
+
+  const childrenByParentId = useMemo(() => {
+    const map = new Map<string | null, any[]>();
+    for (const f of folders) {
+      const pid =
+        f.parent === null || f.parent === undefined || f.parent === ''
+          ? null
+          : String(f.parent);
+      const arr = map.get(pid) ?? [];
+      arr.push(f);
+      map.set(pid, arr);
+    }
+    for (const arr of map.values()) {
+      arr.sort((a, b) => String(a.name).localeCompare(String(b.name)));
+    }
+    return map;
+  }, [folders]);
+
+  const folderTreeData = useMemo(() => {
+    const build = (parentId: string | null): any[] => {
+      const items = childrenByParentId.get(parentId) ?? [];
+      return items.map((f: any) => {
+        const id = String(f.id);
+        return {
+          key: id,
+          title: `${f.name} (${f.imageCount ?? 0})`,
+          children: build(id),
+        };
+      });
+    };
+    return [
+      {
+        key: ALL_NODE_VALUE,
+        title: `${t('images.all_images')} (${imagesLoading && images.length === 0 ? '...' : (totalImages || images.length)})`,
+      },
+      {
+        key: UNCATEGORIZED_NODE_VALUE,
+        title: `${t('images.uncategorized')} (${imagesLoading && images.length === 0 ? '...' : images.filter(img => !img.folderId).length})`,
+      },
+      ...build(null),
+    ];
+  }, [ALL_NODE_VALUE, UNCATEGORIZED_NODE_VALUE, childrenByParentId, images, imagesLoading, t, totalImages]);
+
+  const selectedFolderTreeKeys = useMemo(() => {
+    if (selectedFolder === null) return [ALL_NODE_VALUE];
+    if (selectedFolder === 'uncategorized') return [UNCATEGORIZED_NODE_VALUE];
+    return [selectedFolder];
+  }, [ALL_NODE_VALUE, UNCATEGORIZED_NODE_VALUE, selectedFolder]);
+
+  useEffect(() => {
+    const treeRoot = folderTreeRef.current;
+    if (!treeRoot) return;
+
+    const syncHiddenTreeInput = () => {
+      const hiddenInput = treeRoot.querySelector<HTMLInputElement>('input[aria-label="for screen reader"]');
+      if (!hiddenInput) return;
+      if (!hiddenInput.id) {
+        hiddenInput.id = 'prediction-folder-tree-a11y';
+      }
+      if (!hiddenInput.name) {
+        hiddenInput.name = 'prediction-folder-tree-a11y';
+      }
+    };
+
+    syncHiddenTreeInput();
+
+    let attempts = 0;
+    const timer = window.setInterval(() => {
+      syncHiddenTreeInput();
+      attempts += 1;
+      if (attempts >= 6) {
+        window.clearInterval(timer);
+      }
+    }, 300);
+
+    return () => window.clearInterval(timer);
+  }, [selectedFolderTreeKeys, folderTreeData]);
+
+  const selectedFolderAndDescendants = useMemo(() => {
+    if (!selectedFolder || selectedFolder === 'uncategorized') return null;
+    const seen = new Set<string>();
+    const queue: string[] = [selectedFolder];
+    while (queue.length) {
+      const current = queue.shift() as string;
+      if (seen.has(current)) continue;
+      seen.add(current);
+      const children = childrenByParentId.get(current) ?? [];
+      for (const child of children) {
+        const id = String(child.id);
+        if (!seen.has(id)) queue.push(id);
+      }
+    }
+    return seen;
+  }, [childrenByParentId, selectedFolder]);
+
+  const filteredImages = useMemo(() => {
+    let imgs = images;
+    if (selectedFolder === 'uncategorized') {
+      imgs = imgs.filter(img => !img.folderId);
+    } else if (selectedFolder) {
+      const allowed = selectedFolderAndDescendants;
+      if (allowed) {
+        imgs = imgs.filter(img => !!img.folderId && allowed.has(String(img.folderId)));
+      } else {
+        imgs = imgs.filter(img => img.folderId === selectedFolder);
+      }
+    }
+    if (searchQuery.trim()) {
+      imgs = imgs.filter(img => img.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    }
+    imgs = [...imgs].sort((a, b) => {
+      let cmp = 0;
+      if (sortBy === 'name') cmp = a.name.localeCompare(b.name);
+      else if (sortBy === 'date') cmp = new Date(a.uploadDate || a.created_time || '').getTime() - new Date(b.uploadDate || b.created_time || '').getTime();
+      else if (sortBy === 'size') cmp = (a.size ?? 0) - (b.size ?? 0);
+      return sortOrder === 'asc' ? cmp : -cmp;
+    });
+    return imgs;
+  }, [images, selectedFolder, selectedFolderAndDescendants, searchQuery, sortBy, sortOrder]);
+
+  const handleItemSelect = (itemId: string, isSelected: boolean) => {
+    if (isSelected) {
+      setSelectedItems([...selectedItems, itemId]);
+    } else {
+      setSelectedItems(selectedItems.filter(id => id !== itemId));
+    }
+  };
+
+  const buildTaskPayload = (selectionType: 'images' | 'folders', items: string[], imageCount: number) => ({
+    name: taskName,
+    imageCount,
+    modelType: predictionMode === 'ensemble' ? 'ensemble' : modelType,
+    predictionMode,
+    batchSize,
+    confidence: advancedParams.confidenceThreshold,
+    selectedItems: items,
+    selectionType,
+    parameters: { ...advancedParams, predictionMode, use_ensemble: predictionMode === 'ensemble' },
+    single_model_type: predictionMode === 'ensemble' ? 'ensemble' : modelType
+  });
+
+  // 当前在文件夹树中选中的真实文件夹（“全部图片”“未分类”不支持一键提交）
+  const selectedRealFolder = selectedFolder && selectedFolder !== 'uncategorized'
+    ? folders.find(f => String(f.id) === selectedFolder) ?? null
+    : null;
+
+  // 一键提交：把选中文件夹及其子文件夹整体交给后端展开，避免前端只拿到已分页的图片
+  const handleStartFolderPrediction = () => {
+    if (!selectedRealFolder || !selectedFolderAndDescendants) return;
+    setPendingPayload(
+      buildTaskPayload('folders', Array.from(selectedFolderAndDescendants), selectedRealFolder.imageCount ?? 0)
+    );
+    setShowNameModal(true);
+  };
+
+  // 只选了文件夹、还没勾选单张图片时，摘要按“整个文件夹”计数并允许直接创建任务
+  const folderOnlySelection = Boolean(selectedRealFolder) && selectedItems.length === 0;
+  const summaryItemCount = folderOnlySelection ? 1 : selectedItems.length;
+  const summaryImageCount = folderOnlySelection
+    ? (selectedRealFolder?.imageCount ?? 0)
+    : selectionType === 'images'
+      ? selectedItems.length
+      : folders.filter(f => selectedItems.includes(f.id)).reduce((acc, folder) => acc + folder.imageCount, 0);
+
+  const handleStartPrediction = async () => {
+    if (folderOnlySelection) {
+      handleStartFolderPrediction();
+      return;
+    }
+    if (selectedItems.length === 0) {
+      setError(t('prediction.select_items'));
+      message.error(t('prediction.select_items'));
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      setPendingPayload(buildTaskPayload('images', selectedItems, selectedItems.length));
+      setShowNameModal(true);
+    } catch {
+      setError(t('prediction.create_task_failed'));
+      message.error(t('prediction.create_task_failed'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmName = async () => {
+    // 连点保护：用 ref 而不是 state，state 异步更新拦不住同一帧内的多次点击
+    if (submittingRef.current || !pendingPayload) return;
+    submittingRef.current = true;
+    const payload = { ...pendingPayload, name: taskName };
+    setLoading(true);
+    setError(null);
+    try {
+      await createTask(payload);
+      if (payload.selectionType === 'images') {
+        setSelectedItems([]);
+      }
+      message.success(t('prediction.task_created'));
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.detail || error.response?.data?.error || t('prediction.create_task_failed');
+      setError(errorMsg);
+      message.error(errorMsg);
+    } finally {
+      setLoading(false);
+      submittingRef.current = false;
+    }
+    setShowNameModal(false);
+    setPendingPayload(null);
+  };
+
+  const getEstimatedTime = () => {
+    const itemCount = summaryImageCount;
+    
+    const baseTime = predictionMode === 'ensemble' ? 1.5 : modelType === 'm6_best' ? 1.2 : 0.3;
+    return Math.ceil(itemCount * baseTime);
+  };
+
+  return (
+    <div className="p-6">
+      {/* Header */}
+      <div className="mb-6">
+        <h2 className="text-2xl font-semibold text-gray-800 mb-2">{t('navigation.prediction')}</h2>
+        <p className="text-gray-600">{t('prediction.description')}</p>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-lg">
+          <div className="flex items-center">
+            <ImageIcon className="w-8 h-8 mr-3" />
+            <div>
+              <p className="text-2xl font-bold">{imagesLoading && images.length === 0 ? '...' : (totalImages || images.length)}</p>
+              <p className="text-green-100">{t('prediction.available_images')}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-lg">
+          <div className="flex items-center">
+            <FolderOpen className="w-8 h-8 mr-3" />
+            <div>
+              <p className="text-2xl font-bold">{imagesLoading && folders.length === 0 ? '...' : folders.length}</p>
+              <p className="text-blue-100">{t('prediction.folders')}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-lg">
+          <div className="flex items-center">
+            <Brain className="w-8 h-8 mr-3" />
+            <div>
+              <p className="text-2xl font-bold">{modelOptions.length}</p>
+              <p className="text-purple-100">{t('prediction.models_available')}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4 rounded-lg">
+          <div className="flex items-center">
+            <Zap className="w-8 h-8 mr-3" />
+            <div>
+              <p className="text-2xl font-bold">{summaryImageCount}</p>
+              <p className="text-orange-100">{t('prediction.selected')}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* New task name input */}
+      <div className="mb-4">
+        <label htmlFor="prediction-task-name" className="block text-gray-700 font-medium mb-1">{t('prediction.task_name')}</label>
+        <input
+          id="prediction-task-name"
+          name="prediction-task-name"
+          type="text"
+          className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+          value={taskName}
+          onChange={e => setTaskName(e.target.value)}
+          placeholder={t('prediction.task_name_prompt')}
+          maxLength={50}
+        />
+      </div>
+
+      {/* Change main content area from grid to flex for left-right layout */}
+      <div className="flex flex-col lg:flex-row gap-4 sm:gap-8">
+        {/* Left: Folder + Image Selection Area */}
+        <div className="w-full lg:w-2/3">
+          <div className="flex h-full">
+            {/* Folder Sidebar */}
+            <div className="hidden sm:block w-48 mr-4 h-full">
+              <div ref={folderTreeRef} className="glass-panel rounded-lg shadow-sm p-4 h-full">
+                <h3 className="font-semibold text-gray-800 mb-3">{t('images.folders')}</h3>
+                <div className="border-t border-gray-200 my-2"></div>
+                <Tree
+                  treeData={folderTreeData}
+                  selectedKeys={selectedFolderTreeKeys}
+                  defaultExpandAll
+                  blockNode
+                  onSelect={(keys) => {
+                    const k = keys?.[0] ? String(keys[0]) : null;
+                    if (!k) return;
+                    if (k === ALL_NODE_VALUE) setSelectedFolder(null);
+                    else if (k === UNCATEGORIZED_NODE_VALUE) setSelectedFolder('uncategorized');
+                    else setSelectedFolder(k);
+                  }}
+                />
+              </div>
+            </div>
+            {/* 图片选择主面板 */}
+            <div className="flex-1 h-full">
+              <div className="flex flex-wrap items-center mb-4 space-x-2 sm:space-x-4 gap-2">
+                <div className="relative max-w-md flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    id="prediction-search-images"
+                    name="prediction-search-images"
+                    type="text"
+                    placeholder={t('images.search')}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent w-full text-sm"
+                  />
+                </div>
+                <div className="hidden xs:flex items-center space-x-2">
+                  <select
+                    id="prediction-sort-by"
+                    name="prediction-sort-by"
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="px-2 py-1 sm:px-3 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-xs sm:text-sm"
+                  >
+                    <option value="date">{t('images.sort.date')}</option>
+                    <option value="name">{t('images.sort.name')}</option>
+                    <option value="size">{t('images.sort.size')}</option>
+                  </select>
+                  <button
+                    onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    {sortOrder === 'asc' ? <SortAsc className="w-4 h-4" /> : <SortDesc className="w-4 h-4" />}
+                  </button>
+                </div>
+                <button
+                  onClick={() => {
+                    if (selectedItems.length === filteredImages.length) {
+                    setSelectedItems([]);
+                    } else {
+                      setSelectedItems(filteredImages.map(img => img.id));
+                    }
+                  }}
+                  className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg border text-xs sm:text-sm ${selectedItems.length === filteredImages.length && filteredImages.length > 0 ? 'bg-green-600 text-white border-green-600' : 'bg-white text-green-700 border-green-600'} transition-colors`}
+                >
+                  <span className="hidden xs:inline">{t('images.select_all', { count: filteredImages.length })}</span>
+                  <span className="xs:hidden">{t('images.select_all', { count: filteredImages.length })}</span>
+                </button>
+                {selectedRealFolder && (
+                  <button
+                    type="button"
+                    onClick={handleStartFolderPrediction}
+                    disabled={loading || !selectedRealFolder.imageCount}
+                    className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-green-600 text-white text-xs sm:text-sm hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {t('prediction.submit_folder', { name: selectedRealFolder.name, count: selectedRealFolder.imageCount ?? 0 })}
+                  </button>
+                )}
+              </div>
+              <div className="h-[600px] overflow-y-auto border border-gray-200 rounded-lg bg-white">
+                <div className="grid grid-cols-1 xs:grid-cols-2 gap-2 sm:gap-4 p-2 sm:p-4">
+                  {filteredImages.map(image => (
+                    <label key={image.id} className={`flex items-center p-2 sm:p-3 rounded-lg cursor-pointer transition-all border ${selectedItems.includes(image.id) ? 'bg-green-50 border-green-500 shadow' : 'hover:bg-gray-50 border-gray-200'}`}>
+                      <input
+                        name={`prediction-image-${image.id}`}
+                        type="checkbox"
+                        checked={selectedItems.includes(image.id)}
+                        onChange={(e) => handleItemSelect(image.id, e.target.checked)}
+                        className="mr-2 sm:mr-3 w-4 h-4 text-green-600 rounded border-gray-300"
+                      />
+                      <img
+                        src={image.preview_url || image.image_url || image.url}
+                        alt={image.name}
+                        className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded mr-2 sm:mr-3 border"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 truncate text-sm sm:text-base">{image.name}</p>
+                        <ImageResolutionLabel width={image.pixel_width} height={image.pixel_height} />
+                        <p className="text-xs sm:text-sm text-gray-500 truncate">{image.format}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                {hasMoreImages && (
+                  <div className="px-4 pb-4 flex justify-center">
+                    <button
+                      onClick={() => loadMoreImages()}
+                      disabled={loadingMoreImages}
+                      className="px-4 py-2 rounded-lg border border-green-600 text-green-700 hover:bg-green-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {loadingMoreImages ? t('common.loading_more') : t('common.load_more')}
+                    </button>
+                  </div>
+                )}
+                </div>
+            </div>
+          </div>
+        </div>
+        {/* Right side: Task Configuration Area */}
+        <div className="w-full lg:w-1/3 h-full flex flex-col">
+          <div className="flex-1 space-y-6 h-full">
+            {/* Model Selection & Config */}
+            <div className="glass-panel rounded-lg shadow-lg border border-gray-200 p-6 h-full">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">{t('prediction.configuration')}</h3>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="prediction-mode" className="block text-sm font-medium text-gray-700 mb-2">{t('prediction.prediction_mode')}</label>
+                <div className="flex bg-gray-100 rounded-lg p-1">
+                  {(['single', 'ensemble'] as const).map(mode => (
+                    <button key={mode} id={mode === 'single' ? 'prediction-mode' : undefined}
+                      type="button" aria-pressed={predictionMode === mode}
+                      onClick={() => setPredictionMode(mode)}
+                      className={`flex-1 px-2 py-1.5 sm:px-3 sm:py-2 rounded text-xs sm:text-sm transition-colors ${predictionMode === mode ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}>
+                      {mode === 'single' ? t('prediction.mode.single') : '投票模型'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <div>
+                <label htmlFor="prediction-model-type" className="block text-sm font-medium text-gray-700 mb-2">{t('prediction.model')}</label>
+                <select
+                  id="prediction-model-type"
+                  name="prediction-model-type"
+                  disabled={predictionMode === 'ensemble'}
+                  value={predictionMode === 'ensemble' ? 'ensemble' : modelType}
+                  onChange={(e) => setModelType(e.target.value)}
+                  className="w-full px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                >
+                  {predictionMode === 'ensemble' && <option value="ensemble">有监督模型 + 半监督模型（投票）</option>}
+                  {modelOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                {predictionMode === 'ensemble' && <div className="mt-3 rounded-lg bg-teal-50 p-3 text-sm text-teal-900">
+                  <p className="font-medium">有监督模型 + 半监督模型 · 等权投票</p>
+                  <p className="mt-1 text-xs leading-5">两个模型分析同一切面，每个像素各投一票；1:1 时按平均病变概率裁决。结果保留各模型 PPD 和一致率，分歧供人工复核。一致率不是准确率，也不保证消除漏检。</p>
+                </div>}
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label htmlFor="prediction-confidence-threshold" className="text-xs sm:text-sm font-medium text-gray-700">{t('prediction.confidence_threshold')}</label>
+                  <span className="text-xs sm:text-sm text-gray-500">{advancedParams.confidenceThreshold.toFixed(2)}</span>
+                </div>
+                <input
+                  id="prediction-confidence-threshold"
+                  name="prediction-confidence-threshold"
+                  type="range"
+                  min="0.1"
+                  max="1"
+                  step="0.1"
+                  value={advancedParams.confidenceThreshold}
+                  onChange={(e) => setAdvancedParams(prev => ({ ...prev, confidenceThreshold: parseFloat(e.target.value) }))}
+                  className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+
+              <button
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="flex items-center text-xs sm:text-sm text-blue-600 hover:text-blue-800"
+              >
+                <Settings className="w-4 h-4 mr-1" />
+                <span className="hidden xs:inline">{showAdvanced ? t('prediction.advanced_settings.hide') : t('prediction.advanced_settings.show')}</span>
+                <span className="xs:hidden">{showAdvanced ? t('prediction.advanced_settings.hide_short') : t('prediction.advanced_settings.show_short')}</span>
+              </button>
+
+              {showAdvanced && (
+                <div className="space-y-4 p-4 bg-gray-50 rounded-lg border">
+                  {/* Advanced parameters grouping beautification */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="flex items-center">
+                        <input
+                          name="prediction-use-post-processing"
+                          type="checkbox"
+                          checked={advancedParams.usePostProcessing}
+                          onChange={(e) => setAdvancedParams(prev => ({ ...prev, usePostProcessing: e.target.checked }))}
+                          className="mr-2 w-4 h-4 text-green-600 rounded border-gray-300"
+                        />
+                        <span className="text-xs sm:text-sm text-gray-700">{t('prediction.post_processing')}</span>
+                      </label>
+                      <label className="flex items-center mt-2">
+                        <input
+                          name="prediction-use-tta"
+                          type="checkbox"
+                          checked={advancedParams.useTTA}
+                          onChange={(e) => setAdvancedParams(prev => ({ ...prev, useTTA: e.target.checked }))}
+                          className="mr-2 w-4 h-4 text-green-600 rounded border-gray-300"
+                        />
+                        <span className="text-xs sm:text-sm text-gray-700">{t('prediction.tta')}</span>
+                      </label>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label htmlFor="prediction-min-area" className="text-xs sm:text-sm font-medium text-gray-700">{t('prediction.min_area')}</label>
+                        <span className="text-xs sm:text-sm text-gray-500">{advancedParams.minArea}</span>
+                      </div>
+                      <input
+                        id="prediction-min-area"
+                        name="prediction-min-area"
+                        type="range"
+                        min="10"
+                        max="1000"
+                        step="10"
+                        value={advancedParams.minArea}
+                        onChange={(e) => setAdvancedParams(prev => ({ ...prev, minArea: parseInt(e.target.value) }))}
+                        className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label htmlFor="prediction-morph-kernel" className="text-xs sm:text-sm font-medium text-gray-700">{t('prediction.morph_kernel')}</label>
+                        <span className="text-xs sm:text-sm text-gray-500">{advancedParams.morphKernelSize}</span>
+                      </div>
+                      <input
+                        id="prediction-morph-kernel"
+                        name="prediction-morph-kernel"
+                        type="range"
+                        min="1"
+                        max="15"
+                        step="2"
+                        value={advancedParams.morphKernelSize}
+                        onChange={(e) => setAdvancedParams(prev => ({ ...prev, morphKernelSize: parseInt(e.target.value) }))}
+                        className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label htmlFor="prediction-morph-iterations" className="text-xs sm:text-sm font-medium text-gray-700">{t('prediction.morph_iterations')}</label>
+                        <span className="text-xs sm:text-sm text-gray-500">{advancedParams.morphIterations}</span>
+                      </div>
+                      <input
+                        id="prediction-morph-iterations"
+                        name="prediction-morph-iterations"
+                        type="range"
+                        min="0"
+                        max="10"
+                        step="1"
+                        value={advancedParams.morphIterations}
+                        onChange={(e) => setAdvancedParams(prev => ({ ...prev, morphIterations: parseInt(e.target.value) }))}
+                        className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label htmlFor="prediction-overlay-opacity" className="text-xs sm:text-sm font-medium text-gray-700">{t('prediction.overlay_opacity')}</label>
+                        <span className="text-xs sm:text-sm text-gray-500">{advancedParams.overlayOpacity}</span>
+                      </div>
+                      <input
+                        id="prediction-overlay-opacity"
+                        name="prediction-overlay-opacity"
+                        type="range"
+                        min="0.1"
+                        max="0.9"
+                        step="0.05"
+                        value={advancedParams.overlayOpacity}
+                        onChange={(e) => setAdvancedParams(prev => ({ ...prev, overlayOpacity: parseFloat(e.target.value) }))}
+                        className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+                    <div className="sm:col-span-2 pt-2 border-t border-gray-200">
+                      <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                        {t('prediction.two_stage_advanced')}
+                      </p>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label htmlFor="prediction-stage1-confidence" className="text-xs sm:text-sm font-medium text-gray-700">{t('prediction.stage1_confidence')}</label>
+                        <span className="text-xs sm:text-sm text-gray-500">{advancedParams.stage1Confidence.toFixed(2)}</span>
+                      </div>
+                      <input
+                        id="prediction-stage1-confidence"
+                        name="prediction-stage1-confidence"
+                        type="range"
+                        min="0.05"
+                        max="1"
+                        step="0.01"
+                        value={advancedParams.stage1Confidence}
+                        onChange={(e) => setAdvancedParams(prev => ({ ...prev, stage1Confidence: parseFloat(e.target.value) }))}
+                        className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label htmlFor="prediction-stage2-confidence" className="text-xs sm:text-sm font-medium text-gray-700">{t('prediction.stage2_confidence')}</label>
+                        <span className="text-xs sm:text-sm text-gray-500">{advancedParams.stage2Confidence.toFixed(2)}</span>
+                      </div>
+                      <input
+                        id="prediction-stage2-confidence"
+                        name="prediction-stage2-confidence"
+                        type="range"
+                        min="0.05"
+                        max="1"
+                        step="0.01"
+                        value={advancedParams.stage2Confidence}
+                        onChange={(e) => setAdvancedParams(prev => ({ ...prev, stage2Confidence: parseFloat(e.target.value) }))}
+                        className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label htmlFor="prediction-roi-padding" className="text-xs sm:text-sm font-medium text-gray-700">{t('prediction.roi_padding')}</label>
+                        <span className="text-xs sm:text-sm text-gray-500">{advancedParams.roiPadding.toFixed(2)}</span>
+                      </div>
+                      <input
+                        id="prediction-roi-padding"
+                        name="prediction-roi-padding"
+                        type="range"
+                        min="0"
+                        max="0.4"
+                        step="0.02"
+                        value={advancedParams.roiPadding}
+                        onChange={(e) => setAdvancedParams(prev => ({ ...prev, roiPadding: parseFloat(e.target.value) }))}
+                        className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label htmlFor="prediction-fallback-roi-padding" className="text-xs sm:text-sm font-medium text-gray-700">{t('prediction.fallback_roi_padding')}</label>
+                        <span className="text-xs sm:text-sm text-gray-500">{advancedParams.fallbackRoiPadding.toFixed(2)}</span>
+                      </div>
+                      <input
+                        id="prediction-fallback-roi-padding"
+                        name="prediction-fallback-roi-padding"
+                        type="range"
+                        min="0.1"
+                        max="1"
+                        step="0.05"
+                        value={advancedParams.fallbackRoiPadding}
+                        onChange={(e) => setAdvancedParams(prev => ({ ...prev, fallbackRoiPadding: parseFloat(e.target.value) }))}
+                        className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label htmlFor="prediction-expected-count" className="text-xs sm:text-sm font-medium text-gray-700">{t('prediction.expected_count')}</label>
+                        <span className="text-xs sm:text-sm text-gray-500">{advancedParams.expectedCount || '自动'}</span>
+                      </div>
+                      <input
+                        id="prediction-expected-count"
+                        name="prediction-expected-count"
+                        type="range"
+                        min="0"
+                        max="6"
+                        step="1"
+                        value={advancedParams.expectedCount}
+                        onChange={(e) => setAdvancedParams(prev => ({ ...prev, expectedCount: parseInt(e.target.value) }))}
+                        className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label htmlFor="prediction-stage-box-iou" className="text-xs sm:text-sm font-medium text-gray-700">{t('prediction.stage_box_iou')}</label>
+                        <span className="text-xs sm:text-sm text-gray-500">{advancedParams.stageBoxIou.toFixed(2)}</span>
+                      </div>
+                      <input
+                        id="prediction-stage-box-iou"
+                        name="prediction-stage-box-iou"
+                        type="range"
+                        min="0.1"
+                        max="0.9"
+                        step="0.05"
+                        value={advancedParams.stageBoxIou}
+                        onChange={(e) => setAdvancedParams(prev => ({ ...prev, stageBoxIou: parseFloat(e.target.value) }))}
+                        className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+                    {(modelType === 'm6_best' || predictionMode === 'ensemble') && (
+                      <>
+                        <div className="sm:col-span-2 pt-2 border-t border-gray-200">
+                          <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                            {t('prediction.m6_advanced')}
+                          </p>
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <label htmlFor="prediction-patch-size" className="text-xs sm:text-sm font-medium text-gray-700">{t('prediction.patch_size')}</label>
+                            <span className="text-xs sm:text-sm text-gray-500">{advancedParams.patchSize[0]}</span>
+                          </div>
+                          <input
+                            id="prediction-patch-size"
+                            name="prediction-patch-size"
+                            type="range"
+                            min="256"
+                            max="1024"
+                            step="64"
+                            value={advancedParams.patchSize[0]}
+                            onChange={(e) => {
+                              const value = parseInt(e.target.value);
+                              setAdvancedParams(prev => ({ ...prev, patchSize: [value, value] as [number, number] }));
+                            }}
+                            className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                          />
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <label htmlFor="prediction-stride" className="text-xs sm:text-sm font-medium text-gray-700">{t('prediction.stride')}</label>
+                            <span className="text-xs sm:text-sm text-gray-500">{advancedParams.stride[0]}</span>
+                          </div>
+                          <input
+                            id="prediction-stride"
+                            name="prediction-stride"
+                            type="range"
+                            min="128"
+                            max="512"
+                            step="32"
+                            value={advancedParams.stride[0]}
+                            onChange={(e) => {
+                              const value = parseInt(e.target.value);
+                              setAdvancedParams(prev => ({ ...prev, stride: [value, value] as [number, number] }));
+                            }}
+                            className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Prediction Summary */}
+          <div className="bg-gradient-to-br from-slate-100 to-slate-50 rounded-lg shadow-glass border border-slate-200 p-6 flex-1">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">{t('prediction.summary')}</h3>
+            
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">{t('prediction.selected_items')}：</span>
+                <span className="font-medium">
+                  {folderOnlySelection
+                    ? `${selectedRealFolder?.name}（${t('prediction.folder_whole')}）`
+                    : `${summaryItemCount} ${selectionType === 'images' ? t('prediction.images') : t('folders.title')}`}
+                </span>
+              </div>
+              
+              <div className="flex justify-between">
+                <span className="text-gray-600">{t('prediction.estimated_images')}：</span>
+                <span className="font-medium">
+                  {summaryImageCount} {t('prediction.images')}
+                </span>
+              </div>
+              
+              <div className="flex justify-between">
+                <span className="text-gray-600">{t('prediction.prediction_mode')}：</span>
+                <span className="font-medium">{predictionMode === 'ensemble' ? '投票模型' : t('prediction.mode.single')}</span>
+              </div>
+              
+              <div className="flex justify-between">
+                <span className="text-gray-600">{t('prediction.selected_model')}：</span>
+                  <span className="font-medium">{predictionMode === 'ensemble' ? '有监督模型 + 半监督模型' : modelOptions.find(m => m.value === modelType)?.label}</span>
+              </div>
+              
+              <div className="flex justify-between">
+                <span className="text-gray-600">{t('prediction.estimated_time')}：</span>
+                <span className="font-medium">{getEstimatedTime()} {t('tasks.seconds')}</span>
+              </div>
+            </div>
+
+            <button
+              onClick={handleStartPrediction}
+              disabled={(summaryItemCount === 0 && !folderOnlySelection) || loading}
+              className="w-full mt-4 sm:mt-6 flex items-center justify-center px-3 py-2 sm:px-4 sm:py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm sm:text-base"
+            >
+              {loading ? <span className="animate-spin mr-2"><Play className="w-4 h-4 sm:w-5 sm:h-5" /></span> : <Play className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />}
+              {t('prediction.create_task')}
+            </button>
+            {error && <div className="mt-3 text-red-500 text-sm">{error}</div>}
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* Task Name Modal */}
+      {showNameModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black bg-opacity-40" onClick={() => setShowNameModal(false)} />
+          <div className="relative glass-panel rounded-lg shadow-xl p-6 w-full max-w-md mx-auto z-10 animate-fade-in">
+            <h3 className="text-lg font-semibold mb-4 text-gray-800">{t('prediction.task_name_prompt')}</h3>
+            <input
+              id="prediction-task-name-modal"
+              name="prediction-task-name-modal"
+              type="text"
+              className="w-full border rounded px-2 py-1.5 sm:px-3 sm:py-2 focus:outline-none focus:ring-2 focus:ring-green-400 mb-4 text-sm sm:text-base"
+              value={taskName}
+              onChange={e => setTaskName(e.target.value)}
+              placeholder={t('prediction.task_name_prompt')}
+              maxLength={50}
+              autoFocus
+            />
+            <div className="flex justify-end gap-2 sm:gap-4">
+              <button className="px-3 py-1.5 sm:px-4 sm:py-2 rounded bg-gray-100 text-gray-700 hover:bg-gray-200 text-sm sm:text-base" onClick={() => setShowNameModal(false)}>{t('prediction.cancel')}</button>
+              <button className="px-3 py-1.5 sm:px-4 sm:py-2 rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base" onClick={handleConfirmName} disabled={loading}>{t('prediction.confirm')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default PredictionModule;

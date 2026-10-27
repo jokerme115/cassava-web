@@ -1,0 +1,209 @@
+{
+  "csv": {
+    "count": 31,
+    "warnings": 0,
+    "bytes": 14062
+  },
+  "xlsx": {
+    "count": 31,
+    "warnings": 0,
+    "bytes": 5899
+  },
+  "zip": {
+    "count": 31,
+    "warnings": 3,
+    "bytes": 36506266
+  },
+  "package": {
+    "results": 31,
+    "segments": 93,
+    "resource_errors": [
+      {
+        "result_id": 13,
+        "final_ppd": 59.661566285277466,
+        "measurement_status": "model-only",
+        "measurement_source": "model",
+        "correction_version": 0,
+        "corrected_by": null,
+        "corrected_at": null,
+        "correction_note": "",
+        "review_status": "unreviewed",
+        "files": {
+          "model_cassava_mask.png": "results/13/model_cassava_mask.png",
+          "model_rotten_mask.png": "results/13/model_rotten_mask.png",
+          "final_cassava_mask.png": "results/13/final_cassava_mask.png",
+          "final_rotten_mask.png": "results/13/final_rotten_mask.png"
+        },
+        "errors": [
+          "original.jpg: [Errno 2] No such file or directory: 'C:\\\\Users\\\\Administrator\\\\Desktop\\\\work\\\\02_农业研究\\\\木薯图像分割\\\\木薯网页源代码\\\\网页\\\\back\\\\cassavaBack\\\\media\\\\images\\\\5\\\\S15 (4).jpg'",
+          "final_overlay.png: [Errno 2] No such file or directory: 'C:\\\\Users\\\\Administrator\\\\Desktop\\\\work\\\\02_农业研究\\\\木薯图像分割\\\\木薯网页源代码\\\\网页\\\\back\\\\cassavaBack\\\\media\\\\images\\\\5\\\\S15 (4).jpg'"
+        ],
+        "segments": [
+          {
+            "segment": "cut2_1",
+            "bbox": [
+              1016,
+              577,
+              1522,
+              1172
+            ],
+            "cassava_pixels": 221026,
+            "rotten_pixels": 28655,
+            "ppd_percent": 12.964538108638804
+          },
+          {
+            "segment": "cut2_2",
+            "bbox": [
+              1629,
+              559,
+              2204,
+              1131
+            ],
+            "cassava_pixels": 240633,
+            "rotten_pixels": 207110,
+            "ppd_percent": 86.06882680264137
+          },
+          {
+            "segment": "cut2_3",
+            "bbox": [
+              2362,
+              590,
+              2853,
+              1115
+            ],
+            "cassava_pixels": 181953,
+            "rotten_pixels": 148224,
+            "ppd_percent": 81.46279533725742
+          }
+        ],
+        "parameters": {},
+        "model": "m6_best",
+        "model_ppd": 59.661566285277466
+      },
+      {
+        "result_id": 12,
+        "final_ppd": 8.660248499017168,
+        "measurement_status": "model-only",
+        "measurement_source": "model",
+        "correction_version": 0,
+        "corrected_by": null,
+        "corrected_at": null,
+        "correction_note": "",
+        "review_status": "unreviewed",
+        "files": {
+          "model_cassava_mask.png": "results/12/model_cassava_mask.png",
+          "model_rotten_mask.png": "results/12/model_rotten_mask.png",
+          "final_cassava_mask.png": "results/12/final_cassava_mask.png",
+          "final_rotten_mask.png": "results/12/final_rotten_mask.png"
+        },
+        "errors": [
+          "original.jpg: [Errno 2] No such file or directory: 'C:\\\\Users\\\\Administrator\\\\Desktop\\\\work\\\\02_农业研究\\\\木薯图像分割\\\\木薯网页源代码\\\\网页\\\\back\\\\cassavaBack\\\\media\\\\images\\\\5\\\\S19 (1).jpg'",
+          "final_overlay.png: [Errno 2] No such file or directory: 'C:\\\\Users\\\\Administrator\\\\Desktop\\\\work\\\\02_农业研究\\\\木薯图像分割\\\\木薯网页源代码\\\\网页\\\\back\\\\cassavaBack\\\\media\\\\images\\\\5\\\\S19 (1).jpg'"
+        ],
+        "segments": [
+          {
+            "segment": "cut2_1",
+            "bbox": [
+              997,
+              346,
+              1632,
+              1025
+            ],
+            "cassava_pixels": 296834,
+            "rotten_pixels": 13731,
+            "ppd_percent": 4.625817797152617
+          },
+          {
+            "segment": "cut2_2",
+            "bbox": [
+              1767,
+              303,
+              2549,
+              1079
+            ],
+            "cassava_pixels": 427091,
+            "rotten_pixels": 28139,
+            "ppd_percent": 6.588525630369172
+          },
+          {
+            "segment": "cut2_3",
+            "bbox": [
+              2774,
+              354,
+              3371,
+              948
+            ],
+            "cassava_pixels": 211129,
+            "rotten_pixels": 39108,
+            "ppd_percent": 18.523272501645913
+          }
+        ],
+        "parameters": {},
+        "model": "resnet101",
+        "model_ppd": 8.660248499017168
+      },
+      {
+        "result_id": 11,
+        "final_ppd": 38.079619398022416,
+        "measurement_status": "model-only",
+        "measurement_source": "model",
+        "correction_version": 0,
+        "corrected_by": null,
+        "corrected_at": null,
+        "correction_note": "",
+        "review_status": "unreviewed",
+        "files": {
+          "model_cassava_mask.png": "results/11/model_cassava_mask.png",
+          "model_rotten_mask.png": "results/11/model_rotten_mask.png",
+          "final_cassava_mask.png": "results/11/final_cassava_mask.png",
+          "final_rotten_mask.png": "results/11/final_rotten_mask.png"
+        },
+        "errors": [
+          "original.jpg: [Errno 2] No such file or directory: 'C:\\\\Users\\\\Administrator\\\\Desktop\\\\work\\\\02_农业研究\\\\木薯图像分割\\\\木薯网页源代码\\\\网页\\\\back\\\\cassavaBack\\\\media\\\\images\\\\5\\\\S15 (4).jpg'",
+          "final_overlay.png: [Errno 2] No such file or directory: 'C:\\\\Users\\\\Administrator\\\\Desktop\\\\work\\\\02_农业研究\\\\木薯图像分割\\\\木薯网页源代码\\\\网页\\\\back\\\\cassavaBack\\\\media\\\\images\\\\5\\\\S15 (4).jpg'"
+        ],
+        "segments": [
+          {
+            "segment": "cut2_1",
+            "bbox": [
+              1016,
+              577,
+              1522,
+              1172
+            ],
+            "cassava_pixels": 221026,
+            "rotten_pixels": 11312,
+            "ppd_percent": 5.117949924443279
+          },
+          {
+            "segment": "cut2_2",
+            "bbox": [
+              1629,
+              559,
+              2204,
+              1131
+            ],
+            "cassava_pixels": 240633,
+            "rotten_pixels": 110925,
+            "ppd_percent": 46.09716871750757
+          },
+          {
+            "segment": "cut2_3",
+            "bbox": [
+              2362,
+              590,
+              2853,
+              1115
+            ],
+            "cassava_pixels": 181953,
+            "rotten_pixels": 122848,
+            "ppd_percent": 67.51633663638412
+          }
+        ],
+        "parameters": {},
+        "model": "resnet101",
+        "model_ppd": 38.079619398022416
+      }
+    ]
+  }
+}

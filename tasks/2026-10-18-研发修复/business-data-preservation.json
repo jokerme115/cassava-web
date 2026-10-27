@@ -1,0 +1,18 @@
+{
+  "predict_predictionresult": {
+    "rows": 31,
+    "unchanged": true
+  },
+  "predict_predictioncorrection": {
+    "rows": 7,
+    "unchanged": true
+  },
+  "predict_processingtask": {
+    "rows": 15,
+    "unchanged": true
+  },
+  "predict_cassavaimage": {
+    "rows": 15,
+    "unchanged": true
+  }
+}

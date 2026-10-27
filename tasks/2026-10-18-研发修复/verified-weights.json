@@ -1,0 +1,30 @@
+{
+  "resnet101": [
+    {
+      "file": "best_deeplabv3plus_resnet101_cassava_rot_os16.pth",
+      "sha256": "c0670adb2192091e9f6a71db0058f635c3ed2dac6b00772cb10da0e25b2ea12a"
+    },
+    {
+      "file": "yolov11(1).pt",
+      "sha256": "8a3adecc24e5e351b2c62d30f65068b61e639f794b744a0a03c9a6a9e0762473"
+    },
+    {
+      "file": "yolov11(2).pt",
+      "sha256": "40cc8ff3b85e6c3a7e6e30706cb0f7fdd99000fff8a15eef81e625565a435bc3"
+    }
+  ],
+  "m6_best": [
+    {
+      "file": "m6_best_fold1.pth",
+      "sha256": "a9da6403423cbc7bb8ec885bedd6fd1eab68f646e646e6d64168a25c266b6fb5"
+    },
+    {
+      "file": "yolov11(1).pt",
+      "sha256": "8a3adecc24e5e351b2c62d30f65068b61e639f794b744a0a03c9a6a9e0762473"
+    },
+    {
+      "file": "yolov11(2).pt",
+      "sha256": "40cc8ff3b85e6c3a7e6e30706cb0f7fdd99000fff8a15eef81e625565a435bc3"
+    }
+  ]
+}

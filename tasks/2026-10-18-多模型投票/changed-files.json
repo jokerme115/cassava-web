@@ -1,0 +1,82 @@
+[
+  {
+    "file": "网页\\back\\cassavaBack\\predict\\ensemble.py",
+    "new": true,
+    "sha256": "965031d4df88b5ee273612377bba29b3220fee6c567799e204b8b52eff93fc10"
+  },
+  {
+    "file": "网页\\back\\cassavaBack\\predict\\models.py",
+    "new": false,
+    "sha256": "31a7953b05f773e84e3d415212ef6f6977f4e970f785ac3f60745de92ff03c57"
+  },
+  {
+    "file": "网页\\back\\cassavaBack\\predict\\result_export.py",
+    "new": false,
+    "sha256": "a9c0151450e54d4e9182772fd617fbc9e0bf1cc3b2d916ff8eb43a9e363efc85"
+  },
+  {
+    "file": "网页\\back\\cassavaBack\\predict\\serializers.py",
+    "new": false,
+    "sha256": "af7d2f09f46cf0da050f211dc50a7a6bba4d5807a91fb69e5d06d8817c82b5c5"
+  },
+  {
+    "file": "网页\\back\\cassavaBack\\predict\\services.py",
+    "new": false,
+    "sha256": "799f00a13dba3eb72aee160dfa7c01f60ac37052cb068413cbc09ceca028cb7b"
+  },
+  {
+    "file": "网页\\back\\cassavaBack\\predict\\migrations\\0036_predictionresult_ensemble_details.py",
+    "new": true,
+    "sha256": "25908150e96d18453ecdd6093d70a6b322ac05869c9166061d11a08121b932e6"
+  },
+  {
+    "file": "网页\\back\\cassavaBack\\predict\\tests\\test_ensemble.py",
+    "new": true,
+    "sha256": "5fbfa25d1365d4f1d50b3c4995be5050dbfc5d92b7cfca0fd473da76a98122f2"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\components\\PredictionModule.tsx",
+    "new": false,
+    "sha256": "c10f817dcfdb0c907806324cf8d7137c9b79723e1be351c4801b439d3045bb22"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\components\\ResultsCenter.tsx",
+    "new": false,
+    "sha256": "cf47bf8578757c37302fac49600ad550ca724ce81cd5f57bf90b27dfda841e8e"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\components\\__tests__\\PredictionModule.test.tsx",
+    "new": true,
+    "sha256": "6d2fc35b50fddffb5f9919a24405e34e6fe80e1f6d27376669e54762abe3ea2e"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\components\\__tests__\\ResultsCenter.test.tsx",
+    "new": false,
+    "sha256": "edadeb93109906334ff2305b3674dd6c32a9bad09fc0ca58bf8a7ff39971b537"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\hooks\\useTaskStore.ts",
+    "new": false,
+    "sha256": "1a4fd1552ef2e9577f93f3577f4f2a5154c1af707aeb479c1a09c601bdd3e740"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\services\\api.ts",
+    "new": false,
+    "sha256": "be8f5c5d3800b8500f3e95e187b3e406c11fc1098eef4df27225a8e93a1fde3b"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\types\\index.ts",
+    "new": false,
+    "sha256": "5ab55dc553f05cebd7cf71ee0d907e40ab9f8f7d14b3f1d7a5b050132885a7cc"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\utils\\modelLabels.test.ts",
+    "new": true,
+    "sha256": "6d7cb9035072fe280e1bf431ddde9cc29e05f24194a9d730c4edd7d0e79226ea"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\utils\\modelLabels.ts",
+    "new": true,
+    "sha256": "999dc22fb599bc212e5cdf4964a836ec6938524320a096ef6e8eb55e80a49bf6"
+  }
+]

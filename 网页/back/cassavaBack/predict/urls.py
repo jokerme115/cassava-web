@@ -1,0 +1,67 @@
+"""
+木薯疾病预测系统API URL配置
+
+该模块定义了所有API端点的URL路由，采用Django REST Framework的路由器自动生成标准RESTful接口，
+支持木薯图像管理、分割结果查询、预测结果获取和任务进度监控等功能。
+"""
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.http import JsonResponse
+from django.middleware.csrf import get_token
+from . import views
+from . import permission_views
+from . import auth_views
+
+# 创建默认路由器并注册视图集
+router = DefaultRouter()
+router.register(r'images', views.CassavaImageViewSet, basename='images')          # 木薯图像管理接口
+router.register(r'folders', views.FolderViewSet, basename='folders')              # 文件夹管理接口
+router.register(r'segmentations', views.SegmentationResultViewSet, basename='segmentations')  # 分割结果查询接口
+router.register(r'predictions', views.PredictionResultViewSet, basename='predictions')      # 预测结果查询接口
+router.register(r'tasks', views.ProcessingTaskViewSet, basename='tasks')          # 任务进度监控接口
+router.register(r'shares', views.ShareViewSet, basename='shares')                # 资源共享接口
+
+# 权限管理路由器
+permission_router = DefaultRouter()
+permission_router.register(r'permissions', permission_views.PermissionViewSet, basename='permissions')
+permission_router.register(r'roles', permission_views.RoleViewSet, basename='roles')
+permission_router.register(r'user-roles', permission_views.UserRoleViewSet, basename='user-roles')
+permission_router.register(r'user-permissions', permission_views.UserPermissionViewSet, basename='user-permissions')
+permission_router.register(r'users', permission_views.UserManagementViewSet, basename='users')
+permission_router.register(r'audit-logs', permission_views.AuditLogViewSet, basename='audit-logs')
+permission_router.register(r'guest-resources', permission_views.GuestResourceViewSet, basename='guest-resources')
+permission_router.register(r'permission-templates', permission_views.PermissionTemplateViewSet, basename='permission-templates')
+
+# CSRF Token视图
+@ensure_csrf_cookie
+def get_csrf_token(request):
+    token = get_token(request)
+    return JsonResponse({'csrftoken': token})
+
+urlpatterns = [
+    # 显式添加upload-batch路由，并豁免CSRF保护
+    path('images/upload-batch/', csrf_exempt(views.CassavaImageViewSet.as_view({'post': 'upload_batch'})), name='image-upload-batch'),
+    path('images/upload-files/', csrf_exempt(views.CassavaImageViewSet.as_view({'post': 'upload_files'})), name='image-upload-files'),
+
+    path('', include(router.urls)),  # 包含路由器生成的所有API端点
+    path('permissions/', include(permission_router.urls)),  # 权限管理API端点
+    
+    # 用户登录路由
+    path('auth/login/', auth_views.user_login, name='user-login'),
+    path('auth/guest/', auth_views.guest_session, name='guest-session'),
+    path('auth/register/', auth_views.user_register, name='user-register'),
+    path('auth/email/code/', auth_views.send_email_code, name='email-code'),
+    path('auth/logout/', auth_views.user_logout, name='user-logout'),
+    path('auth/user/', auth_views.current_user, name='current-user'),
+    path('auth/profile/update/', auth_views.update_profile, name='update-profile'),
+    path('auth/password/change/', auth_views.change_password, name='change-password'),
+    path('auth/csrf/', get_csrf_token, name='csrf-token'),
+
+    # OSS对象存储API
+    path('oss/', csrf_exempt(views.OssObjectView.as_view()), name='oss-object'),
+
+    path('system/settings/', views.SystemSettingView.as_view(), name='system-settings'),
+    path('system/settings/public/', views.public_settings, name='public-settings'),
+]

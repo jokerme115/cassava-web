@@ -1,0 +1,24 @@
+<!--pages/intro/intro.wxml-->
+<view class="intro-page">
+  <swiper class="swiper" current="{{current}}" bindchange="onChange">
+    <swiper-item wx:for="{{slides}}" wx:key="title">
+      <view class="slide">
+        <view class="slide-icon-wrap {{current === index ? 'anim' : ''}}">
+          <image class="slide-icon" src="{{item.icon}}" mode="aspectFit" />
+        </view>
+        <view class="slide-title {{current === index ? 'anim' : ''}}">{{item.title}}</view>
+        <view class="slide-desc {{current === index ? 'anim' : ''}}">{{item.desc}}</view>
+        <view class="slide-highlight {{current === index ? 'anim' : ''}}" wx:if="{{item.highlight}}">{{item.highlight}}</view>
+      </view>
+    </swiper-item>
+  </swiper>
+
+  <view class="dots">
+    <view class="dot {{current === index ? 'active' : ''}}" wx:for="{{slides}}" wx:key="title"></view>
+  </view>
+
+  <view class="footer">
+    <button class="btn-primary start-btn" wx:if="{{current === slides.length - 1}}" bindtap="start">开始使用</button>
+    <view class="skip-btn" wx:else bindtap="start">跳过</view>
+  </view>
+</view>
