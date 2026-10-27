@@ -466,6 +466,19 @@ class DeepLabV3PlusService:
             logger.error(f"加载YOLO模型失败: {e}")
             return None
     
+    @staticmethod
+    def _model_cache_key(model_path):
+        """模型缓存键 = 路径 + mtime + 文件大小。
+
+        只用路径做键时，替换权重文件必须重启进程才会生效；把 mtime 与大小
+        带上，下一次预测就会自动加载新权重。
+        """
+        try:
+            stat = os.stat(model_path)
+            return (model_path, stat.st_mtime_ns, stat.st_size)
+        except OSError:
+            return (model_path, None, None)
+
     def load_model(self, model_path, model_type='deeplabv3plus_resnet50'):
         """
         加载DeepLabV3+模型，支持多种骨干网络架构
@@ -502,10 +515,11 @@ class DeepLabV3PlusService:
             if not model_path or not os.path.exists(model_path):
                 raise FileNotFoundError(f"模型文件不存在: {model_path}")
 
-            # 检查模型是否已缓存
-            if model_path in self.models:
+            # 检查模型是否已缓存（键里带 mtime 与大小，替换权重后会自动重新加载）
+            cache_key = self._model_cache_key(model_path)
+            if cache_key in self.models:
                 logger.info(f"从缓存加载模型: {model_path}")
-                return self.models[model_path]
+                return self.models[cache_key]
 
             lower_path = model_path.lower()
             if 'resnet50' in lower_path:
@@ -630,7 +644,7 @@ class DeepLabV3PlusService:
                     m.track_running_stats = False
             
             # 缓存模型
-            self.models[model_path] = model
+            self.models[cache_key] = model
             
             logger.info(f"成功加载模型: {model_path}")
             return model
@@ -676,11 +690,12 @@ class DeepLabV3PlusService:
         if not resolved_choices:
             raise FileNotFoundError("没有可用的 DeepLab 集成模型")
 
-        # 清理已存在的模型
-        for path in list(self.models.keys()):
-            if path not in seen_paths:
+        # 清理已存在的模型（缓存键是 (路径, mtime, 大小) 三元组，按路径比对）
+        for cache_key in list(self.models.keys()):
+            cached_path = cache_key[0] if isinstance(cache_key, tuple) else cache_key
+            if cached_path not in seen_paths:
                 # 从缓存中移除不需要的模型
-                del self.models[path]
+                del self.models[cache_key]
         
         loaded_models = []
         # 加载所有模型
