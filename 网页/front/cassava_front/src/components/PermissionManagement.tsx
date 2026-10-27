@@ -73,7 +73,7 @@ const TabButton = ({ active, onClick, children }: {
     className={`inline-flex items-center rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
       active 
         ? 'bg-brand-fill text-white shadow-[0_14px_30px_rgba(15,23,42,0.16)]' 
-        : 'text-ink-secondary hover:bg-white hover:text-ink'
+        : 'text-ink-secondary hover:bg-surface-muted hover:text-ink'
     }`}
   >
     {children}
@@ -453,7 +453,7 @@ const PermissionManagement = () => {
   const renderPermissions = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-2xl font-bold text-ink">{t('permissions.title')}</h3>
+        <h2 className="text-xl font-semibold tracking-tight text-ink">{t('permissions.title')}</h2>
         <PermissionGuard permission={PERMISSIONS.PERMISSIONS.ADD_PERMISSION}>
           <button
             onClick={() => { setShowCreatePermissionModal(true); setFormError(null); }}
@@ -474,7 +474,7 @@ const PermissionManagement = () => {
                   <Key className="h-6 w-6 text-purple-600" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-ink">{permission.name}</h4>
+                  <h3 className="font-semibold text-ink">{permission.name}</h3>
                   <p className="text-sm text-ink-secondary">{permission.codename}</p>
                 </div>
               </div>
@@ -526,7 +526,7 @@ const PermissionManagement = () => {
   const renderRoles = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-2xl font-bold text-ink">{t('permissions.roles')}</h3>
+        <h2 className="text-xl font-semibold tracking-tight text-ink">{t('permissions.roles')}</h2>
         <PermissionGuard permission={PERMISSIONS.PERMISSIONS.ADD_ROLE}>
           <button
             onClick={() => { setShowCreateRoleModal(true); setFormError(null); }}
@@ -547,7 +547,7 @@ const PermissionManagement = () => {
                   <Shield className="h-6 w-6 text-accent-text" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-ink">{role.name}</h4>
+                  <h3 className="font-semibold text-ink">{role.name}</h3>
                   <p className="text-sm text-ink-secondary">{t('permissions.user_count', { count: role.user_count ?? 0 })}</p>
                 </div>
               </div>
@@ -639,7 +639,7 @@ const PermissionManagement = () => {
   const renderUsers = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-2xl font-bold text-ink">{t('permissions.users')}</h3>
+        <h2 className="text-xl font-semibold tracking-tight text-ink">{t('permissions.users')}</h2>
         <PermissionGuard permission={PERMISSIONS.PERMISSIONS.ADD_USER}>
           <button
             onClick={() => { setShowCreateUserModal(true); setFormError(null); }}
@@ -799,7 +799,7 @@ const PermissionManagement = () => {
       <div className="flex min-h-screen items-center justify-center bg-surface-sunken p-6">
         <div className="max-w-md rounded-[16px] border border-[rgba(243,18,96,0.24)] bg-white p-8 text-center shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
           <AlertCircle className="h-12 w-12 text-danger-text mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-red-800 mb-2">{t('permissions.access_denied')}</h3>
+          <h2 className="mb-2 text-xl font-semibold text-red-800">{t('permissions.access_denied')}</h2>
           <p className="text-red-700">{t('permissions.access_denied_desc')}</p>
         </div>
       </div>
@@ -810,7 +810,7 @@ const PermissionManagement = () => {
     <div className="page-shell page-shell--flush">
       <div className="mx-auto max-w-[1440px] space-y-6">
         <section className="overflow-hidden rounded-[24px] border border-hairline bg-white shadow-[0_10px_30px_rgba(17,17,26,0.045)]">
-          <div className="grid gap-6 px-6 py-7 sm:px-8 lg:grid-cols-[1.2fr_0.8fr] lg:px-10">
+          <div className="grid gap-6 px-6 py-6 sm:px-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center lg:px-10">
             <div>
               <h1 className="mt-4 text-[28px] font-semibold tracking-tight text-ink sm:text-[32px]">
                 {t('permissions.title')}
@@ -826,7 +826,7 @@ const PermissionManagement = () => {
                 <p className="text-xs uppercase tracking-[0.18em] text-muted">工作区状态</p>
                 <p className="mt-1.5 text-[15px] font-medium text-ink">{totalUserCount || users.length} 位用户 / {totalRoleCount || roles.length} 个角色</p>
               </div>
-              <div className="sm:col-span-2">
+              <div className="hidden sm:col-span-2 sm:block">
                 <p className="text-xs uppercase tracking-[0.18em] text-muted">使用建议</p>
                 <p className="mt-1.5 text-[13px] leading-6 text-muted">
                   先在用户列表完成账户操作，再进入权限工作台处理细粒度授权，效率最高。
@@ -837,7 +837,7 @@ const PermissionManagement = () => {
         </section>
 
         {/* Header stats cards */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-5">
           <StatCard 
             icon={Key} 
             title={t('permissions.total_permissions')} 
