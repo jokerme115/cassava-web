@@ -1,5 +1,6 @@
 from django.db import models
 import os
+import secrets
 from django.contrib.auth.models import User, Group
 from django.utils import timezone
 from django.core.cache import cache
@@ -812,3 +813,38 @@ def prepare_correction_storage_cleanup(sender, instance, **kwargs):
 @receiver(post_delete, sender=PredictionCorrection)
 def cleanup_correction_storage(sender, instance, **kwargs):
     delete_storage_keys(getattr(instance, '_storage_cleanup_keys', []))
+
+class LoginSession(models.Model):
+    """按会话签发的登录令牌。
+
+    DRF 自带 Token 的 user 字段是一对一，同一账号只能存在一个令牌，
+    导致「手机登录把电脑踢下线」。这里改为多令牌模型：每次登录签发一个，
+    接口仍以 `Authorization: Token <key>` 传递，前端与小程序无需改动。
+
+    key 采用与 DRF Token 相同的 40 位十六进制字符串，长度与外观保持一致。
+    """
+
+    key = models.CharField(max_length=40, primary_key=True, serialize=False, verbose_name='令牌')
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='login_sessions',
+        verbose_name='用户',
+    )
+    created = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+    last_seen = models.DateTimeField(null=True, blank=True, verbose_name='最近活跃')
+
+    class Meta:
+        db_table = 'predict_login_session'
+        verbose_name = '登录会话'
+        verbose_name_plural = '登录会话'
+        ordering = ['-created']
+        indexes = [models.Index(fields=['user', '-created'], name='login_sess_user_created_idx')]
+
+    def __str__(self):
+        return f'{self.user_id}:{self.key[:8]}'
+
+    def save(self, *args, **kwargs):
+        if not self.key:
+            self.key = secrets.token_hex(20)
+        return super().save(*args, **kwargs)

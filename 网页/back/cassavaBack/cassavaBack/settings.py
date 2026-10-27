@@ -378,6 +378,9 @@ MINIAPP_ACCESS_TOKEN = os.getenv('MINIAPP_ACCESS_TOKEN', '')
 # Session & Token Security Settings
 # Token过期时间 (秒) - 30分钟无操作自动退出
 TOKEN_EXPIRE_SECONDS = 1800 
+# 同一账号可同时保持的登录会话数（手机 + 电脑 + 平板等）。
+# 每次登录签发新 Token，超出上限时只裁剪最旧的会话。
+MAX_SESSIONS_PER_USER = int(os.getenv('MAX_SESSIONS_PER_USER', '5'))
 # Session过期时间 (秒) - 配合Session认证使用
 SESSION_COOKIE_AGE = 1800
 # 每次请求都更新Session过期时间

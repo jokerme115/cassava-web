@@ -20,9 +20,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.authtoken.models import Token as AuthToken  # 修改导入方式
 from .serializers import UserSerializer, UserProfileSerializer
-from .models import UserProfile, AuditLog, EmailVerificationCode, Role, UserRole
+from .models import UserProfile, AuditLog, EmailVerificationCode, Role, UserRole, LoginSession
 
 
 logger = logging.getLogger(__name__)
@@ -84,11 +83,20 @@ def user_login(request):
             # 登录用户
             login(request, user)
             
-            # Single-session login: serialize token replacement for this user.
+            # 多端登录：每次登录签发新会话，保留最近 MAX_SESSIONS_PER_USER 个。
+            # 历史上这里是「登录即删除该用户全部 Token」（单会话），导致 A 端刚登录
+            # B 端立刻 401；多人日常同时用手机和电脑时不可接受，故改为按会话签发，
+            # 仅裁剪超出上限的最旧会话，避免会话表无限增长。
+            max_sessions = max(int(getattr(settings, 'MAX_SESSIONS_PER_USER', 5) or 5), 1)
             with transaction.atomic():
-                User.objects.select_for_update().get(pk=user.pk)
-                AuthToken.objects.filter(user=user).delete()
-                token = AuthToken.objects.create(user=user)
+                token = LoginSession.objects.create(user=user)
+                stale_keys = list(
+                    LoginSession.objects.filter(user=user)
+                    .order_by('-created')
+                    .values_list('key', flat=True)[max_sessions:]
+                )
+                if stale_keys:
+                    LoginSession.objects.filter(key__in=stale_keys).delete()
             
             # 返回成功响应
             return Response({
@@ -127,14 +135,13 @@ def user_logout(request):
     """
     用户登出API
     """
-    # 只有已登录用户才尝试删除 Token
+    # 只吊销本次请求所用的会话。多端登录后同一用户可能同时存在多个会话，
+    # 早先的 AuthToken.objects.get(user=...) 会抛 MultipleObjectsReturned，
+    # 且会把其他设备的会话一起登出。
     if request.user.is_authenticated:
-        try:
-            token = AuthToken.objects.get(user=request.user)
+        token = getattr(request, 'auth', None)
+        if isinstance(token, LoginSession):
             token.delete()
-        except (AuthToken.DoesNotExist, TypeError):
-            # TypeError 是为了防止某些极端情况下 request.user 依然是 AnonymousUser 导致的报错
-            pass
         
     logout(request)
     return Response({'success': True, 'message': '登出成功'})
@@ -341,8 +348,8 @@ def user_register(request):
             # Try to init roles if missing (optional, or just log error)
             logger.warning("Default 'User' role not found; user created without role")
         
-        # 生成Token
-        token, created = AuthToken.objects.get_or_create(user=user)
+        # 生成登录会话（注册即登录，可与其他设备会话并存）
+        token = LoginSession.objects.create(user=user)
         
         # 返回成功响应
         return Response({
