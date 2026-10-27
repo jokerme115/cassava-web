@@ -45,3 +45,7 @@ export const effectivePpd = (result: MeasuredResult): number | null => {
 };
 
 export const formatPpd = (value: number | null | undefined) => value == null ? '待复核' : `${value.toFixed(2)}%`;
+
+/** 只要数字本身（表格/统计卡用），非有限值给占位符。 */
+export const formatPpdValue = (value: number | null | undefined, fallback = '-') =>
+  typeof value === 'number' && Number.isFinite(value) ? value.toFixed(2) : fallback;

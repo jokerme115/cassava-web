@@ -27,7 +27,7 @@ import {
 import { Modal, message } from 'antd';
 import { PredictionResult } from '../types';
 import { predictionsApi, resolveFileUrl } from '../services/api';
-import { calculateMaskPixelMetrics } from '../utils/measurement';
+import { calculateMaskPixelMetrics, formatPpd } from '../utils/measurement';
 import { readDraft, writeDraft, removeDraft } from '../utils/correctionDrafts';
 
 type LayerName = 'cassava' | 'rotten';
@@ -1324,12 +1324,12 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
 
               <aside className={cx('w-full shrink-0 overflow-y-auto border-t p-3 lg:w-[270px] lg:border-l lg:border-t-0', borderClass, asideClass)}>
                 <div className="flex items-center justify-between"><h3 className="text-sm font-semibold">测量检查器</h3><span className="rounded-full bg-[rgba(10,132,255,0.10)] px-2 py-1 text-xs font-medium text-accent-text">实时</span></div>
-                <div className={cx('mt-3 rounded-xl border p-3', borderClass, isLight ? 'bg-white' : 'bg-white/[0.04]')}><p className={cx('text-xs', mutedClass)}>校正后 PPD</p><p className={cx('mt-1 text-3xl font-semibold tracking-tight', isLight ? 'text-ink' : 'text-white')}>{metrics.ppd.toFixed(2)}<span className="ml-1 text-base text-muted">%</span></p><p className={cx('mt-1 text-xs', delta >= 0 ? 'text-danger-text' : 'text-muted')}>较原模型 {delta >= 0 ? '+' : ''}{delta.toFixed(2)} 个百分点</p></div>
-                {editor?.corrections?.length > 0 && <div className="mt-3"><label htmlFor="correction-version" className={cx('mb-1.5 block text-xs font-semibold', mutedClass)}>校正版本</label><select id="correction-version" value={activeSource?.version ? String(activeSource.version) : 'model'} onChange={(event) => { void handleVersionChange(event.target.value); }} className={cx('w-full rounded-lg border px-2.5 py-1.5 text-xs outline-none focus:border-slate-400', borderClass, isLight ? 'bg-white text-ink-secondary' : 'bg-slate-950/50 text-slate-200')}><option value="model">模型初始结果</option>{editor.corrections.map((item: any) => <option key={item.version} value={String(item.version)}>人工校正 v{item.version} · {Number(item.ppd_percent).toFixed(2)}%</option>)}</select></div>}
+                <div className={cx('mt-3 rounded-xl border p-3', borderClass, isLight ? 'bg-white' : 'bg-white/[0.04]')}><p className={cx('text-xs', mutedClass)}>校正后 PPD</p><p className={cx('mt-1 text-3xl font-semibold tracking-tight', isLight ? 'text-ink' : 'text-white')}>{formatPpd(metrics.ppd)}</p><p className={cx('mt-1 text-xs', delta >= 0 ? 'text-danger-text' : 'text-muted')}>较原模型 {delta >= 0 ? '+' : ''}{delta.toFixed(2)} 个百分点</p></div>
+                {editor?.corrections?.length > 0 && <div className="mt-3"><label htmlFor="correction-version" className={cx('mb-1.5 block text-xs font-semibold', mutedClass)}>校正版本</label><select id="correction-version" value={activeSource?.version ? String(activeSource.version) : 'model'} onChange={(event) => { void handleVersionChange(event.target.value); }} className={cx('w-full rounded-lg border px-2.5 py-1.5 text-xs outline-none focus:border-slate-400', borderClass, isLight ? 'bg-white text-ink-secondary' : 'bg-slate-950/50 text-slate-200')}><option value="model">模型初始结果</option>{editor.corrections.map((item: any) => <option key={item.version} value={String(item.version)}>人工校正 v{item.version} · {formatPpd(Number(item.ppd_percent))}</option>)}</select></div>}
                 <div className="mt-3 space-y-2 text-xs">
                   <div className={cx('flex items-center justify-between border-b pb-2', borderClass)}><span className={mutedClass}>木薯面积</span><strong>{metrics.cassavaPixels.toLocaleString()} px</strong></div>
                   <div className={cx('flex items-center justify-between border-b pb-2', borderClass)}><span className={mutedClass}>腐烂面积</span><strong className="text-rose-400">{metrics.rottenPixels.toLocaleString()} px</strong></div>
-                  <div className={cx('flex items-center justify-between border-b pb-2', borderClass)}><span className={mutedClass}>原始模型 PPD</span><strong>{originalPpd.toFixed(2)}%</strong></div>
+                  <div className={cx('flex items-center justify-between border-b pb-2', borderClass)}><span className={mutedClass}>原始模型 PPD</span><strong>{formatPpd(originalPpd)}</strong></div>
                   <div className="flex items-center justify-between"><span className="text-muted">图像尺寸</span><strong>{masks.width} × {masks.height}</strong></div>
                 </div>
                 {prediction.ppd_unit === 'unknown' && <div className={cx('mt-3 rounded-lg border p-2 text-xs', isLight ? 'border-[rgba(245,165,36,0.30)] bg-[rgba(245,165,36,0.12)] text-warn-text' : 'border-amber-300/20 bg-amber-300/10 text-amber-100')}>原始结果为历史数据，PPD 单位待确认；人工校正值始终按百分比计算。</div>}
