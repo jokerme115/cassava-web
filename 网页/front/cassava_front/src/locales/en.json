@@ -655,7 +655,7 @@
     "nav_to_results": "View results",
     "failed_reason": "Failure reason",
     "partial_warning": "Task finished, but some images produced no result",
-    "list_end": "You have reached the end",
+    "list_end": "All tasks loaded",
     "processed_count": "Processed {{done}} / {{total}}",
     "avg_confidence_short": "Avg confidence {{value}}%",
     "runtime_short": "Runtime {{value}}s",

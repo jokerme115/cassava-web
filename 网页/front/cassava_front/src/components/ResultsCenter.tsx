@@ -15,6 +15,7 @@ import { useTaskStore } from '../hooks/useTaskStore';
 import { predictionsApi, resolveFileUrl } from '../services/api';
 import { useSearchParams } from 'react-router-dom';
 import { effectivePpd, formatPpd } from '../utils/measurement';
+import PageHeader from './PageHeader';
 import { modelLabel } from '../utils/modelLabels';
 import { useTranslation } from 'react-i18next';
 import { PredictionResult, User } from '../types';
@@ -219,16 +220,18 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
 
         <main className="space-y-5">
           <section className="rounded-[16px] border border-hairline bg-white p-4 shadow-[0_4px_16px_rgba(17,24,28,0.05)]">
-            <div className="flex flex-wrap items-center gap-3">
-              <h3 className="text-lg font-semibold tracking-tight text-ink">{activeTask ? activeTask.name : t('results.all_results')}</h3>
-              <div className="ml-auto flex flex-wrap items-center gap-2" aria-label="导出当前筛选结果">
+            <PageHeader
+              title={activeTask ? activeTask.name : t('results.all_results')}
+              actions={(
+              <div className="flex flex-wrap items-center gap-2" aria-label="导出当前筛选结果">
                 {(['csv', 'xlsx', 'zip'] as const).map((fileType) => (
                   <button key={fileType} onClick={() => handleExport(fileType)} disabled={exporting || !totalCount} title={`导出${fileType === 'zip' ? '图像与掩码' : fileType.toUpperCase()}`} className="inline-flex items-center gap-1.5 rounded-[10px] border border-hairline-strong bg-white px-3 py-2 text-sm text-ink-secondary transition-colors hover:bg-surface-sunken disabled:opacity-40">
                     <Download className="h-4 w-4" /><span className="hidden sm:inline">{exporting ? '正在生成…' : fileType === 'zip' ? '图像与掩码ZIP' : `导出${fileType.toUpperCase()}`}</span>
                   </button>
                 ))}
               </div>
-            </div>
+              )}
+            />
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <label htmlFor="results-task-mobile" className="sr-only">{t('results.all_tasks')}</label>
@@ -275,7 +278,7 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
             <div className="rounded-[12px] border border-hairline bg-surface-muted p-4">
               <div className="flex items-center gap-2">
                 <BarChart3 className="h-4 w-4 text-muted" />
-                <h4 className="text-sm font-semibold text-ink">{t('results.health_distribution')}</h4>
+                <h3 className="text-sm font-semibold text-ink">{t('results.health_distribution')}</h3>
               </div>
               <div className="mt-3 space-y-2.5">
                 {distribution.map((item) => (
@@ -306,7 +309,7 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
             ) : taskResults.length === 0 ? (
               <div className="flex min-h-[320px] flex-col items-center justify-center text-center">
                 <div className="rounded-full bg-surface-muted p-4"><ImageIcon className="h-8 w-8 text-muted" /></div>
-                <h4 className="mt-5 text-lg font-semibold text-ink">{t('results.no_results')}</h4>
+                <h3 className="mt-5 text-lg font-semibold text-ink">{t('results.no_results')}</h3>
                 <p className="mt-2 max-w-md text-sm text-muted">{searchQuery || filterStatus !== 'all' ? t('results.adjust_search_results') : t('results.complete_task_tip')}</p>
               </div>
             ) : viewMode === 'grid' ? (
@@ -320,8 +323,10 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
                     <article key={result.id} className={`group card rounded-[16px] border p-3 transition-shadow hover:shadow-lg ${tone}`}>
                         <button className="relative block w-full overflow-hidden rounded-[12px]" onClick={() => { setSelectedResult(result); setEditorOpen(true); }}>
                         <img src={fileUrl(result.imageUrl)} alt={result.imageName} className="aspect-square w-full object-cover" />
-                        <div className="absolute inset-x-2 bottom-2 rounded-full bg-slate-950/75 px-2 py-1 text-center text-xs font-medium text-white">
-                          {t('results.ppd_value')}: {formatPpd(ppdValue)} {result.has_correction ? '· 已校正（未复核）' : hasUnknownPpdUnit(result) ? '· 历史单位待确认' : ''}
+                        <div className="absolute inset-x-2 bottom-2 truncate rounded-lg border border-hairline bg-white/95 px-2 py-1 text-center text-xs font-semibold text-ink shadow-sm">
+                          <span className="text-muted">{t('results.ppd_value')}</span>{' '}
+                          <span className="tabular-nums">{formatPpd(ppdValue)}</span>
+                          {result.has_correction ? <span className="font-normal text-warn-text"> · 已校正（未复核）</span> : hasUnknownPpdUnit(result) ? <span className="font-normal text-warn-text"> · 历史单位待确认</span> : null}
                         </div>
                       </button>
                       <div className="mt-3 flex items-start justify-between gap-2">
@@ -333,7 +338,7 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
                           <Eye className="h-4 w-4" />
                         </button>
                       </div>
-                      {result.ensemble_details?.members?.length === 2 && <button type="button" onClick={() => { setSelectedResult(result); setModalOpen(true); }} className="mt-3 rounded-lg border border-hairline bg-white px-3 py-1.5 text-xs text-ink-secondary hover:bg-white">投票评分</button>}
+                      {result.ensemble_details?.members?.length === 2 && <button type="button" onClick={() => { setSelectedResult(result); setModalOpen(true); }} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-hairline-strong bg-white px-3 py-1.5 text-xs font-medium text-ink-secondary transition-colors hover:border-accent-line hover:bg-surface-sunken hover:text-accent-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-line">投票评分</button>}
                     </article>
                   );
                 })}
@@ -362,7 +367,7 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
                         <button className="rounded-xl border border-hairline bg-white p-2 text-ink-secondary transition hover:text-ink" onClick={() => openZoom(fileUrl(result.imageUrl), [fileUrl(result.imageUrl)])} aria-label={t('results.preview')}><Eye className="h-4 w-4" /></button>
                         <a href={fileUrl(result.imageUrl)} download className="rounded-xl border border-hairline bg-white p-2 text-ink-secondary transition hover:text-ink" aria-label={t('results.download')}><Download className="h-4 w-4" /></a>
                       </div>
-                      {result.ensemble_details?.members?.length === 2 && <button type="button" onClick={() => { setSelectedResult(result); setModalOpen(true); }} className="mt-3 rounded-lg border border-hairline bg-white px-3 py-1.5 text-xs text-ink-secondary hover:bg-white">投票评分</button>}
+                      {result.ensemble_details?.members?.length === 2 && <button type="button" onClick={() => { setSelectedResult(result); setModalOpen(true); }} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-hairline-strong bg-white px-3 py-1.5 text-xs font-medium text-ink-secondary transition-colors hover:border-accent-line hover:bg-surface-sunken hover:text-accent-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-line">投票评分</button>}
                     </article>
                   );
                 })}
