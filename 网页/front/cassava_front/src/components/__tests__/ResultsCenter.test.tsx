@@ -34,7 +34,7 @@ describe('voting scores', () => {
       members: [{ model: 'resnet101', label: 'V1.0', ppd_percent: 0 }, { model: 'm6_best', label: 'V1.1', ppd_percent: 25.98 }],
     } } as any];
     renderPage();
-    fireEvent.click(screen.getByRole('button', { name: 'results.vote_score' }));
+    fireEvent.click(screen.getByRole('button', { name: 'results.vote_detail' }));
     expect(screen.getByText('有监督模型 PPD')).toBeInTheDocument();
     expect(screen.getByText('25.98%')).toBeInTheDocument();
     expect(screen.getByText('73.33%')).toBeInTheDocument();

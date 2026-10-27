@@ -884,7 +884,11 @@
     "not_provided": "未提供",
     "not_recorded": "未记录",
     "original_segment_ppd": "模型原始分段 PPD",
-    "no_segment_ppd": "暂无分段 PPD 数据。"
+    "no_segment_ppd": "暂无分段 PPD 数据。",
+    "reviewed": "已复核",
+    "open_editor": "人工复核",
+    "vote_detail": "投票明细",
+    "ppd_threshold_note": "阈值口径：严重 ≥ 7%，轻微 4–7%，健康 < 4%（按腐烂面积占切面面积的比例）"
   },
   "connection": {
     "description": "测试前端与后端API的连通性",

@@ -51,6 +51,29 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
 
   const hasUnknownPpdUnit = (result: PredictionResult) => !result.has_correction && result.ppd_unit === 'unknown';
 
+  // 复核状态：后端 measurement.review_status 目前只会写 unreviewed；
+  // 已人工校正但未复核的单列「已修正（待复核）」，状态推进到 reviewed 后显示「已复核」。
+  const reviewStateOf = (result: PredictionResult) => {
+    const status = String(result.measurement?.review_status || '').toLowerCase();
+    if (status === 'reviewed' || status === 'confirmed' || status === 'approved') {
+      return { key: 'results.reviewed', cls: 'border-[rgba(23,201,100,0.35)] bg-[rgba(23,201,100,0.12)] text-ok-text' };
+    }
+    if (result.has_correction) {
+      return { key: 'results.corrected_unreviewed', cls: 'border-[rgba(245,165,36,0.35)] bg-[rgba(245,165,36,0.12)] text-warn-text' };
+    }
+    return { key: 'results.needs_review', cls: 'border-hairline-strong bg-surface-sunken text-ink-secondary' };
+  };
+
+  // 模型显示名：优先用结果自身的 model_type，缺失时回落到所属任务的模型类型
+  const modelNameOf = (result: PredictionResult) => {
+    const raw = result as unknown as { model_type?: string; single_model_type?: string; algorithm?: string };
+    const taskModel = tasks.find((task) => String(task.id) === String(result.taskId))?.modelType;
+    return modelLabel(raw.model_type || raw.single_model_type || raw.algorithm || taskModel);
+  };
+
+  // PPD 统一按百分比展示，缺值给 --
+  const ppdText = (value: number | null) => (value === null ? '--' : `${formatPpd(value)}%`);
+
   const buildVisList = useCallback((vis: Record<string, string> | undefined, prefix: string) =>
     Object.entries(vis || {})
       .filter(([key, value]) => key.startsWith(prefix) && value)
@@ -169,10 +192,10 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
   // 注意：任务列表为空时也要提示，否则库中没有任务时永远不会提示
   const invalidTaskParam = Boolean(selectedTaskId) && !tasksLoading && tasks.length > 0 && !activeTask;
   const metricCards = [
-    { label: t('results.total_images'), value: stats?.total || 0 },
-    { label: t('results.avg_ppd'), value: stats?.avg || '-' },
-    { label: t('results.max_ppd'), value: stats?.max || '-' },
-    { label: t('results.min_ppd'), value: stats?.min || '-' }
+    { label: t('results.total_images'), value: String(stats?.total || 0), suffix: '' },
+    { label: t('results.avg_ppd'), value: stats?.avg || '-', suffix: stats?.avg && stats.avg !== '-' ? '%' : '' },
+    { label: t('results.max_ppd'), value: stats?.max || '-', suffix: stats?.max && stats.max !== '-' ? '%' : '' },
+    { label: t('results.min_ppd'), value: stats?.min || '-', suffix: stats?.min && stats.min !== '-' ? '%' : '' }
   ];
 
   return (
@@ -270,7 +293,7 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
               {metricCards.map((card) => (
                 <article key={card.label} className="rounded-[12px] border border-hairline bg-white p-3.5">
                   <p className="text-sm font-medium text-muted">{card.label}</p>
-                  <p className="metric-value mt-1.5 text-2xl">{card.value}</p>
+                  <p className="metric-value mt-1.5 text-2xl tabular-nums">{card.value}<span className="text-base font-medium text-muted">{card.suffix}</span></p>
                 </article>
               ))}
             </div>
@@ -280,6 +303,7 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
                 <BarChart3 className="h-4 w-4 text-muted" />
                 <h3 className="text-sm font-semibold text-ink">{t('results.health_distribution')}</h3>
               </div>
+              <p className="mt-1 text-xs leading-5 text-muted">{t('results.ppd_threshold_note')}</p>
               <div className="mt-3 space-y-2.5">
                 {distribution.map((item) => (
                   <div key={item.label}>
@@ -319,14 +343,14 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
                   const severity = ppdValue === null ? 'unknown' : (ppdValue ?? -1) >= 7 ? 'severe' : (ppdValue ?? -1) >= 4 ? 'mild' : 'healthy';
                   const tone = 'border-hairline bg-white';
                   const severityDot = severity === 'severe' ? 'bg-danger' : severity === 'mild' ? 'bg-warn' : severity === 'healthy' ? 'bg-ok' : 'bg-slate-300';
+                  const reviewState = reviewStateOf(result);
                   return (
                     <article key={result.id} className={`group card flex flex-col rounded-[16px] border p-3 transition-shadow hover:shadow-lg ${tone}`}>
                         <button className="relative block w-full overflow-hidden rounded-[12px]" onClick={() => { setSelectedResult(result); setEditorOpen(true); }}>
                         <img src={fileUrl(result.imageUrl)} alt={result.imageName} className="aspect-square w-full object-cover" />
-                        <div className="absolute inset-x-2 bottom-2 truncate rounded-lg border border-hairline bg-white/95 px-2 py-1 text-center text-xs font-semibold text-ink shadow-sm">
-                          <span className="text-muted">{t('results.ppd_value')}</span>{' '}
-                          <span className="tabular-nums">{formatPpd(ppdValue)}</span>
-                          {result.has_correction ? <span className="font-normal text-warn-text"> · {t('results.corrected_unreviewed')}</span> : hasUnknownPpdUnit(result) ? <span className="font-normal text-warn-text"> · {t('results.unit_unconfirmed')}</span> : null}
+                        <div className="absolute inset-x-2 bottom-2 flex items-center justify-between gap-1 rounded-lg border border-hairline bg-white/95 px-2 py-1 text-xs shadow-sm">
+                          <span className="font-semibold text-ink"><span className="font-normal text-muted">{t('results.ppd_value')}</span> <span className="tabular-nums">{ppdText(ppdValue)}</span></span>
+                          {hasUnknownPpdUnit(result) && <span className="truncate font-normal text-warn-text">{t('results.unit_unconfirmed')}</span>}
                         </div>
                       </button>
                       <div className="mt-3 flex items-start justify-between gap-2">
@@ -338,7 +362,14 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
                           <Eye className="h-4 w-4" />
                         </button>
                       </div>
-                      {result.ensemble_details?.members?.length === 2 && <button type="button" onClick={() => { setSelectedResult(result); setModalOpen(true); }} className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-lg border border-hairline-strong bg-white px-3 py-1.5 text-xs font-medium text-ink-secondary transition-colors hover:border-accent-line hover:bg-surface-sunken hover:text-accent-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-line">{t('results.vote_score')}</button>}
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                        <span className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${reviewState.cls}`}>{t(reviewState.key)}</span>
+                        <span className="truncate rounded-full border border-hairline bg-surface-muted px-2 py-0.5 text-[11px] font-medium text-ink-secondary" title={modelNameOf(result)}>{modelNameOf(result)}</span>
+                      </div>
+                      <div className="mt-auto flex items-center gap-1.5 pt-2">
+                        <button type="button" onClick={() => { setSelectedResult(result); setEditorOpen(true); }} className="inline-flex items-center gap-1 rounded-lg border border-accent-line/40 bg-white px-2.5 py-1.5 text-xs font-medium text-accent-text transition-colors hover:bg-[rgba(10,132,255,0.08)] focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-line">{t('results.open_editor')}</button>
+                        {result.ensemble_details?.members?.length === 2 && <button type="button" onClick={() => { setSelectedResult(result); setModalOpen(true); }} className="inline-flex items-center gap-1 rounded-lg border border-hairline-strong bg-white px-2.5 py-1.5 text-xs font-medium text-ink-secondary transition-colors hover:border-accent-line hover:bg-surface-sunken hover:text-accent-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-line">{t('results.vote_detail')}</button>}
+                      </div>
                     </article>
                   );
                 })}
@@ -350,6 +381,7 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
                   const severity = ppdValue === null ? 'unknown' : (ppdValue ?? -1) >= 7 ? 'severe' : (ppdValue ?? -1) >= 4 ? 'mild' : 'healthy';
                   const tone = 'border-hairline bg-white';
                   const severityDot = severity === 'severe' ? 'bg-danger' : severity === 'mild' ? 'bg-warn' : severity === 'healthy' ? 'bg-ok' : 'bg-slate-300';
+                  const reviewState = reviewStateOf(result);
                   return (
                     <article key={result.id} className={`card flex items-center gap-4 rounded-[16px] border p-3 ${tone}`}>
                       <button onClick={() => { setSelectedResult(result); setEditorOpen(true); }} className="overflow-hidden rounded-[12px]">
@@ -357,9 +389,11 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
                       </button>
                       <div className="min-w-0 flex-1">
                         <button onClick={() => { setSelectedResult(result); setEditorOpen(true); }} className="flex items-center gap-1.5 truncate text-left text-base font-semibold text-ink"><span className={`h-1.5 w-1.5 shrink-0 rounded-full ${severityDot}`} />{result.imageName}</button>
-                        <div className="mt-1 flex flex-wrap gap-3 text-sm text-muted">
+                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
                           <span>{result.folderName || t('results.uncategorized')}</span>
-                          <span>{t('results.ppd_value')}: {formatPpd(ppdValue)} {result.has_correction ? `· ${t('results.corrected_unreviewed')}` : hasUnknownPpdUnit(result) ? `· ${t('results.unit_unconfirmed')}` : ''}</span>
+                          <span>{t('results.ppd_value')}: <span className="font-medium tabular-nums text-ink">{ppdText(ppdValue)}</span>{hasUnknownPpdUnit(result) ? ` · ${t('results.unit_unconfirmed')}` : ''}</span>
+                          <span className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${reviewState.cls}`}>{t(reviewState.key)}</span>
+                          <span className="rounded-full border border-hairline bg-surface-muted px-2 py-0.5 text-[11px] font-medium text-ink-secondary">{modelNameOf(result)}</span>
                           {Array.isArray(result.sub_ppd_values) && result.sub_ppd_values.length > 0 && <span>{t('results.sub_ppd')}: {result.sub_ppd_values.map((v) => Number(v).toFixed(2)).join(', ')}</span>}
                         </div>
                       </div>
@@ -367,7 +401,10 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
                         <button className="rounded-xl border border-hairline bg-white p-2 text-ink-secondary transition hover:text-ink" onClick={() => openZoom(fileUrl(result.imageUrl), [fileUrl(result.imageUrl)])} aria-label={t('results.preview')}><Eye className="h-4 w-4" /></button>
                         <a href={fileUrl(result.imageUrl)} download className="rounded-xl border border-hairline bg-white p-2 text-ink-secondary transition hover:text-ink" aria-label={t('results.download')}><Download className="h-4 w-4" /></a>
                       </div>
-                      {result.ensemble_details?.members?.length === 2 && <button type="button" onClick={() => { setSelectedResult(result); setModalOpen(true); }} className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-lg border border-hairline-strong bg-white px-3 py-1.5 text-xs font-medium text-ink-secondary transition-colors hover:border-accent-line hover:bg-surface-sunken hover:text-accent-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-line">{t('results.vote_score')}</button>}
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        <button type="button" onClick={() => { setSelectedResult(result); setEditorOpen(true); }} className="inline-flex items-center gap-1 rounded-lg border border-accent-line/40 bg-white px-3 py-1.5 text-xs font-medium text-accent-text transition-colors hover:bg-[rgba(10,132,255,0.08)]">{t('results.open_editor')}</button>
+                        {result.ensemble_details?.members?.length === 2 && <button type="button" onClick={() => { setSelectedResult(result); setModalOpen(true); }} className="inline-flex items-center gap-1 rounded-lg border border-hairline-strong bg-white px-3 py-1.5 text-xs font-medium text-ink-secondary transition-colors hover:border-accent-line hover:bg-surface-sunken hover:text-accent-text">{t('results.vote_detail')}</button>}
+                      </div>
                     </article>
                   );
                 })}

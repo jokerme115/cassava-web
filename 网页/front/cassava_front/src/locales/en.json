@@ -820,7 +820,11 @@
     "not_provided": "not provided",
     "not_recorded": "not recorded",
     "original_segment_ppd": "Original segment PPD",
-    "no_segment_ppd": "No segment PPD data."
+    "no_segment_ppd": "No segment PPD data.",
+    "reviewed": "Reviewed",
+    "open_editor": "Manual review",
+    "vote_detail": "Vote details",
+    "ppd_threshold_note": "Thresholds: severe ≥ 7%, mild 4–7%, healthy < 4% (rot area as a share of the cut surface)"
   },
   "connection": {
     "description": "Test connectivity between frontend and backend API",
