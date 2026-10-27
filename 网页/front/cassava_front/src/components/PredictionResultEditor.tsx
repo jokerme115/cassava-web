@@ -25,6 +25,8 @@ import {
   ZoomOut,
 } from 'lucide-react';
 import { Modal, message } from 'antd';
+import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 import { PredictionResult } from '../types';
 import { predictionsApi, resolveFileUrl } from '../services/api';
 import { calculateMaskPixelMetrics, formatPpd } from '../utils/measurement';
@@ -67,14 +69,14 @@ const fetchRaster = (url: string, width: number, height: number): Promise<Uint8A
   image.crossOrigin = 'anonymous';
   image.onload = () => {
     if (image.naturalWidth !== width || image.naturalHeight !== height) {
-      reject(new Error(`掩码尺寸不匹配：${image.naturalWidth} × ${image.naturalHeight}`));
+      reject(new Error(i18n.t('editor.errors.mask_size', { w: image.naturalWidth, h: image.naturalHeight })));
       return;
     }
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
     const context = canvas.getContext('2d');
-    if (!context) return reject(new Error('无法创建掩码画布'));
+    if (!context) return reject(new Error(i18n.t('editor.errors.mask_canvas')));
     context.drawImage(image, 0, 0);
     const pixels = context.getImageData(0, 0, width, height).data;
     const mask = new Uint8Array(width * height);
@@ -83,7 +85,7 @@ const fetchRaster = (url: string, width: number, height: number): Promise<Uint8A
     }
     resolve(mask);
   };
-  image.onerror = () => reject(new Error(`无法加载掩码：${url}`));
+  image.onerror = () => reject(new Error(i18n.t('editor.errors.mask_load', { url })));
   image.src = url;
 });
 
@@ -92,21 +94,21 @@ const fetchConfidenceRaster = (url: string, width: number, height: number): Prom
   image.crossOrigin = 'anonymous';
   image.onload = () => {
     if (image.naturalWidth !== width || image.naturalHeight !== height) {
-      reject(new Error(`置信度图尺寸不匹配：${image.naturalWidth} × ${image.naturalHeight}`));
+      reject(new Error(i18n.t('editor.errors.confidence_size', { w: image.naturalWidth, h: image.naturalHeight })));
       return;
     }
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
     const context = canvas.getContext('2d');
-    if (!context) return reject(new Error('无法创建置信度画布'));
+    if (!context) return reject(new Error(i18n.t('editor.errors.confidence_canvas')));
     context.drawImage(image, 0, 0);
     const pixels = context.getImageData(0, 0, width, height).data;
     const confidence = new Uint8Array(width * height);
     for (let i = 0; i < confidence.length; i += 1) confidence[i] = pixels[i * 4];
     resolve(confidence);
   };
-  image.onerror = () => reject(new Error(`无法加载置信度图：${url}`));
+  image.onerror = () => reject(new Error(i18n.t('editor.errors.confidence_load', { url })));
   image.src = url;
 });
 
@@ -114,7 +116,7 @@ const fetchBaseImage = (url: string): Promise<HTMLImageElement> => new Promise((
   const image = new Image();
   image.crossOrigin = 'anonymous';
   image.onload = () => resolve(image);
-  image.onerror = () => reject(new Error(`无法加载原图：${url}`));
+  image.onerror = () => reject(new Error(i18n.t('editor.errors.image_load', { url })));
   image.src = url;
 });
 
@@ -123,7 +125,7 @@ const maskToBlob = async (mask: Uint8Array, width: number, height: number): Prom
   canvas.width = width;
   canvas.height = height;
   const context = canvas.getContext('2d');
-  if (!context) throw new Error('无法创建掩码导出画布');
+  if (!context) throw new Error(i18n.t('editor.errors.export_canvas'));
   const imageData = context.createImageData(width, height);
   const chunkSize = 500_000;
   for (let start = 0; start < mask.length; start += chunkSize) {
@@ -140,7 +142,7 @@ const maskToBlob = async (mask: Uint8Array, width: number, height: number): Prom
   }
   context.putImageData(imageData, 0, 0);
   return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('掩码导出失败')), 'image/png');
+    canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error(i18n.t('editor.errors.export_failed'))), 'image/png');
   });
 };
 
@@ -295,14 +297,14 @@ const simplifyPolygon = (points: Array<{ x: number; y: number }>, tolerance: num
   return result;
 };
 
-const toolLabel: Record<ToolName, string> = {
-  'brush-add': '画笔添加',
-  'brush-erase': '画笔删除',
-  'pen-add': '钢笔圈选添加',
-  'pen-erase': '钢笔圈选删除',
-  'smart-add': '智能点选添加',
-  'smart-erase': '智能点选删除',
-  pan: '平移',
+const toolLabelKey: Record<ToolName, string> = {
+  'brush-add': 'editor.tools.brush_add',
+  'brush-erase': 'editor.tools.brush_erase',
+  'pen-add': 'editor.tools.pen_add',
+  'pen-erase': 'editor.tools.pen_erase',
+  'smart-add': 'editor.tools.smart_add',
+  'smart-erase': 'editor.tools.smart_erase',
+  pan: 'editor.tools.pan',
 };
 
 const toolShortcut: Record<ToolName, string> = {
@@ -316,6 +318,7 @@ const toolShortcut: Record<ToolName, string> = {
 };
 
 const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ prediction, onClose, onSaved }) => {
+  const { t } = useTranslation();
   const [editor, setEditor] = useState<any>(null);
   const [activeSource, setActiveSource] = useState<any>(null);
   const [masks, setMasks] = useState<Masks | null>(null);
@@ -378,7 +381,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
       setActiveSource(source);
       setNote(source.note || '');
       if (!payload.editor_available && !source.cassava_mask_url) {
-        throw new Error('该历史结果没有可编辑的原始掩码，请重新预测后再编辑。');
+        throw new Error(t('editor.message.no_mask'));
       }
       const image = await fetchBaseImage(resolveFileUrl(payload.original_image_url || prediction.imageUrl));
       const width = Number(source.width || image.naturalWidth);
@@ -394,26 +397,26 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
         if (!active) return;
         if (draft && draft.width === width && draft.height === height &&
             await confirmAction(
-              '发现未保存的草稿',
+              t('editor.dialog.draft_title'),
               draft.baseVersion === (payload.current_correction?.version || 0)
-                ? '发现未保存的本地草稿，是否恢复？'
-                : '发现基于旧版本的本地草稿，是否恢复并在保存前重新核对？',
-              '恢复草稿',
-              '放弃草稿',
+                ? t('editor.dialog.draft_content')
+                : t('editor.dialog.draft_content_stale'),
+              t('editor.dialog.draft_restore'),
+              t('editor.dialog.draft_discard'),
             )) {
           next = { width, height, cassava: draft.cassava, rotten: draft.rotten };
           setNote(draft.note);
           setDirty(true);
           setRevision((value) => value + 1);
         }
-      } catch { message.warning('浏览器草稿存储不可用，请及时保存版本'); }
+      } catch { message.warning(t('editor.dialog.draft_warning')); }
 
       masksRef.current = next;
       setMasks(next);
       setMetrics(calculateMaskPixelMetrics(next.cassava, next.rotten));
       setBaseImage(image);
     }).catch((loadError: any) => {
-      if (active) setError(loadError?.message || '编辑数据加载失败');
+      if (active) setError(loadError?.message || t('editor.message.load_failed'));
     }).finally(() => {
       if (active) setLoading(false);
     });
@@ -679,7 +682,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
     if (confidenceMapRef.current) return confidenceMapRef.current;
     const sourceUrl = editor?.confidence_map_url;
     const current = masksRef.current;
-    if (!sourceUrl || !current) throw new Error('该历史结果没有置信度图，请重新预测后使用智能点选。');
+    if (!sourceUrl || !current) throw new Error(t('editor.message.no_confidence'));
     const confidence = await fetchConfidenceRaster(resolveFileUrl(sourceUrl), current.width, current.height);
     confidenceMapRef.current = confidence;
     setConfidenceReady(true);
@@ -687,15 +690,15 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
   };
 
   const growSmartRegion = async (point: { x: number; y: number }) => {
-    if (layer !== 'rotten') throw new Error('智能点选目前用于腐烂范围，请先切换到“腐烂范围”。');
+    if (layer !== 'rotten') throw new Error(t('editor.message.rotten_only'));
     const current = masksRef.current;
-    if (!current) throw new Error('掩码尚未加载完成');
+    if (!current) throw new Error(t('editor.message.mask_not_ready'));
     const confidence = await ensureConfidenceMap();
     const width = current.width;
     const height = current.height;
     const total = width * height;
     const seedIndex = Math.floor(point.y) * width + Math.floor(point.x);
-    if (!current.cassava[seedIndex]) throw new Error('请点击木薯主体内部，再进行智能点选。');
+    if (!current.cassava[seedIndex]) throw new Error(t('editor.message.click_cassava'));
     const seedValue = confidence[seedIndex];
     const tolerance = Math.max(2, Math.round(smartThreshold * 255));
     const visited = new Uint8Array(total);
@@ -748,11 +751,11 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
     setSmartLoading(true);
     try {
       const selection = await growSmartRegion(point);
-      if (countPixels(selection) === 0) throw new Error('没有找到相似的连续区域，请增大相似度阈值。');
+      if (countPixels(selection) === 0) throw new Error(t('editor.message.no_similar'));
       setSmartSelection(selection);
       setSmartSelectionCount(countPixels(selection));
     } catch (smartError: any) {
-      message.warning(smartError?.message || '智能点选失败');
+      message.warning(smartError?.message || t('editor.message.smart_failed'));
     } finally {
       setSmartLoading(false);
     }
@@ -820,7 +823,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
         const minArea = Math.max(24, Math.round((current.width * current.height) / 60000));
         const rings = traceMaskOutlines(source, current.width, current.height, minArea);
         if (!rings.length) {
-          message.warning(layer === 'cassava' ? '当前图层没有可转换的区域' : '当前腐烂范围为空，请先涂抹或使用智能点选');
+          message.warning(layer === 'cassava' ? t('editor.tool.convert_empty_cassava') : t('editor.tool.convert_empty_rotten'));
           return;
         }
         const tolerance = Math.max(2, current.width / 480);
@@ -828,7 +831,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
           .map((ring) => simplifyPolygon(ring, tolerance).map((point) => ({ x: Math.round(point.x), y: Math.round(point.y) })))
           .filter((ring) => ring.length >= 3);
         if (!simplifiedRings.length) {
-          message.warning('轮廓过于细碎，无法转换为可拖动的多边形');
+          message.warning(t('editor.tool.convert_too_fine'));
           return;
         }
         const totalPoints = simplifiedRings.reduce((sum, ring) => sum + ring.length, 0);
@@ -836,7 +839,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
         setMaskRings(simplifiedRings);
         // 转换出来的轮廓表示「当前掩码的边界」，应用时应当还原而不是擦除，故默认用添加工具
         setTool('pen-add');
-        message.success(`已转换 ${simplifiedRings.length} 段病害边界（共 ${totalPoints} 个顶点），拖动顶点微调后点「应用多边形」写回掩码`);
+        message.success(t('editor.tool.converted', { count: simplifiedRings.length, points: totalPoints }));
       } finally {
         setMaskToPolygonLoading(false);
       }
@@ -1055,16 +1058,16 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
       commitSnapshot(current);
       updateMasks(next);
     };
-    void load().catch((resetError: any) => message.error(resetError?.message || '恢复失败'));
+    void load().catch((resetError: any) => message.error(resetError?.message || t('editor.message.restore_failed')));
   };
 
   const handleVersionChange = async (value: string) => {
     if (!editor || !masksRef.current || savingRef.current || versionLoading) return;
     if ((dirty || polygonPoints.length || maskRings.length || smartSelection) && !(await confirmAction(
-      '当前修改尚未保存',
-      '切换版本将替换当前画布，是否继续？',
+      t('editor.dialog.switch_title'),
+      t('editor.dialog.switch_content'),
       '继续',
-      '留在当前版本',
+      t('editor.dialog.cancel'),
     ))) return;
     const source = value === 'model' ? editor : (editor.corrections || []).find((item: any) => String(item.version) === value);
     if (!source?.cassava_mask_url || !source?.rotten_mask_url) return;
@@ -1085,20 +1088,20 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
       setFuture([]);
       setDirty(false);
       updateMasks({ ...current, cassava, rotten });
-    } catch (versionError: any) { message.error(versionError?.message || '版本加载失败'); }
+    } catch (versionError: any) { message.error(versionError?.message || t('editor.message.version_failed')); }
     finally { setVersionLoading(false); }
   };
 
   const handleSave = async () => {
     if (!masksRef.current || savingRef.current || versionLoading) return;
     if (polygonPoints.length || maskRings.length || smartSelection || smartLoading) {
-      message.warning('请先应用或放弃当前多边形/智能选区，再保存版本');
+      message.warning(t('editor.save.pending_apply'));
       return;
     }
-    if (!dirty) { message.info('当前没有待保存修改'); return; }
+    if (!dirty) { message.info(t('editor.save.nothing')); return; }
     const saveSnapshot = snapshot(masksRef.current);
     if (!metrics.cassavaPixels) {
-      message.warning('木薯主体面积为 0，无法计算 PPD。');
+      message.warning(t('editor.save.cassava_zero'));
       return;
     }
     savingRef.current = true;
@@ -1121,10 +1124,10 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
       try { await removeDraft(draftKey); } catch { /* The server version is already safely stored. */ }
       setHistory([]);
       setFuture([]);
-      message.success('人工校正版本已保存');
+      message.success(t('editor.save.saved'));
       onSaved(correction);
     } catch (saveError: any) {
-      message.error(saveError?.response?.data?.message || saveError?.response?.data?.detail || saveError?.message || '保存校正结果失败');
+      message.error(saveError?.response?.data?.message || saveError?.response?.data?.detail || saveError?.message || t('editor.save.failed'));
     } finally {
       savingRef.current = false;
       setSaving(false);
@@ -1216,7 +1219,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
       const current = masksRef.current;
       if (!current || savingRef.current) return;
       void writeDraft({ id: draftKey, baseVersion: editor.current_correction?.version || 0,
-        ...snapshot(current), note, savedAt: new Date().toISOString() }).catch(() => message.warning('草稿暂存失败，请保存版本'));
+        ...snapshot(current), note, savedAt: new Date().toISOString() }).catch(() => message.warning(t('editor.dialog.draft_failed')));
     }, 800);
     return () => window.clearTimeout(timer);
   }, [revision, dirty, note, saving, draftKey, editor]);
@@ -1230,12 +1233,12 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
   }, [hasPendingChanges, saving]);
 
   const handleClose = async () => {
-    if (savingRef.current || versionLoading) { message.info('正在保存或加载，请稍候'); return; }
+    if (savingRef.current || versionLoading) { message.info(t('editor.save.busy_hint')); return; }
     if (hasPendingChanges && !(await confirmAction(
-      '尚未保存为正式版本',
-      '当前修改尚未保存为正式版本，是否退出？已暂存的草稿下次可恢复。',
+      t('editor.dialog.exit_title'),
+      t('editor.dialog.exit_content'),
       '退出',
-      '继续编辑',
+      t('editor.dialog.keep_editing'),
     ))) return;
     onClose();
   };
@@ -1255,52 +1258,52 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
           <div className="flex min-w-0 items-baseline gap-2">
             <Layers3 className="h-4 w-4 shrink-0 self-center text-muted" />
             <h2 className="truncate text-sm font-semibold">{prediction.imageName}</h2>
-            <span className={cx('hidden shrink-0 text-xs md:inline', mutedClass)} title="木薯范围与腐烂范围均可编辑，PPD 实时计算">PPD 实时计算</span>
+            <span className={cx('hidden shrink-0 text-xs md:inline', mutedClass)} title={t('editor.header.ppd_hint')}>{t('editor.header.ppd')}</span>
           </div>
           <div className="flex shrink-0 items-center gap-1">
-            <button onClick={() => setTheme((value) => value === 'dark' ? 'light' : 'dark')} className={cx('inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title="切换深浅主题">
-              {isLight ? <Moon className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />}{isLight ? '深色' : '浅色'}
+            <button onClick={() => setTheme((value) => value === 'dark' ? 'light' : 'dark')} className={cx('inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title={t('editor.header.toggle_theme')}>
+              {isLight ? <Moon className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />}{isLight ? t('editor.header.theme_dark') : t('editor.header.theme_light')}
             </button>
-            <button onClick={handleClose} className={cx('rounded-lg p-1.5 transition', mutedClass, isLight ? 'hover:bg-white hover:text-ink' : 'hover:bg-white/10 hover:text-white')} aria-label="关闭编辑器"><X className="h-4 w-4" /></button>
+            <button onClick={handleClose} className={cx('rounded-lg p-1.5 transition', mutedClass, isLight ? 'hover:bg-white hover:text-ink' : 'hover:bg-white/10 hover:text-white')} aria-label={t('editor.header.close')}><X className="h-4 w-4" /></button>
           </div>
         </header>
 
-        {loading ? <div className="flex flex-1 items-center justify-center text-muted">正在加载原图和掩码...</div> : error ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center"><CircleDot className="h-10 w-10 text-amber-300" /><p className="max-w-md text-sm text-muted">{error}</p><button onClick={handleClose} className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-ink">返回结果</button></div>
+        {loading ? <div className="flex flex-1 items-center justify-center text-muted">{t('editor.header.loading')}</div> : error ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center"><CircleDot className="h-10 w-10 text-amber-300" /><p className="max-w-md text-sm text-muted">{error}</p><button onClick={handleClose} className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-ink">{t('editor.header.back')}</button></div>
         ) : masks && baseImage ? (
           <>
             <div className={cx('flex flex-wrap items-center gap-1.5 border-b px-3 py-1.5', borderClass, toolbarClass)}>
-              <span className={cx('mr-1 hidden items-center xl:flex', mutedClass)} title="原图全屏编辑"><Maximize2 className="h-3.5 w-3.5 text-muted" /></span>
+              <span className={cx('mr-1 hidden items-center xl:flex', mutedClass)} title={t('editor.canvas.fullscreen_hint')}><Maximize2 className="h-3.5 w-3.5 text-muted" /></span>
               <div className={cx('mr-1 flex items-center gap-1 rounded-lg p-0.5', isLight ? 'bg-surface-muted' : 'bg-white/5')}>
-                <button onClick={() => setLayer('cassava')} className={cx('rounded-md px-2.5 py-1 text-xs', layer === 'cassava' ? 'bg-white text-ink shadow-sm' : mutedClass, layer === 'cassava' ? '' : (isLight ? 'hover:bg-white' : 'hover:bg-white/10'))} title="木薯范围（C）"><i className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-[#30b0c7] align-middle" />木薯范围</button>
-                <button onClick={() => setLayer('rotten')} className={cx('rounded-md px-2.5 py-1 text-xs', layer === 'rotten' ? 'bg-white text-ink shadow-sm' : mutedClass, layer === 'rotten' ? '' : (isLight ? 'hover:bg-white' : 'hover:bg-white/10'))} title="腐烂范围（R）"><i className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-rose-400 align-middle" />腐烂范围</button>
+                <button onClick={() => setLayer('cassava')} className={cx('rounded-md px-2.5 py-1 text-xs', layer === 'cassava' ? 'bg-white text-ink shadow-sm' : mutedClass, layer === 'cassava' ? '' : (isLight ? 'hover:bg-white' : 'hover:bg-white/10'))} title={t('editor.layer.cassava_title')}><i className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-[#30b0c7] align-middle" />{t('editor.layer.cassava')}</button>
+                <button onClick={() => setLayer('rotten')} className={cx('rounded-md px-2.5 py-1 text-xs', layer === 'rotten' ? 'bg-white text-ink shadow-sm' : mutedClass, layer === 'rotten' ? '' : (isLight ? 'hover:bg-white' : 'hover:bg-white/10'))} title={t('editor.layer.rotten_title')}><i className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-rose-400 align-middle" />{t('editor.layer.rotten')}</button>
               </div>
               {(['brush-add', 'brush-erase', 'pen-add', 'pen-erase', 'smart-add', 'smart-erase', 'pan'] as ToolName[]).map((name) => (
-                <button key={name} onClick={() => { setTool(name); setSmartSelection(null); setSmartSelectionCount(0); if (!name.startsWith('pen')) { setPolygonPoints([]); setMaskRings([]); setMaskRingDrag(null); } }} className={cx('inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs transition', tool === name ? (isLight ? 'bg-brand-fill text-white' : 'bg-white text-slate-950') : mutedClass, tool === name ? '' : (isLight ? 'hover:bg-white' : 'hover:bg-white/10'))} title={`${toolLabel[name]}（${toolShortcut[name]}）${name.startsWith('smart') && !editor?.confidence_map_url ? ' · 需重新预测生成置信度图' : ''}`}>{activeToolIcon(name)}<span className="hidden md:inline">{toolLabel[name]}</span></button>
+                <button key={name} onClick={() => { setTool(name); setSmartSelection(null); setSmartSelectionCount(0); if (!name.startsWith('pen')) { setPolygonPoints([]); setMaskRings([]); setMaskRingDrag(null); } }} className={cx('inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs transition', tool === name ? (isLight ? 'bg-brand-fill text-white' : 'bg-white text-slate-950') : mutedClass, tool === name ? '' : (isLight ? 'hover:bg-white' : 'hover:bg-white/10'))} title={`${t(toolLabelKey[name])}（${toolShortcut[name]}）${name.startsWith('smart') && !editor?.confidence_map_url ? t('editor.tool.needs_confidence') : ''}`}>{activeToolIcon(name)}<span className="hidden md:inline">{t(toolLabelKey[name])}</span></button>
               ))}
               <div className={cx('ml-auto flex items-center gap-1 border-l pl-2', borderClass)}>
-                <button onClick={handleUndo} disabled={!history.length} className={cx('rounded-lg p-1.5 disabled:opacity-30', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title="撤销 Ctrl+Z"><Undo2 className="h-3.5 w-3.5" /></button>
-                <button onClick={handleRedo} disabled={!future.length} className={cx('rounded-lg p-1.5 disabled:opacity-30', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title="重做 Ctrl+Y"><Redo2 className="h-3.5 w-3.5" /></button>
-                <button onClick={handleReset} className={cx('rounded-lg p-1.5', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title="恢复当前版本"><RotateCcw className="h-3.5 w-3.5" /></button>
+                <button onClick={handleUndo} disabled={!history.length} className={cx('rounded-lg p-1.5 disabled:opacity-30', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title={t('editor.tool.undo')}><Undo2 className="h-3.5 w-3.5" /></button>
+                <button onClick={handleRedo} disabled={!future.length} className={cx('rounded-lg p-1.5 disabled:opacity-30', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title={t('editor.tool.redo')}><Redo2 className="h-3.5 w-3.5" /></button>
+                <button onClick={handleReset} className={cx('rounded-lg p-1.5', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title={t('editor.tool.reset')}><RotateCcw className="h-3.5 w-3.5" /></button>
               </div>
               <div className={cx('flex items-center gap-1 rounded-lg p-0.5', isLight ? 'bg-surface-muted' : 'bg-white/5')}>
-                <button onClick={() => setZoom((value) => clamp(value - 0.1, 0.25, 4))} className={cx('rounded-md p-1.5', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title="缩小 -"><ZoomOut className="h-3.5 w-3.5" /></button>
+                <button onClick={() => setZoom((value) => clamp(value - 0.1, 0.25, 4))} className={cx('rounded-md p-1.5', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title={t('editor.tool.zoom_out')}><ZoomOut className="h-3.5 w-3.5" /></button>
                 <span className={cx('w-10 text-center text-xs', mutedClass)}>{Math.round(zoom * 100)}%</span>
-                <button onClick={() => setZoom((value) => clamp(value + 0.1, 0.25, 4))} className={cx('rounded-md p-1.5', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title="放大 +"><ZoomIn className="h-3.5 w-3.5" /></button>
-                <button onClick={fitToView} className={cx('rounded-md px-2 py-1 text-xs', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title="适应窗口">适应</button>
+                <button onClick={() => setZoom((value) => clamp(value + 0.1, 0.25, 4))} className={cx('rounded-md p-1.5', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title={t('editor.tool.zoom_in')}><ZoomIn className="h-3.5 w-3.5" /></button>
+                <button onClick={fitToView} className={cx('rounded-md px-2 py-1 text-xs', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title={t('editor.tool.fit_title')}>{t('editor.tool.fit')}</button>
               </div>
-              {tool.startsWith('pen') && polygonPoints.length >= 3 && <button onClick={applyPolygon} className="inline-flex items-center gap-1 rounded-xl bg-amber-300 px-3 py-2 text-xs font-semibold text-slate-950"><Check className="h-4 w-4" />闭合钢笔区域</button>}
-              {!tool.startsWith('smart') && <button onClick={handleMaskToPolygon} disabled={maskToPolygonLoading} className={cx('inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition disabled:opacity-50', isLight ? 'bg-brand-fill text-white hover:bg-slate-700' : 'bg-white text-slate-950 hover:bg-hairline')} title={`把当前${layer === 'cassava' ? '木薯' : '腐烂'}范围的掩码边缘转成可拖动的多边形轮廓`}><Spline className="h-3.5 w-3.5" /><span className="hidden md:inline">{maskToPolygonLoading ? '转换中…' : '掩码转多边形'}</span></button>}
-              {maskRings.length > 0 && <button onClick={applyMaskRings} className="inline-flex items-center gap-1 rounded-xl bg-sky-300 px-3 py-1.5 text-xs font-semibold text-slate-950" title="把当前多环轮廓写回掩码"><Check className="h-3.5 w-3.5" />应用多边形（{maskRings.length} 段）</button>}
-              {maskRings.length > 0 && <button onClick={() => { setMaskRings([]); setMaskRingDrag(null); }} className={cx('inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title="放弃当前转换出的多边形轮廓"><X className="h-3.5 w-3.5" />放弃</button>}
-              {tool.startsWith('smart') && smartSelection && <button onClick={applySmartSelection} className="inline-flex items-center gap-1 rounded-lg bg-amber-300 px-3 py-1.5 text-xs font-semibold text-slate-950"><Check className="h-3.5 w-3.5" />应用选区 ({smartSelectionCount.toLocaleString()} px)</button>}
+              {tool.startsWith('pen') && polygonPoints.length >= 3 && <button onClick={applyPolygon} className="inline-flex items-center gap-1 rounded-xl bg-amber-300 px-3 py-2 text-xs font-semibold text-slate-950"><Check className="h-4 w-4" />{t('editor.tool.close_polygon')}</button>}
+              {!tool.startsWith('smart') && <button onClick={handleMaskToPolygon} disabled={maskToPolygonLoading} className={cx('inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition disabled:opacity-50', isLight ? 'bg-brand-fill text-white hover:bg-slate-700' : 'bg-white text-slate-950 hover:bg-hairline')} title={t('editor.tool.mask_to_polygon_hint', { layer: layer === 'cassava' ? t('editor.layer.cassava') : t('editor.layer.rotten') })}><Spline className="h-3.5 w-3.5" /><span className="hidden md:inline">{maskToPolygonLoading ? t('editor.tool.converting') : t('editor.tool.mask_to_polygon')}</span></button>}
+              {maskRings.length > 0 && <button onClick={applyMaskRings} className="inline-flex items-center gap-1 rounded-xl bg-sky-300 px-3 py-1.5 text-xs font-semibold text-slate-950" title={t('editor.tool.apply_polygon_hint')}><Check className="h-3.5 w-3.5" />{t('editor.tool.apply_polygon', { count: maskRings.length })}</button>}
+              {maskRings.length > 0 && <button onClick={() => { setMaskRings([]); setMaskRingDrag(null); }} className={cx('inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title={t('editor.tool.discard_hint')}><X className="h-3.5 w-3.5" />{t('editor.tool.discard')}</button>}
+              {tool.startsWith('smart') && smartSelection && <button onClick={applySmartSelection} className="inline-flex items-center gap-1 rounded-lg bg-amber-300 px-3 py-1.5 text-xs font-semibold text-slate-950"><Check className="h-3.5 w-3.5" />{t('editor.tool.apply_selection', { px: smartSelectionCount.toLocaleString() })}</button>}
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
               <main ref={viewportRef} className={cx('relative min-h-0 flex-1 overflow-auto p-3 md:p-4', isLight ? 'bg-surface-muted' : 'bg-[#080d14]')} style={{ cursor: tool === 'pan' || spacePressed ? 'grab' : (tool.startsWith('brush') || tool.startsWith('pen')) ? 'none' : 'default' }}>
                 <div className="flex min-h-full min-w-full p-2">
                   <div className="relative m-auto shrink-0" style={{ width: masks.width * zoom, height: masks.height * zoom }}>
-                    <canvas aria-label="像素校正画布" ref={canvasRef} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} onPointerLeave={() => setCursor(null)} onDoubleClick={handleCanvasDoubleClick} onWheel={handleCanvasWheel} className="block max-w-none rounded-xl shadow-2xl" style={{ width: `${masks.width * zoom}px`, height: `${masks.height * zoom}px`, imageRendering: zoom > 1.5 ? 'pixelated' : 'auto' }} />
+                    <canvas aria-label={t('editor.canvas.aria')} ref={canvasRef} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} onPointerLeave={() => setCursor(null)} onDoubleClick={handleCanvasDoubleClick} onWheel={handleCanvasWheel} className="block max-w-none rounded-xl shadow-2xl" style={{ width: `${masks.width * zoom}px`, height: `${masks.height * zoom}px`, imageRendering: zoom > 1.5 ? 'pixelated' : 'auto' }} />
                     {cursor && tool.startsWith('brush') && !spacePressed && (
                       <span
                         aria-hidden
@@ -1318,46 +1321,46 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
                   </div>
                 </div>
                 <div className={cx('absolute bottom-4 left-4 flex flex-wrap gap-2 rounded-lg border px-2.5 py-1.5 text-xs backdrop-blur', isLight ? 'border-hairline bg-white text-ink-secondary' : 'border-hairline bg-slate-950/75 text-slate-200')}>
-                  <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-[#30b0c7]" />木薯范围</span><span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-rose-400" />腐烂范围</span>
+                  <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-[#30b0c7]" />{t('editor.layer.cassava')}</span><span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-rose-400" />{t('editor.layer.rotten')}</span>
                 </div>
               </main>
 
               <aside className={cx('w-full shrink-0 overflow-y-auto border-t p-3 lg:w-[270px] lg:border-l lg:border-t-0', borderClass, asideClass)}>
-                <div className="flex items-center justify-between"><h3 className="text-sm font-semibold">测量检查器</h3><span className="rounded-full bg-[rgba(10,132,255,0.10)] px-2 py-1 text-xs font-medium text-accent-text">实时</span></div>
-                <div className={cx('mt-3 rounded-xl border p-3', borderClass, isLight ? 'bg-white' : 'bg-white/[0.04]')}><p className={cx('text-xs', mutedClass)}>校正后 PPD</p><p className={cx('mt-1 text-3xl font-semibold tracking-tight', isLight ? 'text-ink' : 'text-white')}>{formatPpd(metrics.ppd)}</p><p className={cx('mt-1 text-xs', delta >= 0 ? 'text-danger-text' : 'text-muted')}>较原模型 {delta >= 0 ? '+' : ''}{delta.toFixed(2)} 个百分点</p></div>
-                {editor?.corrections?.length > 0 && <div className="mt-3"><label htmlFor="correction-version" className={cx('mb-1.5 block text-xs font-semibold', mutedClass)}>校正版本</label><select id="correction-version" value={activeSource?.version ? String(activeSource.version) : 'model'} onChange={(event) => { void handleVersionChange(event.target.value); }} className={cx('w-full rounded-lg border px-2.5 py-1.5 text-xs outline-none focus:border-slate-400', borderClass, isLight ? 'bg-white text-ink-secondary' : 'bg-slate-950/50 text-slate-200')}><option value="model">模型初始结果</option>{editor.corrections.map((item: any) => <option key={item.version} value={String(item.version)}>人工校正 v{item.version} · {formatPpd(Number(item.ppd_percent))}</option>)}</select></div>}
+                <div className="flex items-center justify-between"><h3 className="text-sm font-semibold">{t('editor.inspector.title')}</h3><span className="rounded-full bg-[rgba(10,132,255,0.10)] px-2 py-1 text-xs font-medium text-brand-fill-hover">{t('editor.inspector.live')}</span></div>
+                <div className={cx('mt-3 rounded-xl border p-3', borderClass, isLight ? 'bg-white' : 'bg-white/[0.04]')}><p className={cx('text-xs', mutedClass)}>{t('editor.inspector.corrected_ppd')}</p><p className={cx('mt-1 text-3xl font-semibold tracking-tight', isLight ? 'text-ink' : 'text-white')}>{formatPpd(metrics.ppd)}</p><p className={cx('mt-1 text-xs', delta >= 0 ? 'text-danger-text' : 'text-muted')}>{t('editor.inspector.delta', { sign: delta >= 0 ? '+' : '', value: delta.toFixed(2) })}</p></div>
+                {editor?.corrections?.length > 0 && <div className="mt-3"><label htmlFor="correction-version" className={cx('mb-1.5 block text-xs font-semibold', mutedClass)}>{t('editor.inspector.version')}</label><select id="correction-version" value={activeSource?.version ? String(activeSource.version) : 'model'} onChange={(event) => { void handleVersionChange(event.target.value); }} className={cx('w-full rounded-lg border px-2.5 py-1.5 text-xs outline-none focus:border-slate-400', borderClass, isLight ? 'bg-white text-ink-secondary' : 'bg-slate-950/50 text-slate-200')}><option value="model">{t('editor.inspector.version_model')}</option>{editor.corrections.map((item: any) => <option key={item.version} value={String(item.version)}>{t('editor.inspector.version_option', { version: item.version, ppd: formatPpd(Number(item.ppd_percent)) })}</option>)}</select></div>}
                 <div className="mt-3 space-y-2 text-xs">
-                  <div className={cx('flex items-center justify-between border-b pb-2', borderClass)}><span className={mutedClass}>木薯面积</span><strong>{metrics.cassavaPixels.toLocaleString()} px</strong></div>
-                  <div className={cx('flex items-center justify-between border-b pb-2', borderClass)}><span className={mutedClass}>腐烂面积</span><strong className="text-rose-400">{metrics.rottenPixels.toLocaleString()} px</strong></div>
-                  <div className={cx('flex items-center justify-between border-b pb-2', borderClass)}><span className={mutedClass}>原始模型 PPD</span><strong>{formatPpd(originalPpd)}</strong></div>
-                  <div className="flex items-center justify-between"><span className="text-muted">图像尺寸</span><strong>{masks.width} × {masks.height}</strong></div>
+                  <div className={cx('flex items-center justify-between border-b pb-2', borderClass)}><span className={mutedClass}>{t('editor.inspector.cassava_area')}</span><strong>{metrics.cassavaPixels.toLocaleString()} px</strong></div>
+                  <div className={cx('flex items-center justify-between border-b pb-2', borderClass)}><span className={mutedClass}>{t('editor.inspector.rotten_area')}</span><strong className={isLight ? 'text-rose-600' : 'text-rose-400'}>{metrics.rottenPixels.toLocaleString()} px</strong></div>
+                  <div className={cx('flex items-center justify-between border-b pb-2', borderClass)}><span className={mutedClass}>{t('editor.inspector.original_ppd')}</span><strong>{formatPpd(originalPpd)}</strong></div>
+                  <div className="flex items-center justify-between"><span className="text-muted">{t('editor.inspector.image_size')}</span><strong>{masks.width} × {masks.height}</strong></div>
                 </div>
-                {prediction.ppd_unit === 'unknown' && <div className={cx('mt-3 rounded-lg border p-2 text-xs', isLight ? 'border-[rgba(245,165,36,0.30)] bg-[rgba(245,165,36,0.12)] text-warn-text' : 'border-amber-300/20 bg-amber-300/10 text-amber-100')}>原始结果为历史数据，PPD 单位待确认；人工校正值始终按百分比计算。</div>}
+                {prediction.ppd_unit === 'unknown' && <div className={cx('mt-3 rounded-lg border p-2 text-xs', isLight ? 'border-[rgba(245,165,36,0.30)] bg-[rgba(245,165,36,0.12)] text-warn-text' : 'border-amber-300/20 bg-amber-300/10 text-amber-100')}>{t('editor.inspector.unit_unknown')}</div>}
 
-                <div className={cx('mt-3 border-t pt-3', borderClass)}><p className={cx('mb-2 text-xs font-semibold', mutedClass)}>显示图层</p><div className="grid grid-cols-2 gap-1">
-                  <button onClick={() => setShowOriginal((value) => !value)} title="原图底图" className={cx('flex items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/5')}><span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-surface-muted" />原图</span>{showOriginal ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5 text-muted" />}</button>
-                  <button onClick={() => setShowCassava((value) => !value)} title="木薯范围" className={cx('flex items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/5')}><span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-slate-300" />木薯</span>{showCassava ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5 text-muted" />}</button>
-                  <button onClick={() => setShowRotten((value) => !value)} title="腐烂范围" className={cx('flex items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/5')}><span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-rose-400" />腐烂</span>{showRotten ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5 text-muted" />}</button>
-                  <button onClick={() => setDimOutside((value) => !value)} title="暗化计算范围外区域" className={cx('flex items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/5')}><span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-surface-muted0" />暗化</span>{dimOutside ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5 text-muted" />}</button>
+                <div className={cx('mt-3 border-t pt-3', borderClass)}><p className={cx('mb-2 text-xs font-semibold', mutedClass)}>{t('editor.inspector.layers')}</p><div className="grid grid-cols-2 gap-1">
+                  <button onClick={() => setShowOriginal((value) => !value)} title={t('editor.layer.original_title')} className={cx('flex items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/5')}><span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-surface-muted" />{t('editor.layer.original')}</span>{showOriginal ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5 text-muted" />}</button>
+                  <button onClick={() => setShowCassava((value) => !value)} title={t('editor.layer.cassava')} className={cx('flex items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/5')}><span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-slate-300" />{t('editor.layer.cassava_short')}</span>{showCassava ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5 text-muted" />}</button>
+                  <button onClick={() => setShowRotten((value) => !value)} title={t('editor.layer.rotten')} className={cx('flex items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/5')}><span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-rose-400" />{t('editor.layer.rotten_short')}</span>{showRotten ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5 text-muted" />}</button>
+                  <button onClick={() => setDimOutside((value) => !value)} title={t('editor.layer.dim_title')} className={cx('flex items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/5')}><span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-surface-muted0" />{t('editor.layer.dim')}</span>{dimOutside ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5 text-muted" />}</button>
                 </div>
                 <div className={cx('mt-3 space-y-2 rounded-lg p-2.5', isLight ? 'bg-surface-muted' : 'bg-white/[0.03]')}>
-                  <div><div className="mb-1 flex justify-between text-xs text-muted"><span>木薯范围透明度</span><span>{Math.round(cassavaOpacity * 100)}%</span></div><input aria-label="木薯范围透明度" type="range" min="0" max="100" value={Math.round(cassavaOpacity * 100)} onChange={(event) => setCassavaOpacity(Number(event.target.value) / 100)} className="w-full accent-[var(--accent)]" /></div>
-                  <div><div className="mb-1 flex justify-between text-xs text-muted"><span>腐烂范围透明度</span><span>{Math.round(rottenOpacity * 100)}%</span></div><input aria-label="腐烂范围透明度" type="range" min="0" max="100" value={Math.round(rottenOpacity * 100)} onChange={(event) => setRottenOpacity(Number(event.target.value) / 100)} className="w-full accent-rose-400" /></div>
+                  <div><div className="mb-1 flex justify-between text-xs text-muted"><span>{t('editor.inspector.cassava_opacity')}</span><span>{Math.round(cassavaOpacity * 100)}%</span></div><input aria-label={t('editor.inspector.cassava_opacity')} type="range" min="0" max="100" value={Math.round(cassavaOpacity * 100)} onChange={(event) => setCassavaOpacity(Number(event.target.value) / 100)} className="w-full accent-[var(--accent)]" /></div>
+                  <div><div className="mb-1 flex justify-between text-xs text-muted"><span>{t('editor.inspector.rotten_opacity')}</span><span>{Math.round(rottenOpacity * 100)}%</span></div><input aria-label={t('editor.inspector.rotten_opacity')} type="range" min="0" max="100" value={Math.round(rottenOpacity * 100)} onChange={(event) => setRottenOpacity(Number(event.target.value) / 100)} className="w-full accent-rose-400" /></div>
                 </div></div>
 
-                {(tool === 'brush-add' || tool === 'brush-erase') && <div className={cx('mt-3 border-t pt-3', borderClass)}><div className={cx('mb-1.5 flex items-center justify-between text-xs', mutedClass)}><span>画笔大小</span><span>{brushSize}px</span></div><input type="range" min="4" max="120" value={brushSize} onChange={(event) => setBrushSize(Number(event.target.value))} className="w-full accent-[var(--accent)]" /></div>}
-                {tool.startsWith('pen') && <div className={cx('mt-3 rounded-lg border p-2.5 text-xs leading-4', isLight ? 'border-[rgba(245,165,36,0.30)] bg-[rgba(245,165,36,0.12)] text-warn-text' : 'border-amber-300/20 bg-amber-300/10 text-amber-100')}>钢笔工具：点击原图逐点圈选，靠近起点自动闭合；也可双击完成。</div>}
+                {(tool === 'brush-add' || tool === 'brush-erase') && <div className={cx('mt-3 border-t pt-3', borderClass)}><div className={cx('mb-1.5 flex items-center justify-between text-xs', mutedClass)}><span>{t('editor.inspector.brush_size')}</span><span>{brushSize}px</span></div><input aria-label={t('editor.inspector.brush_size')} type="range" min="4" max="120" value={brushSize} onChange={(event) => setBrushSize(Number(event.target.value))} className="w-full accent-[var(--accent)]" /></div>}
+                {tool.startsWith('pen') && <div className={cx('mt-3 rounded-lg border p-2.5 text-xs leading-4', isLight ? 'border-[rgba(245,165,36,0.30)] bg-[rgba(245,165,36,0.12)] text-warn-text' : 'border-amber-300/20 bg-amber-300/10 text-amber-100')}>{t('editor.inspector.pen_hint')}</div>}
                 {tool.startsWith('smart') && <div className={cx('mt-3 rounded-lg border p-2.5 text-xs leading-4', isLight ? 'border-[rgba(245,165,36,0.30)] bg-[rgba(245,165,36,0.12)] text-warn-text' : 'border-amber-300/20 bg-amber-300/10 text-amber-100')}>
-                  <div className="mb-1.5 flex items-center justify-between font-semibold"><span className="flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" />智能点选</span><span>{Math.round(smartThreshold * 100)}%</span></div>
-                  <input aria-label="智能点选相似度阈值" type="range" min="2" max="30" value={Math.round(smartThreshold * 100)} onChange={(event) => setSmartThreshold(Number(event.target.value) / 100)} className="w-full accent-[var(--accent)]" />
-                  <p className="mt-1.5">点击腐烂区域，选择置信度相近的连续区域。阈值越大，选区越宽。</p>
-                  <p className="mt-1">{smartLoading ? '正在计算选区，请稍候...' : confidenceReady ? `已加载置信度图，当前选区 ${smartSelectionCount.toLocaleString()} px` : editor?.confidence_map_url ? '首次点击时按需加载置信度图' : '该结果没有置信度图，请重新预测后使用'}</p>
+                  <div className="mb-1.5 flex items-center justify-between font-semibold"><span className="flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" />{t('editor.inspector.smart_title')}</span><span>{Math.round(smartThreshold * 100)}%</span></div>
+                  <input aria-label={t('editor.inspector.smart_threshold')} type="range" min="2" max="30" value={Math.round(smartThreshold * 100)} onChange={(event) => setSmartThreshold(Number(event.target.value) / 100)} className="w-full accent-[var(--accent)]" />
+                  <p className="mt-1.5">{t('editor.inspector.smart_hint')}</p>
+                  <p className="mt-1">{smartLoading ? t('editor.inspector.smart_loading') : confidenceReady ? t('editor.inspector.smart_ready', { px: smartSelectionCount.toLocaleString() }) : editor?.confidence_map_url ? t('editor.inspector.smart_lazy') : t('editor.inspector.smart_missing')}</p>
                 </div>}
-                <div className="mt-3 flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs" title="Alt + 滚轮缩放 · 空格 + 左键平移 · PPD = 腐烂面积 ÷ 木薯面积 × 100%"><span className={cx('flex items-center gap-1.5', isLight ? 'text-ink' : 'text-slate-200')}><MousePointer2 className="h-3.5 w-3.5 text-muted" />{toolLabel[tool]}</span><Keyboard className="h-3.5 w-3.5 text-muted" /></div>
-                <label className="mt-3 block text-xs" htmlFor="correction-note">校正备注</label>
-                <textarea id="correction-note" value={note} disabled={saving} maxLength={2000} onChange={(event) => { setNote(event.target.value); setDirty(true); }} className="mt-1 w-full rounded-lg border border-slate-500 bg-transparent p-2 text-xs" placeholder="记录修改原因，便于后续复核" />
-                <p className="mt-1 text-xs text-muted">{saving ? '正在保存，请勿关闭' : dirty ? '有未保存修改 · 草稿自动暂存' : '与当前保存版本一致'}</p>
-                <button onClick={handleSave} disabled={saving || versionLoading || smartLoading || !dirty} className="mt-3 flex w-full items-center justify-center gap-2 rounded-[12px] bg-brand-fill px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-brand-fill-hover disabled:cursor-not-allowed disabled:bg-hairline disabled:text-muted"><Save className="h-3.5 w-3.5" />{saving ? '保存中...' : '保存人工校正版本'}</button>
+                <div className="mt-3 flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs" title={t('editor.inspector.shortcuts')}><span className={cx('flex items-center gap-1.5', isLight ? 'text-ink' : 'text-slate-200')}><MousePointer2 className="h-3.5 w-3.5 text-muted" />{t(toolLabelKey[tool])}</span><Keyboard className="h-3.5 w-3.5 text-muted" /></div>
+                <label className="mt-3 block text-xs" htmlFor="correction-note">{t('editor.note.label')}</label>
+                <textarea id="correction-note" value={note} disabled={saving} maxLength={2000} onChange={(event) => { setNote(event.target.value); setDirty(true); }} className="mt-1 w-full rounded-lg border border-slate-500 bg-transparent p-2 text-xs" placeholder={t('editor.note.placeholder')} />
+                <p className="mt-1 text-xs text-muted">{saving ? t('editor.note.saving') : dirty ? t('editor.note.dirty') : t('editor.note.clean')}</p>
+                <button onClick={handleSave} disabled={saving || versionLoading || smartLoading || !dirty} className="mt-3 flex w-full items-center justify-center gap-2 rounded-[12px] bg-brand-fill px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-brand-fill-hover disabled:cursor-not-allowed disabled:bg-hairline disabled:text-muted"><Save className="h-3.5 w-3.5" />{saving ? t('editor.save.busy') : t('editor.save.button')}</button>
               </aside>
             </div>
           </>
