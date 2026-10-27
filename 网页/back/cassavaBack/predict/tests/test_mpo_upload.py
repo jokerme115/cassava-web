@@ -58,7 +58,7 @@ class ImageServiceNormalizationTests(TestCase):
         def verify(self):
             return None
 
-    @patch('predict.services.Image.open')
+    @patch('predict.services.image.Image.open')
     def test_normalize_uploaded_image_bytes_converts_mpo_to_jpeg(self, mock_image_open):
         jpeg_buffer = io.BytesIO()
         Image.new('RGB', (10, 10), (0, 128, 255)).save(jpeg_buffer, format='JPEG')
