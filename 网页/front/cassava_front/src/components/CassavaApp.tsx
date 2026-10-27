@@ -19,11 +19,10 @@ const PermissionManagement = lazy(() => import('./PermissionManagement'));
 const AuditLogs = lazy(() => import('./AuditLogs'));
 const UserProfile = lazy(() => import('./UserProfile'));
 // 风格样板页：只做视觉对比，不接入导航、不触碰主流程
-const HeroSoftPreview = lazy(() => import('./preview/HeroSoftPreview'));
 
 const KNOWN_SECTIONS = new Set([
   'home', 'images', 'prediction', 'tasks', 'results', 'contact',
-  'login', 'register', 'profile', 'permissions', 'audit', 'preview'
+  'login', 'register', 'profile', 'permissions', 'audit'
 ]);
 
 // 页面由网址决定：/ 为首页，/prediction 等为对应页面；未知网址按首页处理
@@ -376,8 +375,6 @@ const CassavaApp: React.FC = () => {
         return <ResultsCenter currentUser={currentUser} />;
       case 'contact':
         return <ContactUs />;
-      case 'preview':
-        return <HeroSoftPreview />;
       case 'profile':
         return (
           <UserProfile
