@@ -11,7 +11,7 @@ interface AuditLogsProps {
  * 审计日志管理组件
  */
 const AuditLogs: React.FC<AuditLogsProps> = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -103,59 +103,16 @@ const AuditLogs: React.FC<AuditLogsProps> = () => {
       return translated;
     }
 
-    const isChinese = typeof navigator !== 'undefined' && navigator.language.toLowerCase().startsWith('zh');
-    const genericActionLabels: Record<string, string> = isChinese
-      ? {
-          CREATE: '创建',
-          UPDATE: '更新',
-          DELETE: '删除',
-          ASSIGN: '分配',
-          LOGIN: '登录',
-          LOGOUT: '登出',
-        }
-      : {
-          CREATE: 'Create',
-          UPDATE: 'Update',
-          DELETE: 'Delete',
-          ASSIGN: 'Assign',
-          LOGIN: 'Login',
-          LOGOUT: 'Logout',
-        };
-
-    return genericActionLabels[actionKey] ?? raw;
+    const fallbackKey = `audit.actions.${actionKey}`;
+    return i18n.exists(fallbackKey) ? t(fallbackKey) : raw;
   };
 
   // 资源类型的中文名（后端存的是模型类名，直接展示对使用者没有意义）
   const getResourceLabel = (resourceType?: string): string => {
     const raw = String(resourceType || '').trim();
     if (!raw) return '-';
-    const isChinese = typeof navigator !== 'undefined' && navigator.language.toLowerCase().startsWith('zh');
-    const labels: Record<string, string> = isChinese
-      ? {
-          CassavaImage: '图片',
-          Folder: '文件夹',
-          SegmentationResult: '分割结果',
-          PredictionResult: '预测结果',
-          ProcessingTask: '预测任务',
-          SystemSetting: '系统设置',
-          User: '用户',
-          Role: '角色',
-          Permission: '权限',
-          GuestAccessibleResource: '访客白名单',
-        }
-      : {
-          CassavaImage: 'Image',
-          Folder: 'Folder',
-          SegmentationResult: 'Segmentation',
-          PredictionResult: 'Prediction result',
-          ProcessingTask: 'Prediction task',
-          SystemSetting: 'System settings',
-          User: 'User',
-          Role: 'Role',
-          Permission: 'Permission',
-          GuestAccessibleResource: 'Guest whitelist',
-        };
-    return labels[raw] ?? raw;
+    const labelKey = `audit.resources.${raw}`;
+    return i18n.exists(labelKey) ? t(labelKey) : raw;
   };
 
   const getActionStyle = (action: AuditAction): string => {

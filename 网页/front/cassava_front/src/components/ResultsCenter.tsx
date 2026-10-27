@@ -100,7 +100,7 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
       { label: `${t('results.severe_disease')} (>= 7)`, value: stats.severe, tone: 'rose' },
       { label: `${t('results.mild_disease')} (4-7)`, value: stats.mild, tone: 'amber' },
       { label: `${t('results.healthy')} (< 4)`, value: stats.healthy, tone: 'emerald' },
-      { label: '待复核', value: stats.needsReview, tone: 'slate' }
+      { label: t('results.needs_review'), value: stats.needsReview, tone: 'slate' }
     ].map((item) => ({ ...item, percent: ((item.value / stats.total) * 100).toFixed(1) }));
   }, [stats, t]);
 
@@ -223,10 +223,10 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
             <PageHeader
               title={activeTask ? activeTask.name : t('results.all_results')}
               actions={(
-              <div className="flex flex-wrap items-center gap-2" aria-label="导出当前筛选结果">
+              <div className="flex flex-wrap items-center gap-2" aria-label={t('results.export_filtered')}>
                 {(['csv', 'xlsx', 'zip'] as const).map((fileType) => (
-                  <button key={fileType} onClick={() => handleExport(fileType)} disabled={exporting || !totalCount} title={`导出${fileType === 'zip' ? '图像与掩码' : fileType.toUpperCase()}`} className="inline-flex items-center gap-1.5 rounded-[10px] border border-hairline-strong bg-white px-3 py-2 text-sm text-ink-secondary transition-colors hover:bg-surface-sunken disabled:opacity-40">
-                    <Download className="h-4 w-4" /><span className="hidden sm:inline">{exporting ? '正在生成…' : fileType === 'zip' ? '图像与掩码ZIP' : `导出${fileType.toUpperCase()}`}</span>
+                  <button key={fileType} onClick={() => handleExport(fileType)} disabled={exporting || !totalCount} title={t('results.export_title', { type: fileType === 'zip' ? t('results.images_and_masks') : fileType.toUpperCase() })} className="inline-flex items-center gap-1.5 rounded-[10px] border border-hairline-strong bg-white px-3 py-2 text-sm text-ink-secondary transition-colors hover:bg-surface-sunken disabled:opacity-40">
+                    <Download className="h-4 w-4" /><span className="hidden sm:inline">{exporting ? t('results.generating') : fileType === 'zip' ? t('results.images_and_masks_zip') : t('results.export_title', { type: fileType.toUpperCase() })}</span>
                   </button>
                 ))}
               </div>
@@ -326,19 +326,19 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
                         <div className="absolute inset-x-2 bottom-2 truncate rounded-lg border border-hairline bg-white/95 px-2 py-1 text-center text-xs font-semibold text-ink shadow-sm">
                           <span className="text-muted">{t('results.ppd_value')}</span>{' '}
                           <span className="tabular-nums">{formatPpd(ppdValue)}</span>
-                          {result.has_correction ? <span className="font-normal text-warn-text"> · 已校正（未复核）</span> : hasUnknownPpdUnit(result) ? <span className="font-normal text-warn-text"> · 历史单位待确认</span> : null}
+                          {result.has_correction ? <span className="font-normal text-warn-text"> · {t('results.corrected_unreviewed')}</span> : hasUnknownPpdUnit(result) ? <span className="font-normal text-warn-text"> · {t('results.unit_unconfirmed')}</span> : null}
                         </div>
                       </button>
                       <div className="mt-3 flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="flex items-center gap-1.5 truncate text-sm font-semibold text-ink" title={result.imageName}><span className={`h-1.5 w-1.5 shrink-0 rounded-full ${severityDot}`} />{result.imageName}</p>
-                          <p className="mt-1 truncate text-xs text-muted" title={result.folderName || ''}>{result.folderName || t('results.uncategorized')}</p>{result.measurement?.execution_warning && <p className="mt-1 text-xs text-warn-text">历史模型记录不一致，建议重跑</p>}
+                          <p className="mt-1 truncate text-xs text-muted" title={result.folderName || ''}>{result.folderName || t('results.uncategorized')}</p>{result.measurement?.execution_warning && <p className="mt-1 text-xs text-warn-text">{t('results.history_inconsistent')}</p>}
                         </div>
                         <button className="rounded-xl border border-hairline bg-white p-2 text-ink-secondary transition hover:text-ink" onClick={() => openZoom(fileUrl(result.imageUrl), [fileUrl(result.imageUrl)])} aria-label={t('results.preview')}>
                           <Eye className="h-4 w-4" />
                         </button>
                       </div>
-                      {result.ensemble_details?.members?.length === 2 && <button type="button" onClick={() => { setSelectedResult(result); setModalOpen(true); }} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-hairline-strong bg-white px-3 py-1.5 text-xs font-medium text-ink-secondary transition-colors hover:border-accent-line hover:bg-surface-sunken hover:text-accent-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-line">投票评分</button>}
+                      {result.ensemble_details?.members?.length === 2 && <button type="button" onClick={() => { setSelectedResult(result); setModalOpen(true); }} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-hairline-strong bg-white px-3 py-1.5 text-xs font-medium text-ink-secondary transition-colors hover:border-accent-line hover:bg-surface-sunken hover:text-accent-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-line">{t('results.vote_score')}</button>}
                     </article>
                   );
                 })}
@@ -359,7 +359,7 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
                         <button onClick={() => { setSelectedResult(result); setEditorOpen(true); }} className="flex items-center gap-1.5 truncate text-left text-base font-semibold text-ink"><span className={`h-1.5 w-1.5 shrink-0 rounded-full ${severityDot}`} />{result.imageName}</button>
                         <div className="mt-1 flex flex-wrap gap-3 text-sm text-muted">
                           <span>{result.folderName || t('results.uncategorized')}</span>
-                          <span>{t('results.ppd_value')}: {formatPpd(ppdValue)} {result.has_correction ? '· 已校正（未复核）' : hasUnknownPpdUnit(result) ? '· 历史单位待确认' : ''}</span>
+                          <span>{t('results.ppd_value')}: {formatPpd(ppdValue)} {result.has_correction ? `· ${t('results.corrected_unreviewed')}` : hasUnknownPpdUnit(result) ? `· ${t('results.unit_unconfirmed')}` : ''}</span>
                           {Array.isArray(result.sub_ppd_values) && result.sub_ppd_values.length > 0 && <span>{t('results.sub_ppd')}: {result.sub_ppd_values.map((v) => Number(v).toFixed(2)).join(', ')}</span>}
                         </div>
                       </div>
@@ -367,7 +367,7 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
                         <button className="rounded-xl border border-hairline bg-white p-2 text-ink-secondary transition hover:text-ink" onClick={() => openZoom(fileUrl(result.imageUrl), [fileUrl(result.imageUrl)])} aria-label={t('results.preview')}><Eye className="h-4 w-4" /></button>
                         <a href={fileUrl(result.imageUrl)} download className="rounded-xl border border-hairline bg-white p-2 text-ink-secondary transition hover:text-ink" aria-label={t('results.download')}><Download className="h-4 w-4" /></a>
                       </div>
-                      {result.ensemble_details?.members?.length === 2 && <button type="button" onClick={() => { setSelectedResult(result); setModalOpen(true); }} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-hairline-strong bg-white px-3 py-1.5 text-xs font-medium text-ink-secondary transition-colors hover:border-accent-line hover:bg-surface-sunken hover:text-accent-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-line">投票评分</button>}
+                      {result.ensemble_details?.members?.length === 2 && <button type="button" onClick={() => { setSelectedResult(result); setModalOpen(true); }} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-hairline-strong bg-white px-3 py-1.5 text-xs font-medium text-ink-secondary transition-colors hover:border-accent-line hover:bg-surface-sunken hover:text-accent-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-line">{t('results.vote_score')}</button>}
                     </article>
                   );
                 })}
@@ -384,7 +384,7 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
               <div>
                 <h3 className="text-xl font-semibold text-ink">{selectedResult.imageName}</h3>
                 <p className="mt-1 text-sm text-muted">{selectedResult.folderName || t('results.uncategorized')}</p>
-                <button type="button" className="mt-2 text-sm font-medium text-ink-secondary" onClick={() => { setModalOpen(false); setEditorOpen(true); }}>进入人工校正</button>
+                <button type="button" className="mt-2 text-sm font-medium text-ink-secondary" onClick={() => { setModalOpen(false); setEditorOpen(true); }}>{t('results.enter_manual_correction')}</button>
               </div>
               <button onClick={() => setModalOpen(false)} className="rounded-2xl border border-hairline p-2 text-muted transition hover:bg-white hover:text-ink-secondary" aria-label={t('results.preview')}>
                 <X className="h-5 w-5" />
@@ -394,11 +394,11 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
             <div className="max-h-[calc(90vh-88px)] overflow-y-auto px-6 py-6">
                   {selectedResult.ensemble_details?.members?.length === 2 && (
                     <div className="rounded-[16px] border border-hairline bg-white p-5">
-                      <h4 className="text-sm font-semibold text-ink">投票模型评分</h4>
+                      <h4 className="text-sm font-semibold text-ink">{t('results.vote_model_score')}</h4>
                       <div className="mt-3 space-y-2 text-sm">
-                        <div className="flex justify-between font-medium"><span>投票模型 PPD</span><span>{formatPpd(selectedResult.ppdValue)}</span></div>
+                        <div className="flex justify-between font-medium"><span>{t('results.vote_model_ppd')}</span><span>{formatPpd(selectedResult.ppdValue)}</span></div>
                         {selectedResult.ensemble_details.members.map(member => <div key={member.model} className="flex justify-between"><span>{modelLabel(member.model)} PPD</span><span>{formatPpd(member.ppd_percent)}</span></div>)}
-                        <div className="flex justify-between border-t border-hairline pt-2"><span>模型一致率</span><span>{formatPpd(selectedResult.ensemble_details.agreement_percent)}</span></div>
+                        <div className="flex justify-between border-t border-hairline pt-2"><span>{t('results.model_agreement')}</span><span>{formatPpd(selectedResult.ensemble_details.agreement_percent)}</span></div>
                       </div>
                       <p className="mt-3 text-xs leading-5 text-ink-secondary">一致率不代表准确率；分歧像素：{selectedResult.ensemble_details.disagreement_pixels}。分歧按平均病变概率裁决。以上为模型原始结果，人工校正后的最终 PPD 单独显示。</p>
                     </div>
@@ -411,12 +411,12 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
                     <img src={fileUrl(selectedResult.imageUrl)} alt={selectedResult.imageName} className="mt-3 w-full rounded-[16px] object-cover shadow-sm" onClick={() => openZoom(fileUrl(selectedResult.imageUrl), [fileUrl(selectedResult.imageUrl)])} />
                   </div>
 
-                  {finalOverlay && <div className="rounded-[16px] border border-hairline bg-white p-4"><h4 className="text-sm font-semibold">人工校正叠加图 · v{selectedResult.latest_correction?.version} · 未复核</h4><img src={finalOverlay} alt="人工校正最终叠加图" className="mt-3 w-full rounded-xl" /><a href={finalOverlay} download={`corrected-${selectedResult.id}.png`} className="mt-2 inline-block text-sm text-ink-secondary">下载校正叠加图</a></div>}
-                  {Boolean(selectedResult.latest_correction?.edit_data?.segments) && <p className="text-xs text-muted">校正分段数值见导出表“切面明细”；下方保留模型原始分段用于对照。</p>}
-                  {selectedResult.vis_images?.disagreement && <div className="rounded-[16px] border border-[rgba(245,165,36,0.30)] bg-white p-4"><h4 className="text-sm font-semibold">模型分歧范围（白色区域）</h4><p className="mt-1 text-xs text-muted">与原图坐标一致，用于定位需要人工检查的位置。</p><img src={fileUrl(selectedResult.vis_images.disagreement)} alt="模型分歧范围" className="mt-3 w-full rounded-xl" /></div>}
+                  {finalOverlay && <div className="rounded-[16px] border border-hairline bg-white p-4"><h4 className="text-sm font-semibold">{t('results.manual_overlay')} · v{selectedResult.latest_correction?.version} · {t('results.unreviewed')}</h4><img src={finalOverlay} alt={t('results.manual_overlay_alt')} className="mt-3 w-full rounded-xl" /><a href={finalOverlay} download={`corrected-${selectedResult.id}.png`} className="mt-2 inline-block text-sm text-ink-secondary">{t('results.download_overlay')}</a></div>}
+                  {Boolean(selectedResult.latest_correction?.edit_data?.segments) && <p className="text-xs text-muted">{t('results.correction_note')}</p>}
+                  {selectedResult.vis_images?.disagreement && <div className="rounded-[16px] border border-[rgba(245,165,36,0.30)] bg-white p-4"><h4 className="text-sm font-semibold">{t('results.disagreement_range')}</h4><p className="mt-1 text-xs text-muted">{t('results.disagreement_hint')}</p><img src={fileUrl(selectedResult.vis_images.disagreement)} alt="模型分歧范围" className="mt-3 w-full rounded-xl" /></div>}
                   {selectedVis.pred.length > 0 && (
                     <div className="rounded-[16px] card p-4">
-                      <h4 className="text-sm font-semibold text-ink">模型原始预测图</h4>
+                      <h4 className="text-sm font-semibold text-ink">{t('results.original_prediction')}</h4>
                       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                         {selectedVis.pred.map((img, index) => (
                           <button key={`${img}-${index}`} onClick={() => openZoom(img, selectedVis.pred)} className="overflow-hidden rounded-[16px] border border-hairline bg-surface-muted">
@@ -446,9 +446,9 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
                     <h4 className="text-sm font-semibold">{t('results.result_details')}</h4>
                     <div className="mt-4 space-y-3 text-sm">
                       <div className="flex items-center justify-between border-b border-hairline pb-3"><span className="text-muted">{t('results.ppd_value')}</span><span className="font-medium">{formatPpd(effectivePpd(selectedResult))}</span></div>
-                      {hasUnknownPpdUnit(selectedResult) && <div className="rounded-lg bg-amber-400/10 px-2 py-1.5 text-xs text-amber-200">该历史结果的 PPD 单位无法确认，建议重新预测。</div>}
-                      <div className="flex items-center justify-between border-b border-hairline pb-3"><span className="text-muted">Confidence</span><span className="font-medium">{selectedResult.confidence == null ? '未提供' : `${(selectedResult.confidence * 100).toFixed(1)}%`}</span></div>
-                      <div className="flex items-center justify-between border-b border-hairline pb-3"><span className="text-muted">Processing Time</span><span className="font-medium">{selectedResult.processingTime ? `${selectedResult.processingTime}s` : '未记录'}</span></div>
+                      {hasUnknownPpdUnit(selectedResult) && <div className="rounded-lg bg-amber-400/10 px-2 py-1.5 text-xs text-amber-200">{t('results.unit_unknown_hint')}</div>}
+                      <div className="flex items-center justify-between border-b border-hairline pb-3"><span className="text-muted">Confidence</span><span className="font-medium">{selectedResult.confidence == null ? t('results.not_provided') : `${(selectedResult.confidence * 100).toFixed(1)}%`}</span></div>
+                      <div className="flex items-center justify-between border-b border-hairline pb-3"><span className="text-muted">Processing Time</span><span className="font-medium">{selectedResult.processingTime ? `${selectedResult.processingTime}s` : t('results.not_recorded')}</span></div>
                       <div className="flex items-center justify-between"><span className="text-muted">Segments</span><span className="font-medium">{segmentCount}</span></div>
                     </div>
                   </div>
@@ -456,7 +456,7 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
 
 
                   <div className="rounded-[16px] border border-hairline bg-surface-muted p-5">
-                    <h4 className="text-sm font-semibold text-ink">模型原始分段 PPD</h4>
+                    <h4 className="text-sm font-semibold text-ink">{t('results.original_segment_ppd')}</h4>
                     <div className="mt-4 space-y-3">
                       {Array.isArray(selectedResult.sub_ppd_values) && selectedResult.sub_ppd_values.length > 0 ? (
                         selectedResult.sub_ppd_values.map((value, index) => (
@@ -471,7 +471,7 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
                           </div>
                         ))
                       ) : (
-                        <p className="text-sm text-muted">暂无分段 PPD 数据。</p>
+                        <p className="text-sm text-muted">{t('results.no_segment_ppd')}</p>
                       )}
                     </div>
                   </div>

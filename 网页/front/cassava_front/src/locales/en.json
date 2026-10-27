@@ -793,7 +793,34 @@
     },
     "prev_image": "← Previous",
     "next_image": "Next →",
-    "distribution": "Distribution"
+    "distribution": "Distribution",
+    "export_filtered": "Export current filters",
+    "export_title": "Export {{type}}",
+    "images_and_masks": "images and masks",
+    "images_and_masks_zip": "Images & masks ZIP",
+    "generating": "Generating…",
+    "needs_review": "Needs review",
+    "corrected_unreviewed": "corrected (unreviewed)",
+    "unit_unconfirmed": "legacy unit unconfirmed",
+    "history_inconsistent": "Historical record inconsistent — re-run recommended",
+    "vote_score": "Vote scores",
+    "enter_manual_correction": "Open manual correction",
+    "vote_model_score": "Ensemble scores",
+    "vote_model_ppd": "Ensemble PPD",
+    "model_agreement": "Model agreement",
+    "manual_overlay": "Manual correction overlay",
+    "manual_overlay_alt": "Final manual correction overlay",
+    "unreviewed": "unreviewed",
+    "download_overlay": "Download overlay",
+    "correction_note": "Corrected segment values are in the exported “section detail” sheet; the model’s original segments are kept below for comparison.",
+    "disagreement_range": "Model disagreement area (white)",
+    "disagreement_hint": "Same coordinates as the source image; use it to locate areas that need manual review.",
+    "original_prediction": "Original model prediction",
+    "unit_unknown_hint": "This historical result has an unconfirmed PPD unit — please re-run the prediction.",
+    "not_provided": "not provided",
+    "not_recorded": "not recorded",
+    "original_segment_ppd": "Original segment PPD",
+    "no_segment_ppd": "No segment PPD data."
   },
   "connection": {
     "description": "Test connectivity between frontend and backend API",
@@ -1124,5 +1151,27 @@
     "guest_visits": "Guest Visits",
     "registered_visits": "Registered Visits",
     "ip_details": "IP Details"
+  },
+  "audit": {
+    "actions": {
+      "CREATE": "Create",
+      "UPDATE": "Update",
+      "DELETE": "Delete",
+      "ASSIGN": "Assign",
+      "LOGIN": "Log in",
+      "LOGOUT": "Log out"
+    },
+    "resources": {
+      "CassavaImage": "Image",
+      "Folder": "Folder",
+      "SegmentationResult": "Segmentation",
+      "PredictionResult": "Prediction result",
+      "ProcessingTask": "Prediction task",
+      "SystemSetting": "System settings",
+      "User": "User",
+      "Role": "Role",
+      "Permission": "Permission",
+      "GuestAccessibleResource": "Guest whitelist"
+    }
   }
 }

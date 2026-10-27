@@ -857,7 +857,34 @@
       "small": "< 1 MB",
       "medium": "1-5 MB",
       "large": "> 5 MB"
-    }
+    },
+    "export_filtered": "导出当前筛选结果",
+    "export_title": "导出{{type}}",
+    "images_and_masks": "图像与掩码",
+    "images_and_masks_zip": "图像与掩码ZIP",
+    "generating": "正在生成…",
+    "needs_review": "待复核",
+    "corrected_unreviewed": "已校正（未复核）",
+    "unit_unconfirmed": "历史单位待确认",
+    "history_inconsistent": "历史模型记录不一致，建议重跑",
+    "vote_score": "投票评分",
+    "enter_manual_correction": "进入人工校正",
+    "vote_model_score": "投票模型评分",
+    "vote_model_ppd": "投票模型 PPD",
+    "model_agreement": "模型一致率",
+    "manual_overlay": "人工校正叠加图",
+    "manual_overlay_alt": "人工校正最终叠加图",
+    "unreviewed": "未复核",
+    "download_overlay": "下载校正叠加图",
+    "correction_note": "校正分段数值见导出表“切面明细”；下方保留模型原始分段用于对照。",
+    "disagreement_range": "模型分歧范围（白色区域）",
+    "disagreement_hint": "与原图坐标一致，用于定位需要人工检查的位置。",
+    "original_prediction": "模型原始预测图",
+    "unit_unknown_hint": "该历史结果的 PPD 单位无法确认，建议重新预测。",
+    "not_provided": "未提供",
+    "not_recorded": "未记录",
+    "original_segment_ppd": "模型原始分段 PPD",
+    "no_segment_ppd": "暂无分段 PPD 数据。"
   },
   "connection": {
     "description": "测试前端与后端API的连通性",
@@ -1125,6 +1152,28 @@
       "wechat": "微信公众号：搜索\"热科院品资所\"或\"龙海侠团队\"获取更新日志",
       "github": "GitHub 源码：https://github.com/longhaixia/cassava-rot-detection（MIT 协议，已放 v1.2 权重）",
       "system": "系统试用：http://cassava.hainnu.edu.cn（校内 IP 免登录，外网需申请临时账号）"
+    }
+  },
+  "audit": {
+    "actions": {
+      "CREATE": "创建",
+      "UPDATE": "更新",
+      "DELETE": "删除",
+      "ASSIGN": "分配",
+      "LOGIN": "登录",
+      "LOGOUT": "登出"
+    },
+    "resources": {
+      "CassavaImage": "图片",
+      "Folder": "文件夹",
+      "SegmentationResult": "分割结果",
+      "PredictionResult": "预测结果",
+      "ProcessingTask": "预测任务",
+      "SystemSetting": "系统设置",
+      "User": "用户",
+      "Role": "角色",
+      "Permission": "权限",
+      "GuestAccessibleResource": "访客白名单"
     }
   }
 }
