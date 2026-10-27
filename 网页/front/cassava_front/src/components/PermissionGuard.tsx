@@ -87,7 +87,7 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
     return (
       <div className="flex items-center justify-center p-4">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2 text-[#3f4650]">{t('navigation.permission_guard.checking')}</span>
+        <span className="ml-2 text-ink-secondary">{t('navigation.permission_guard.checking')}</span>
       </div>
     );
   }

@@ -95,7 +95,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ visible, onCancel, resourceType
     >
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-[#3f4650] mb-1">{t('shares.select_user')}</label>
+          <label className="block text-sm font-medium text-ink-secondary mb-1">{t('shares.select_user')}</label>
           <Select
             showSearch
             value={selectedUser || undefined}
@@ -121,7 +121,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ visible, onCancel, resourceType
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-[#3f4650] mb-1">{t('shares.permission')}</label>
+          <label className="block text-sm font-medium text-ink-secondary mb-1">{t('shares.permission')}</label>
           <Radio.Group value={permission} onChange={e => setPermission(e.target.value)}>
             <Radio value="view">{t('shares.perm_view')}</Radio>
             <Radio value="edit">{t('shares.perm_edit')}</Radio>
@@ -130,7 +130,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ visible, onCancel, resourceType
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-[#3f4650] mb-1">{t('shares.expires_at')}</label>
+          <label className="block text-sm font-medium text-ink-secondary mb-1">{t('shares.expires_at')}</label>
           <DatePicker 
             style={{ width: '100%' }} 
             value={expiresAt}

@@ -4,7 +4,7 @@ export default function ImageResolutionLabel({ width, height }: { width?: number
   const low = isLowResolution(width, height);
   if (low === null) return null;
   return <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
-    <span className="text-[#687076]">{width} × {height} px</span>
-    {low && <span className="rounded-full border border-[rgba(245,165,36,0.30)] bg-[rgba(245,165,36,0.12)] px-2 py-0.5 font-medium text-[#b26a00]" title={RESOLUTION_SCREEN_RULE}>低分辨率</span>}
+    <span className="text-muted">{width} × {height} px</span>
+    {low && <span className="rounded-full border border-[rgba(245,165,36,0.30)] bg-[rgba(245,165,36,0.12)] px-2 py-0.5 font-medium text-warn-text" title={RESOLUTION_SCREEN_RULE}>低分辨率</span>}
   </div>;
 }

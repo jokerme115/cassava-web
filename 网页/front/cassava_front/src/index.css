@@ -24,6 +24,12 @@
   --ok: #17c964;
   --warn: #f5a524;
   --danger: #f31260;
+  /* 文字档强调/状态色：白底对比均 ≥4.5:1，可用于正文；上面的 --accent/--ok/--warn/--danger
+     只做图标、描边、圆点与浅底，不承载正文文字 */
+  --brand-text: #0070e0;
+  --ok-text: #12805c;
+  --warn-text: #b54708;
+  --danger-text: #d92d20;
   --ok-soft: rgba(23, 201, 100, 0.12);
   --warn-soft: rgba(245, 165, 36, 0.14);
   --danger-soft: rgba(243, 18, 96, 0.12);
@@ -48,12 +54,12 @@
   --hairline: #ededf2;
   --hairline-strong: #e4e5eb;
 
-  /* 圆角：面板 16 / 卡片 12 / 控件 10 / Hero 24 */
+  /* 圆角：面板 16 / 卡片 12 / 控件 10 / Hero 24 / 胶囊全圆 */
   --radius-hero: 24px;
   --radius-xl: 16px;
-  --radius-lg: 16px;
   --radius-md: 12px;
   --radius-sm: 10px;
+  --radius-pill: 999px;
 
   /* 投影：普通卡片一层极淡，只有浮层才用大投影 */
   --shadow-card: 0 4px 16px rgba(17, 24, 28, 0.05);
@@ -236,7 +242,8 @@ body {
   transition: border-color 160ms ease-out, box-shadow 160ms ease-out;
 }
 .field::placeholder {
-  color: var(--muted-light);
+  /* 占位符也是要读的文字：#8b9199 白底仅 3.18，改用 --muted(5.04) */
+  color: var(--muted);
 }
 .field:focus,
 .field:focus-within {

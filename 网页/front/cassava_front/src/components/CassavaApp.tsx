@@ -225,8 +225,8 @@ const CassavaApp: React.FC = () => {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-2 border-[#ededf2] border-t-[#0a84ff]" />
-          <p className="text-sm text-[#687076]">{t('common.loading') || 'Loading...'}</p>
+          <div className="h-12 w-12 animate-spin rounded-full border-2 border-hairline border-t-accent-line" />
+          <p className="text-sm text-muted">{t('common.loading') || 'Loading...'}</p>
         </div>
       </div>
     );
@@ -238,22 +238,22 @@ const CassavaApp: React.FC = () => {
       <div className="min-h-screen px-4 py-10">
         <div className="mx-auto flex min-h-[80vh] max-w-3xl items-center justify-center">
           <div className="card-float w-full rounded-[24px] p-8 sm:p-10">
-            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-[rgba(245,165,36,0.18)] text-[#b26a00]">
+            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-[rgba(245,165,36,0.18)] text-warn-text">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <h2 className="mb-3 text-3xl font-semibold tracking-tight text-[#11181c]">
+            <h2 className="mb-3 text-3xl font-semibold tracking-tight text-ink">
               {t('system.maintenance_mode')}
             </h2>
-            <p className="mb-8 max-w-xl text-base leading-7 text-[#3f4650]">
+            <p className="mb-8 max-w-xl text-base leading-7 text-ink-secondary">
               {t('system.maintenance_message') ||
                 'The system is currently undergoing maintenance. Please try again later.'}
             </p>
             {currentUser ? (
               <button
                 onClick={handleLogout}
-                className="inline-flex h-11 items-center justify-center rounded-full border border-[#e4e5eb] px-5 text-sm font-medium text-[#3f4650] transition hover:border-slate-400 hover:bg-white"
+                className="inline-flex h-11 items-center justify-center rounded-full border border-hairline-strong px-5 text-sm font-medium text-ink-secondary transition hover:border-slate-400 hover:bg-white"
               >
                 {t('navigation.logout')}
               </button>
@@ -274,8 +274,8 @@ const CassavaApp: React.FC = () => {
   const renderDenied = () => (
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
       <div className="rounded-[16px] border border-[rgba(243,18,96,0.24)] bg-white p-8 shadow-[0_10px_30px_rgba(17,17,26,0.045)]">
-        <h3 className="text-xl font-semibold text-[#d00b52]">{t('permissions.access_denied')}</h3>
-        <p className="mt-3 text-sm leading-7 text-[#3f4650]">
+        <h3 className="text-xl font-semibold text-danger-text">{t('permissions.access_denied')}</h3>
+        <p className="mt-3 text-sm leading-7 text-ink-secondary">
           {t('permissions.access_denied_desc') || t('permissions.guest_restricted')}
         </p>
       </div>
@@ -285,20 +285,20 @@ const CassavaApp: React.FC = () => {
   const renderNotFound = (pathname: string) => (
     <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6">
       <div className="rounded-[16px] card p-10 text-center shadow-[0_10px_30px_rgba(17,17,26,0.045)]">
-        <p className="text-5xl font-semibold tracking-tight text-[#687076]">404</p>
-        <h3 className="mt-4 text-xl font-semibold text-[#11181c]">{t('not_found.title')}</h3>
-        <p className="mt-3 text-sm leading-7 text-[#3f4650]">{t('not_found.desc')}</p>
-        <p className="mt-2 break-all text-xs text-[#687076]">{pathname}</p>
+        <p className="text-5xl font-semibold tracking-tight text-muted">404</p>
+        <h3 className="mt-4 text-xl font-semibold text-ink">{t('not_found.title')}</h3>
+        <p className="mt-3 text-sm leading-7 text-ink-secondary">{t('not_found.desc')}</p>
+        <p className="mt-2 break-all text-xs text-muted">{pathname}</p>
         <div className="mt-6 flex justify-center gap-3">
           <button
             onClick={() => navigate('/')}
-            className="inline-flex h-11 items-center justify-center rounded-full bg-[#0070e0] px-5 text-sm font-medium text-white transition hover:bg-emerald-800"
+            className="inline-flex h-11 items-center justify-center rounded-full bg-brand-fill px-5 text-sm font-medium text-white transition hover:bg-brand-fill-hover"
           >
             {t('not_found.back_home')}
           </button>
           <button
             onClick={() => navigate(-1)}
-            className="inline-flex h-11 items-center justify-center rounded-full border border-[#e4e5eb] px-5 text-sm font-medium text-[#3f4650] transition hover:bg-white"
+            className="inline-flex h-11 items-center justify-center rounded-full border border-hairline-strong px-5 text-sm font-medium text-ink-secondary transition hover:bg-white"
           >
             {t('not_found.back_prev')}
           </button>
@@ -324,17 +324,17 @@ const CassavaApp: React.FC = () => {
 
     if (activeSection === 'register') {
       return (
-        <div className="min-h-[70vh] bg-[#f7f8fa] px-4 py-10">
+        <div className="min-h-[70vh] bg-surface-muted px-4 py-10">
           <div className="mx-auto max-w-xl rounded-[16px] card p-8 text-center shadow-[0_24px_80px_rgba(15,23,42,0.06)]">
-            <h3 className="text-2xl font-semibold text-[#11181c]">
+            <h3 className="text-2xl font-semibold text-ink">
               {t('register.registration_closed')}
             </h3>
-            <p className="mt-3 text-sm leading-7 text-[#3f4650]">
+            <p className="mt-3 text-sm leading-7 text-ink-secondary">
               {t('register.registration_closed_desc')}
             </p>
             <button
               onClick={() => handleSectionChange('login')}
-              className="mt-6 inline-flex h-11 items-center justify-center rounded-full border border-[#0a84ff] px-5 text-sm font-medium text-[#0a84ff] transition hover:bg-[rgba(10,132,255,0.08)]"
+              className="mt-6 inline-flex h-11 items-center justify-center rounded-full border border-accent-line px-5 text-sm font-medium text-accent-text transition hover:bg-[rgba(10,132,255,0.08)]"
             >
               {t('login.back_to_login')}
             </button>
@@ -391,7 +391,7 @@ const CassavaApp: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen text-[#11181c]">
+    <div className="min-h-screen text-ink">
       <TopNavigation
         activeSection={activeSection}
         onSectionChange={handleSectionChange}
@@ -403,13 +403,20 @@ const CassavaApp: React.FC = () => {
         fallback={
           <div className="flex min-h-[70vh] items-center justify-center">
             <div className="flex flex-col items-center gap-4">
-              <div className="h-12 w-12 animate-spin rounded-full border-2 border-[#ededf2] border-t-[#0a84ff]" />
-              <p className="text-sm text-[#687076]">{t('common.loading') || 'Loading...'}</p>
+              <div className="h-12 w-12 animate-spin rounded-full border-2 border-hairline border-t-accent-line" />
+              <p className="text-sm text-muted">{t('common.loading') || 'Loading...'}</p>
             </div>
           </div>
         }
       >
-        <div className="flex h-[calc(100vh-95px)] min-h-0 flex-col overflow-x-hidden">{renderContent()}</div>
+        <div
+          className="flex h-[calc(100vh-95px)] min-h-0 flex-col overflow-x-hidden"
+          role="region"
+          aria-label={t('a11y.main_region')}
+          tabIndex={0}
+        >
+          {renderContent()}
+        </div>
       </Suspense>
     </div>
   );

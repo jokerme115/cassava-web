@@ -103,9 +103,9 @@ export const EditImageModal: React.FC<EditImageModalProps> = ({ image, onClose, 
   return (
     <div className="fixed inset-0 bg-[rgba(15,23,42,0.28)] flex items-center justify-center p-4 z-50">
       <div className="card card-float rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-[#f7f8fa]">
-          <h3 className="text-xl font-bold text-[#11181c] flex items-center">
-            <Edit className="w-5 h-5 mr-2 text-[#0a84ff]" />
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-surface-muted">
+          <h3 className="text-xl font-bold text-ink flex items-center">
+            <Edit className="w-5 h-5 mr-2 text-accent-text" />
             {t('images.edit_image')}
           </h3>
           <div className="flex items-center space-x-2">
@@ -115,7 +115,7 @@ export const EditImageModal: React.FC<EditImageModalProps> = ({ image, onClose, 
               className="p-2 hover:bg-white rounded-full transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               title={t('common.undo')}
             >
-              <Undo className="w-5 h-5 text-[#3f4650]" />
+              <Undo className="w-5 h-5 text-ink-secondary" />
             </button>
             <button 
               onClick={handleRedo} 
@@ -123,11 +123,11 @@ export const EditImageModal: React.FC<EditImageModalProps> = ({ image, onClose, 
               className="p-2 hover:bg-white rounded-full transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               title={t('common.redo')}
             >
-              <Redo className="w-5 h-5 text-[#3f4650]" />
+              <Redo className="w-5 h-5 text-ink-secondary" />
             </button>
             <div className="w-px h-6 bg-gray-300 mx-2"></div>
             <button onClick={onClose} className="p-2 hover:bg-white rounded-full transition-colors">
-              <X className="w-5 h-5 text-[#687076]" />
+              <X className="w-5 h-5 text-muted" />
             </button>
           </div>
         </div>
@@ -144,7 +144,7 @@ export const EditImageModal: React.FC<EditImageModalProps> = ({ image, onClose, 
 
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-[#3f4650] mb-1">{t('images.name')}</label>
+            <label className="block text-sm font-medium text-ink-secondary mb-1">{t('images.name')}</label>
             <input
               type="text"
               value={name}
@@ -154,13 +154,13 @@ export const EditImageModal: React.FC<EditImageModalProps> = ({ image, onClose, 
               }}
               onBlur={(e) => onInputBlur(e.target.value, focusValueRef.current)}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-2 border border-[#e4e5eb] rounded-lg focus:ring-2 focus:ring-[#0a84ff] focus:border-transparent transition-all"
+              className="w-full px-4 py-2 border border-hairline-strong rounded-lg focus:ring-2 focus:ring-accent-line focus:border-transparent transition-all"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-[#3f4650] mb-1">{t('images.description')}</label>
+            <label className="block text-sm font-medium text-ink-secondary mb-1">{t('images.description')}</label>
             <textarea
               value={description}
               onFocus={(e) => {
@@ -170,13 +170,13 @@ export const EditImageModal: React.FC<EditImageModalProps> = ({ image, onClose, 
               onBlur={(e) => onInputBlur(e.target.value, focusValueRef.current)}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full px-4 py-2 border border-[#e4e5eb] rounded-lg focus:ring-2 focus:ring-[#0a84ff] focus:border-transparent transition-all"
+              className="w-full px-4 py-2 border border-hairline-strong rounded-lg focus:ring-2 focus:ring-accent-line focus:border-transparent transition-all"
             />
           </div>
 
           {/* Capture Time */}
           <div>
-            <label className="block text-sm font-medium text-[#3f4650] mb-1">{t('images.capture_time')}</label>
+            <label className="block text-sm font-medium text-ink-secondary mb-1">{t('images.capture_time')}</label>
             <input
               type="datetime-local"
               value={captureTime ? new Date(captureTime).toISOString().slice(0, 16) : ''}
@@ -186,22 +186,22 @@ export const EditImageModal: React.FC<EditImageModalProps> = ({ image, onClose, 
               }}
               onBlur={(e) => onInputBlur(e.target.value, focusValueRef.current)}
               onChange={(e) => setCaptureTime(e.target.value)}
-              className="w-full px-4 py-2 border border-[#e4e5eb] rounded-lg focus:ring-2 focus:ring-[#0a84ff] focus:border-transparent transition-all"
+              className="w-full px-4 py-2 border border-hairline-strong rounded-lg focus:ring-2 focus:ring-accent-line focus:border-transparent transition-all"
             />
           </div>
         </div>
 
-        <div className="p-6 border-t border-gray-100 bg-[#f7f8fa] flex justify-end space-x-3">
+        <div className="p-6 border-t border-gray-100 bg-surface-muted flex justify-end space-x-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-[#3f4650] card border border-[#e4e5eb] rounded-lg hover:bg-white transition-all shadow-sm"
+            className="px-4 py-2 text-ink-secondary card border border-hairline-strong rounded-lg hover:bg-white transition-all shadow-sm"
           >
             {t('common.cancel')}
           </button>
           <button
             onClick={handleSave}
             disabled={loading}
-            className="px-4 py-2 text-white bg-[#0070e0] rounded-lg transition-all shadow-md flex items-center disabled:opacity-50"
+            className="px-4 py-2 text-white bg-brand-fill rounded-lg transition-all shadow-md flex items-center disabled:opacity-50"
           >
             <Save className="w-4 h-4 mr-2" />
             {loading ? t('common.saving') : t('common.save')}

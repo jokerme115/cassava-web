@@ -178,7 +178,7 @@ const VisitorAnalytics: React.FC = () => {
         <span className="flex items-center">
           {record.is_guest && <Tag color="blue">{t('analytics.guest')}</Tag>}
           {!record.is_guest && <Tag color="green">{t('analytics.registered')}</Tag>}
-          {record.username && !record.is_guest && <span className="ml-2 text-[#3f4650]">({record.username})</span>}
+          {record.username && !record.is_guest && <span className="ml-2 text-ink-secondary">({record.username})</span>}
         </span>
       ),
     },
@@ -266,11 +266,11 @@ const VisitorAnalytics: React.FC = () => {
   return (
     <div className="p-6 space-y-6 card-soft rounded-lg">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-[#11181c]">{t('analytics.visitor_analytics')}</h2>
+        <h2 className="text-2xl font-bold text-ink">{t('analytics.visitor_analytics')}</h2>
         <select 
           value={days} 
           onChange={(e) => setDays(Number(e.target.value))}
-          className="border border-[#e4e5eb] rounded-md p-2 bg-white shadow-sm focus:ring-blue-500 focus:border-blue-500"
+          className="border border-hairline-strong rounded-md p-2 bg-white shadow-sm focus:ring-blue-500 focus:border-blue-500"
         >
           <option value={7}>{t('analytics.last_7_days')}</option>
           <option value={30}>{t('analytics.last_30_days')}</option>
@@ -281,20 +281,20 @@ const VisitorAnalytics: React.FC = () => {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="card p-4 rounded-lg shadow-sm border-l-4 border-blue-500">
-          <div className="text-sm font-medium text-[#687076] uppercase tracking-wider">{t('analytics.today_visits')}</div>
-          <div className="mt-1 text-3xl font-semibold text-[#11181c]">{data.summary.today_visits}</div>
+          <div className="text-sm font-medium text-muted uppercase tracking-wider">{t('analytics.today_visits')}</div>
+          <div className="mt-1 text-3xl font-semibold text-ink">{data.summary.today_visits}</div>
         </div>
-        <div className="card p-4 rounded-lg shadow-sm border-l-4 border-[#0a84ff]">
-          <div className="text-sm font-medium text-[#687076] uppercase tracking-wider">{t('analytics.today_unique')}</div>
-          <div className="mt-1 text-3xl font-semibold text-[#11181c]">{data.summary.today_unique}</div>
+        <div className="card p-4 rounded-lg shadow-sm border-l-4 border-accent-line">
+          <div className="text-sm font-medium text-muted uppercase tracking-wider">{t('analytics.today_unique')}</div>
+          <div className="mt-1 text-3xl font-semibold text-ink">{data.summary.today_unique}</div>
         </div>
         <div className="card p-4 rounded-lg shadow-sm border-l-4 border-purple-500">
-          <div className="text-sm font-medium text-[#687076] uppercase tracking-wider">{t('analytics.total_visits_period')}</div>
-          <div className="mt-1 text-3xl font-semibold text-[#11181c]">{data.summary.total_visits_period}</div>
+          <div className="text-sm font-medium text-muted uppercase tracking-wider">{t('analytics.total_visits_period')}</div>
+          <div className="mt-1 text-3xl font-semibold text-ink">{data.summary.total_visits_period}</div>
         </div>
         <div className="card p-4 rounded-lg shadow-sm border-l-4 border-orange-500">
-          <div className="text-sm font-medium text-[#687076] uppercase tracking-wider">{t('analytics.unique_visitors_period')}</div>
-          <div className="mt-1 text-3xl font-semibold text-[#11181c]">{data.summary.unique_visitors_period}</div>
+          <div className="text-sm font-medium text-muted uppercase tracking-wider">{t('analytics.unique_visitors_period')}</div>
+          <div className="mt-1 text-3xl font-semibold text-ink">{data.summary.unique_visitors_period}</div>
         </div>
       </div>
 
@@ -310,7 +310,7 @@ const VisitorAnalytics: React.FC = () => {
 
       {/* IP Detail Table */}
       <div className="card p-6 rounded-lg shadow-sm mb-6">
-        <h3 className="text-lg font-bold text-[#11181c] mb-4">{t('analytics.ip_stats_table')}</h3>
+        <h3 className="text-lg font-bold text-ink mb-4">{t('analytics.ip_stats_table')}</h3>
         <Table
           columns={ipColumns}
           dataSource={ipStats}
@@ -329,7 +329,7 @@ const VisitorAnalytics: React.FC = () => {
 
       {/* Access Logs Table */}
       <div className="card p-6 rounded-lg shadow-sm">
-        <h3 className="text-lg font-bold text-[#11181c] mb-4">{t('analytics.access_logs')}</h3>
+        <h3 className="text-lg font-bold text-ink mb-4">{t('analytics.access_logs')}</h3>
         <Table 
           columns={columns} 
           dataSource={logs} 

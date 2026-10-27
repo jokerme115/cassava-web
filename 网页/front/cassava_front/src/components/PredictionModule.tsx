@@ -288,57 +288,57 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
     <div className="p-6">
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-2xl font-semibold text-[#11181c] mb-2">{t('navigation.prediction')}</h2>
+        <h2 className="text-2xl font-semibold text-ink mb-2">{t('navigation.prediction')}</h2>
       </div>
 
       {/* Quick Stats */}
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
         <div className="card flex items-center gap-3 rounded-[16px] p-3.5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[rgba(10,132,255,0.08)] text-[#0a84ff]">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[rgba(10,132,255,0.08)] text-brand-fill-hover">
             <ImageIcon className="h-5 w-5" />
           </span>
           <div className="min-w-0">
-            <p className="text-xl font-semibold leading-tight text-[#11181c]">{imagesLoading && images.length === 0 ? '...' : (totalImages || images.length)}</p>
-            <p className="truncate text-xs text-[#687076]">{t('prediction.available_images')}</p>
+            <p className="text-xl font-semibold leading-tight text-ink">{imagesLoading && images.length === 0 ? '...' : (totalImages || images.length)}</p>
+            <p className="truncate text-xs text-muted">{t('prediction.available_images')}</p>
           </div>
         </div>
         <div className="card flex items-center gap-3 rounded-[16px] p-3.5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[rgba(10,132,255,0.08)] text-[#0a84ff]">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[rgba(10,132,255,0.08)] text-brand-fill-hover">
             <FolderOpen className="h-5 w-5" />
           </span>
           <div className="min-w-0">
-            <p className="text-xl font-semibold leading-tight text-[#11181c]">{imagesLoading && folders.length === 0 ? '...' : folders.length}</p>
-            <p className="truncate text-xs text-[#687076]">{t('prediction.folders')}</p>
+            <p className="text-xl font-semibold leading-tight text-ink">{imagesLoading && folders.length === 0 ? '...' : folders.length}</p>
+            <p className="truncate text-xs text-muted">{t('prediction.folders')}</p>
           </div>
         </div>
         <div className="card flex items-center gap-3 rounded-[16px] p-3.5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[rgba(10,132,255,0.08)] text-[#0a84ff]">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[rgba(10,132,255,0.08)] text-brand-fill-hover">
             <Brain className="h-5 w-5" />
           </span>
           <div className="min-w-0">
-            <p className="text-xl font-semibold leading-tight text-[#11181c]">{modelOptions.length}</p>
-            <p className="truncate text-xs text-[#687076]">{t('prediction.models_available')}</p>
+            <p className="text-xl font-semibold leading-tight text-ink">{modelOptions.length}</p>
+            <p className="truncate text-xs text-muted">{t('prediction.models_available')}</p>
           </div>
         </div>
         <div className="card flex items-center gap-3 rounded-[16px] p-3.5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[rgba(10,132,255,0.08)] text-[#0a84ff]">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[rgba(10,132,255,0.08)] text-brand-fill-hover">
             <Zap className="h-5 w-5" />
           </span>
           <div className="min-w-0">
-            <p className="text-xl font-semibold leading-tight text-[#11181c]">{summaryImageCount}</p>
-            <p className="truncate text-xs text-[#687076]">{t('prediction.selected')}</p>
+            <p className="text-xl font-semibold leading-tight text-ink">{summaryImageCount}</p>
+            <p className="truncate text-xs text-muted">{t('prediction.selected')}</p>
           </div>
         </div>
       </div>
 
       {/* New task name input */}
       <div className="mb-4">
-        <label htmlFor="prediction-task-name" className="mb-1.5 block text-[13px] font-medium text-[#3f4650]">{t('prediction.task_name')}</label>
+        <label htmlFor="prediction-task-name" className="mb-1.5 block text-[13px] font-medium text-ink-secondary">{t('prediction.task_name')}</label>
         <input
           id="prediction-task-name"
           name="prediction-task-name"
           type="text"
-          className="w-full max-w-[440px] rounded-[12px] border border-[#e4e5eb] bg-white px-3 py-2 text-sm text-[#11181c] outline-none transition focus:border-[#0a84ff] focus:ring-2 focus:ring-[rgba(10,132,255,0.10)]"
+          className="w-full max-w-[440px] rounded-[12px] border border-hairline-strong bg-white px-3 py-2 text-sm text-ink outline-none transition focus:border-accent-line focus:ring-2 focus:ring-[rgba(10,132,255,0.10)]"
           value={taskName}
           onChange={e => setTaskName(e.target.value)}
           placeholder={t('prediction.task_name_prompt')}
@@ -354,8 +354,8 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
             {/* Folder Sidebar */}
             <div className="hidden sm:block w-48 mr-4 h-full">
               <div ref={folderTreeRef} className="card rounded-lg shadow-sm p-4 h-full">
-                <h3 className="font-semibold text-[#11181c] mb-3">{t('images.folders')}</h3>
-                <div className="border-t border-[#ededf2] my-2"></div>
+                <h3 className="font-semibold text-ink mb-3">{t('images.folders')}</h3>
+                <div className="border-t border-hairline my-2"></div>
                 <Tree
                   treeData={folderTreeData}
                   selectedKeys={selectedFolderTreeKeys}
@@ -375,7 +375,7 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
             <div className="flex-1 h-full">
               <div className="flex flex-wrap items-center mb-4 space-x-2 sm:space-x-4 gap-2">
                 <div className="relative max-w-md flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#687076] w-4 h-4" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted w-4 h-4" />
                   <input
                     id="prediction-search-images"
                     name="prediction-search-images"
@@ -383,16 +383,17 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
                     placeholder={t('images.search')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 pr-4 py-2 border border-[#e4e5eb] rounded-lg focus:ring-2 focus:ring-[#0a84ff] focus:border-transparent w-full text-sm"
+                    className="pl-10 pr-4 py-2 border border-hairline-strong rounded-lg focus:ring-2 focus:ring-accent-line focus:border-transparent w-full text-sm"
                   />
                 </div>
                 <div className="hidden xs:flex items-center space-x-2">
                   <select
                     id="prediction-sort-by"
                     name="prediction-sort-by"
+                    aria-label={t('a11y.sort_by')}
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as any)}
-                    className="px-2 py-1 sm:px-3 sm:py-2 border border-[#e4e5eb] rounded-lg focus:ring-2 focus:ring-[#0a84ff] focus:border-transparent text-xs sm:text-sm"
+                    className="px-2 py-1 sm:px-3 sm:py-2 border border-hairline-strong rounded-lg focus:ring-2 focus:ring-accent-line focus:border-transparent text-xs sm:text-sm"
                   >
                     <option value="date">{t('images.sort.date')}</option>
                     <option value="name">{t('images.sort.name')}</option>
@@ -400,7 +401,8 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
                   </select>
                   <button
                     onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                    className="p-2 border border-[#e4e5eb] rounded-lg hover:bg-white transition-colors"
+                    aria-label={t('a11y.sort_order')}
+                    className="p-2 border border-hairline-strong rounded-lg hover:bg-white transition-colors"
                   >
                     {sortOrder === 'asc' ? <SortAsc className="w-4 h-4" /> : <SortDesc className="w-4 h-4" />}
                   </button>
@@ -413,7 +415,7 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
                       setSelectedItems(filteredImages.map(img => img.id));
                     }
                   }}
-                  className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg border text-xs sm:text-sm ${selectedItems.length === filteredImages.length && filteredImages.length > 0 ? 'bg-[#0070e0] text-white border-[#0a84ff]' : 'bg-white text-[#0a84ff] border-[#0a84ff]'} transition-colors`}
+                  className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg border text-xs sm:text-sm ${selectedItems.length === filteredImages.length && filteredImages.length > 0 ? 'bg-brand-fill text-white border-accent-line' : 'bg-white text-accent-text border-accent-line'} transition-colors`}
                 >
                   <span className="hidden xs:inline">{t('images.select_all', { count: filteredImages.length })}</span>
                   <span className="xs:hidden">{t('images.select_all', { count: filteredImages.length })}</span>
@@ -423,22 +425,22 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
                     type="button"
                     onClick={handleStartFolderPrediction}
                     disabled={loading || !selectedRealFolder.imageCount}
-                    className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-[#0070e0] text-white text-xs sm:text-sm hover:bg-[#005cb8] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                    className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-brand-fill text-white text-xs sm:text-sm hover:bg-brand-fill-hover disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                   >
                     {t('prediction.submit_folder', { name: selectedRealFolder.name, count: selectedRealFolder.imageCount ?? 0 })}
                   </button>
                 )}
               </div>
-              <div className="h-[600px] overflow-y-auto border border-[#ededf2] rounded-lg bg-white">
+              <div className="h-[600px] overflow-y-auto border border-hairline rounded-lg bg-white">
                 <div className="grid grid-cols-1 xs:grid-cols-2 gap-2 sm:gap-4 p-2 sm:p-4">
                   {filteredImages.map(image => (
-                    <label key={image.id} className={`flex items-center p-2 sm:p-3 rounded-lg cursor-pointer transition-all border ${selectedItems.includes(image.id) ? 'bg-[rgba(10,132,255,0.10)] border-[#0a84ff] shadow' : 'hover:bg-white border-[#ededf2]'}`}>
+                    <label key={image.id} className={`flex items-center p-2 sm:p-3 rounded-lg cursor-pointer transition-all border ${selectedItems.includes(image.id) ? 'bg-[rgba(10,132,255,0.10)] border-accent-line shadow' : 'hover:bg-white border-hairline'}`}>
                       <input
                         name={`prediction-image-${image.id}`}
                         type="checkbox"
                         checked={selectedItems.includes(image.id)}
                         onChange={(e) => handleItemSelect(image.id, e.target.checked)}
-                        className="mr-2 sm:mr-3 w-4 h-4 text-[#0a84ff] rounded border-[#e4e5eb]"
+                        className="mr-2 sm:mr-3 w-4 h-4 text-accent-text rounded border-hairline-strong"
                       />
                       <img
                         src={image.preview_url || image.image_url || image.url}
@@ -446,9 +448,9 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
                         className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded mr-2 sm:mr-3 border"
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-[#11181c] truncate text-sm sm:text-base">{image.name}</p>
+                        <p className="font-medium text-ink truncate text-sm sm:text-base">{image.name}</p>
                         <ImageResolutionLabel width={image.pixel_width} height={image.pixel_height} />
-                        <p className="text-xs sm:text-sm text-[#687076] truncate">{image.format}</p>
+                        <p className="text-xs sm:text-sm text-muted truncate">{image.format}</p>
                       </div>
                     </label>
                   ))}
@@ -458,7 +460,7 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
                     <button
                       onClick={() => loadMoreImages()}
                       disabled={loadingMoreImages}
-                      className="px-4 py-2 rounded-lg border border-[#0a84ff] text-[#0a84ff] hover:bg-[rgba(10,132,255,0.10)] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                      className="px-4 py-2 rounded-lg border border-accent-line text-accent-text hover:bg-[rgba(10,132,255,0.10)] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                     >
                       {loadingMoreImages ? t('common.loading_more') : t('common.load_more')}
                     </button>
@@ -473,16 +475,16 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
           <div className="flex-1 space-y-6 h-full">
             {/* Model Selection & Config */}
             <div className="card rounded-lg shadow-lg border p-6 h-full">
-            <h3 className="text-lg font-semibold text-[#11181c] mb-4">{t('prediction.configuration')}</h3>
+            <h3 className="text-lg font-semibold text-ink mb-4">{t('prediction.configuration')}</h3>
             <div className="space-y-4">
               <div>
-                <label htmlFor="prediction-mode" className="block text-sm font-medium text-[#3f4650] mb-2">{t('prediction.prediction_mode')}</label>
-                <div className="flex bg-[#f2f3f6] rounded-lg p-1">
+                <label htmlFor="prediction-mode" className="block text-sm font-medium text-ink-secondary mb-2">{t('prediction.prediction_mode')}</label>
+                <div className="flex bg-surface-sunken rounded-lg p-1">
                   {(['single', 'ensemble'] as const).map(mode => (
                     <button key={mode} id={mode === 'single' ? 'prediction-mode' : undefined}
                       type="button" aria-pressed={predictionMode === mode}
                       onClick={() => setPredictionMode(mode)}
-                      className={`flex-1 px-2 py-1.5 sm:px-3 sm:py-2 rounded text-xs sm:text-sm transition-colors ${predictionMode === mode ? 'bg-white shadow-sm text-[#11181c]' : 'text-[#687076]'}`}>
+                      className={`flex-1 px-2 py-1.5 sm:px-3 sm:py-2 rounded text-xs sm:text-sm transition-colors ${predictionMode === mode ? 'bg-white shadow-sm text-ink' : 'text-muted'}`}>
                       {mode === 'single' ? t('prediction.mode.single') : '投票模型'}
                     </button>
                   ))}
@@ -490,14 +492,14 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
               </div>
               
               <div>
-                <label htmlFor="prediction-model-type" className="block text-sm font-medium text-[#3f4650] mb-2">{t('prediction.model')}</label>
+                <label htmlFor="prediction-model-type" className="block text-sm font-medium text-ink-secondary mb-2">{t('prediction.model')}</label>
                 <select
                   id="prediction-model-type"
                   name="prediction-model-type"
                   disabled={predictionMode === 'ensemble'}
                   value={predictionMode === 'ensemble' ? 'ensemble' : modelType}
                   onChange={(e) => setModelType(e.target.value)}
-                  className="w-full px-2 py-1.5 sm:px-3 sm:py-2 border border-[#e4e5eb] rounded-lg focus:ring-2 focus:ring-[#0a84ff] focus:border-transparent text-sm"
+                  className="w-full px-2 py-1.5 sm:px-3 sm:py-2 border border-hairline-strong rounded-lg focus:ring-2 focus:ring-accent-line focus:border-transparent text-sm"
                 >
                   {predictionMode === 'ensemble' && <option value="ensemble">有监督模型 + 半监督模型（投票）</option>}
                   {modelOptions.map(option => (
@@ -514,8 +516,8 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label htmlFor="prediction-confidence-threshold" className="text-xs sm:text-sm font-medium text-[#3f4650]">{t('prediction.confidence_threshold')}</label>
-                  <span className="text-xs sm:text-sm text-[#687076]">{advancedParams.confidenceThreshold.toFixed(2)}</span>
+                  <label htmlFor="prediction-confidence-threshold" className="text-xs sm:text-sm font-medium text-ink-secondary">{t('prediction.confidence_threshold')}</label>
+                  <span className="text-xs sm:text-sm text-muted">{advancedParams.confidenceThreshold.toFixed(2)}</span>
                 </div>
                 <input
                   id="prediction-confidence-threshold"
@@ -532,7 +534,7 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
 
               <button
                 onClick={() => setShowAdvanced(!showAdvanced)}
-                className="flex items-center text-xs sm:text-sm text-[#0a84ff] hover:text-blue-800"
+                className="flex items-center text-xs sm:text-sm text-accent-text hover:text-blue-800"
               >
                 <Settings className="w-4 h-4 mr-1" />
                 <span className="hidden xs:inline">{showAdvanced ? t('prediction.advanced_settings.hide') : t('prediction.advanced_settings.show')}</span>
@@ -550,9 +552,9 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
                           type="checkbox"
                           checked={advancedParams.usePostProcessing}
                           onChange={(e) => setAdvancedParams(prev => ({ ...prev, usePostProcessing: e.target.checked }))}
-                          className="mr-2 w-4 h-4 text-[#0a84ff] rounded border-[#e4e5eb]"
+                          className="mr-2 w-4 h-4 text-accent-text rounded border-hairline-strong"
                         />
-                        <span className="text-xs sm:text-sm text-[#3f4650]">{t('prediction.post_processing')}</span>
+                        <span className="text-xs sm:text-sm text-ink-secondary">{t('prediction.post_processing')}</span>
                       </label>
                       <label className="flex items-center mt-2">
                         <input
@@ -560,17 +562,17 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
                           type="checkbox"
                           checked={advancedParams.useTTA}
                           onChange={(e) => setAdvancedParams(prev => ({ ...prev, useTTA: e.target.checked }))}
-                          className="mr-2 w-4 h-4 text-[#0a84ff] rounded border-[#e4e5eb]"
+                          className="mr-2 w-4 h-4 text-accent-text rounded border-hairline-strong"
                         />
-                        <span className="text-xs sm:text-sm text-[#3f4650]">{t('prediction.tta')}</span>
+                        <span className="text-xs sm:text-sm text-ink-secondary">{t('prediction.tta')}</span>
                       </label>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <label htmlFor="prediction-min-area" className="text-xs sm:text-sm font-medium text-[#3f4650]">{t('prediction.min_area')}</label>
-                        <span className="text-xs sm:text-sm text-[#687076]">{advancedParams.minArea}</span>
+                        <label htmlFor="prediction-min-area" className="text-xs sm:text-sm font-medium text-ink-secondary">{t('prediction.min_area')}</label>
+                        <span className="text-xs sm:text-sm text-muted">{advancedParams.minArea}</span>
                       </div>
                       <input
                         id="prediction-min-area"
@@ -581,13 +583,13 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
                         step="10"
                         value={advancedParams.minArea}
                         onChange={(e) => setAdvancedParams(prev => ({ ...prev, minArea: parseInt(e.target.value) }))}
-                        className="w-full h-2 bg-[#f2f3f6] rounded-lg appearance-none cursor-pointer"
+                        className="w-full h-2 bg-surface-sunken rounded-lg appearance-none cursor-pointer"
                       />
                     </div>
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <label htmlFor="prediction-morph-kernel" className="text-xs sm:text-sm font-medium text-[#3f4650]">{t('prediction.morph_kernel')}</label>
-                        <span className="text-xs sm:text-sm text-[#687076]">{advancedParams.morphKernelSize}</span>
+                        <label htmlFor="prediction-morph-kernel" className="text-xs sm:text-sm font-medium text-ink-secondary">{t('prediction.morph_kernel')}</label>
+                        <span className="text-xs sm:text-sm text-muted">{advancedParams.morphKernelSize}</span>
                       </div>
                       <input
                         id="prediction-morph-kernel"
@@ -598,13 +600,13 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
                         step="2"
                         value={advancedParams.morphKernelSize}
                         onChange={(e) => setAdvancedParams(prev => ({ ...prev, morphKernelSize: parseInt(e.target.value) }))}
-                        className="w-full h-2 bg-[#f2f3f6] rounded-lg appearance-none cursor-pointer"
+                        className="w-full h-2 bg-surface-sunken rounded-lg appearance-none cursor-pointer"
                       />
                     </div>
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <label htmlFor="prediction-morph-iterations" className="text-xs sm:text-sm font-medium text-[#3f4650]">{t('prediction.morph_iterations')}</label>
-                        <span className="text-xs sm:text-sm text-[#687076]">{advancedParams.morphIterations}</span>
+                        <label htmlFor="prediction-morph-iterations" className="text-xs sm:text-sm font-medium text-ink-secondary">{t('prediction.morph_iterations')}</label>
+                        <span className="text-xs sm:text-sm text-muted">{advancedParams.morphIterations}</span>
                       </div>
                       <input
                         id="prediction-morph-iterations"
@@ -615,13 +617,13 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
                         step="1"
                         value={advancedParams.morphIterations}
                         onChange={(e) => setAdvancedParams(prev => ({ ...prev, morphIterations: parseInt(e.target.value) }))}
-                        className="w-full h-2 bg-[#f2f3f6] rounded-lg appearance-none cursor-pointer"
+                        className="w-full h-2 bg-surface-sunken rounded-lg appearance-none cursor-pointer"
                       />
                     </div>
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <label htmlFor="prediction-overlay-opacity" className="text-xs sm:text-sm font-medium text-[#3f4650]">{t('prediction.overlay_opacity')}</label>
-                        <span className="text-xs sm:text-sm text-[#687076]">{advancedParams.overlayOpacity}</span>
+                        <label htmlFor="prediction-overlay-opacity" className="text-xs sm:text-sm font-medium text-ink-secondary">{t('prediction.overlay_opacity')}</label>
+                        <span className="text-xs sm:text-sm text-muted">{advancedParams.overlayOpacity}</span>
                       </div>
                       <input
                         id="prediction-overlay-opacity"
@@ -632,18 +634,18 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
                         step="0.05"
                         value={advancedParams.overlayOpacity}
                         onChange={(e) => setAdvancedParams(prev => ({ ...prev, overlayOpacity: parseFloat(e.target.value) }))}
-                        className="w-full h-2 bg-[#f2f3f6] rounded-lg appearance-none cursor-pointer"
+                        className="w-full h-2 bg-surface-sunken rounded-lg appearance-none cursor-pointer"
                       />
                     </div>
-                    <div className="sm:col-span-2 pt-2 border-t border-[#ededf2]">
-                      <p className="text-xs font-semibold tracking-wide text-[#687076] uppercase">
+                    <div className="sm:col-span-2 pt-2 border-t border-hairline">
+                      <p className="text-xs font-semibold tracking-wide text-muted uppercase">
                         {t('prediction.two_stage_advanced')}
                       </p>
                     </div>
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <label htmlFor="prediction-stage1-confidence" className="text-xs sm:text-sm font-medium text-[#3f4650]">{t('prediction.stage1_confidence')}</label>
-                        <span className="text-xs sm:text-sm text-[#687076]">{advancedParams.stage1Confidence.toFixed(2)}</span>
+                        <label htmlFor="prediction-stage1-confidence" className="text-xs sm:text-sm font-medium text-ink-secondary">{t('prediction.stage1_confidence')}</label>
+                        <span className="text-xs sm:text-sm text-muted">{advancedParams.stage1Confidence.toFixed(2)}</span>
                       </div>
                       <input
                         id="prediction-stage1-confidence"
@@ -654,13 +656,13 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
                         step="0.01"
                         value={advancedParams.stage1Confidence}
                         onChange={(e) => setAdvancedParams(prev => ({ ...prev, stage1Confidence: parseFloat(e.target.value) }))}
-                        className="w-full h-2 bg-[#f2f3f6] rounded-lg appearance-none cursor-pointer"
+                        className="w-full h-2 bg-surface-sunken rounded-lg appearance-none cursor-pointer"
                       />
                     </div>
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <label htmlFor="prediction-stage2-confidence" className="text-xs sm:text-sm font-medium text-[#3f4650]">{t('prediction.stage2_confidence')}</label>
-                        <span className="text-xs sm:text-sm text-[#687076]">{advancedParams.stage2Confidence.toFixed(2)}</span>
+                        <label htmlFor="prediction-stage2-confidence" className="text-xs sm:text-sm font-medium text-ink-secondary">{t('prediction.stage2_confidence')}</label>
+                        <span className="text-xs sm:text-sm text-muted">{advancedParams.stage2Confidence.toFixed(2)}</span>
                       </div>
                       <input
                         id="prediction-stage2-confidence"
@@ -671,13 +673,13 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
                         step="0.01"
                         value={advancedParams.stage2Confidence}
                         onChange={(e) => setAdvancedParams(prev => ({ ...prev, stage2Confidence: parseFloat(e.target.value) }))}
-                        className="w-full h-2 bg-[#f2f3f6] rounded-lg appearance-none cursor-pointer"
+                        className="w-full h-2 bg-surface-sunken rounded-lg appearance-none cursor-pointer"
                       />
                     </div>
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <label htmlFor="prediction-roi-padding" className="text-xs sm:text-sm font-medium text-[#3f4650]">{t('prediction.roi_padding')}</label>
-                        <span className="text-xs sm:text-sm text-[#687076]">{advancedParams.roiPadding.toFixed(2)}</span>
+                        <label htmlFor="prediction-roi-padding" className="text-xs sm:text-sm font-medium text-ink-secondary">{t('prediction.roi_padding')}</label>
+                        <span className="text-xs sm:text-sm text-muted">{advancedParams.roiPadding.toFixed(2)}</span>
                       </div>
                       <input
                         id="prediction-roi-padding"
@@ -688,13 +690,13 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
                         step="0.02"
                         value={advancedParams.roiPadding}
                         onChange={(e) => setAdvancedParams(prev => ({ ...prev, roiPadding: parseFloat(e.target.value) }))}
-                        className="w-full h-2 bg-[#f2f3f6] rounded-lg appearance-none cursor-pointer"
+                        className="w-full h-2 bg-surface-sunken rounded-lg appearance-none cursor-pointer"
                       />
                     </div>
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <label htmlFor="prediction-fallback-roi-padding" className="text-xs sm:text-sm font-medium text-[#3f4650]">{t('prediction.fallback_roi_padding')}</label>
-                        <span className="text-xs sm:text-sm text-[#687076]">{advancedParams.fallbackRoiPadding.toFixed(2)}</span>
+                        <label htmlFor="prediction-fallback-roi-padding" className="text-xs sm:text-sm font-medium text-ink-secondary">{t('prediction.fallback_roi_padding')}</label>
+                        <span className="text-xs sm:text-sm text-muted">{advancedParams.fallbackRoiPadding.toFixed(2)}</span>
                       </div>
                       <input
                         id="prediction-fallback-roi-padding"
@@ -705,13 +707,13 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
                         step="0.05"
                         value={advancedParams.fallbackRoiPadding}
                         onChange={(e) => setAdvancedParams(prev => ({ ...prev, fallbackRoiPadding: parseFloat(e.target.value) }))}
-                        className="w-full h-2 bg-[#f2f3f6] rounded-lg appearance-none cursor-pointer"
+                        className="w-full h-2 bg-surface-sunken rounded-lg appearance-none cursor-pointer"
                       />
                     </div>
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <label htmlFor="prediction-expected-count" className="text-xs sm:text-sm font-medium text-[#3f4650]">{t('prediction.expected_count')}</label>
-                        <span className="text-xs sm:text-sm text-[#687076]">{advancedParams.expectedCount || '自动'}</span>
+                        <label htmlFor="prediction-expected-count" className="text-xs sm:text-sm font-medium text-ink-secondary">{t('prediction.expected_count')}</label>
+                        <span className="text-xs sm:text-sm text-muted">{advancedParams.expectedCount || '自动'}</span>
                       </div>
                       <input
                         id="prediction-expected-count"
@@ -722,13 +724,13 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
                         step="1"
                         value={advancedParams.expectedCount}
                         onChange={(e) => setAdvancedParams(prev => ({ ...prev, expectedCount: parseInt(e.target.value) }))}
-                        className="w-full h-2 bg-[#f2f3f6] rounded-lg appearance-none cursor-pointer"
+                        className="w-full h-2 bg-surface-sunken rounded-lg appearance-none cursor-pointer"
                       />
                     </div>
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <label htmlFor="prediction-stage-box-iou" className="text-xs sm:text-sm font-medium text-[#3f4650]">{t('prediction.stage_box_iou')}</label>
-                        <span className="text-xs sm:text-sm text-[#687076]">{advancedParams.stageBoxIou.toFixed(2)}</span>
+                        <label htmlFor="prediction-stage-box-iou" className="text-xs sm:text-sm font-medium text-ink-secondary">{t('prediction.stage_box_iou')}</label>
+                        <span className="text-xs sm:text-sm text-muted">{advancedParams.stageBoxIou.toFixed(2)}</span>
                       </div>
                       <input
                         id="prediction-stage-box-iou"
@@ -739,20 +741,20 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
                         step="0.05"
                         value={advancedParams.stageBoxIou}
                         onChange={(e) => setAdvancedParams(prev => ({ ...prev, stageBoxIou: parseFloat(e.target.value) }))}
-                        className="w-full h-2 bg-[#f2f3f6] rounded-lg appearance-none cursor-pointer"
+                        className="w-full h-2 bg-surface-sunken rounded-lg appearance-none cursor-pointer"
                       />
                     </div>
                     {(modelType === 'm6_best' || predictionMode === 'ensemble') && (
                       <>
-                        <div className="sm:col-span-2 pt-2 border-t border-[#ededf2]">
-                          <p className="text-xs font-semibold tracking-wide text-[#687076] uppercase">
+                        <div className="sm:col-span-2 pt-2 border-t border-hairline">
+                          <p className="text-xs font-semibold tracking-wide text-muted uppercase">
                             {t('prediction.m6_advanced')}
                           </p>
                         </div>
                         <div>
                           <div className="flex items-center justify-between mb-2">
-                            <label htmlFor="prediction-patch-size" className="text-xs sm:text-sm font-medium text-[#3f4650]">{t('prediction.patch_size')}</label>
-                            <span className="text-xs sm:text-sm text-[#687076]">{advancedParams.patchSize[0]}</span>
+                            <label htmlFor="prediction-patch-size" className="text-xs sm:text-sm font-medium text-ink-secondary">{t('prediction.patch_size')}</label>
+                            <span className="text-xs sm:text-sm text-muted">{advancedParams.patchSize[0]}</span>
                           </div>
                           <input
                             id="prediction-patch-size"
@@ -766,13 +768,13 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
                               const value = parseInt(e.target.value);
                               setAdvancedParams(prev => ({ ...prev, patchSize: [value, value] as [number, number] }));
                             }}
-                            className="w-full h-2 bg-[#f2f3f6] rounded-lg appearance-none cursor-pointer"
+                            className="w-full h-2 bg-surface-sunken rounded-lg appearance-none cursor-pointer"
                           />
                         </div>
                         <div>
                           <div className="flex items-center justify-between mb-2">
-                            <label htmlFor="prediction-stride" className="text-xs sm:text-sm font-medium text-[#3f4650]">{t('prediction.stride')}</label>
-                            <span className="text-xs sm:text-sm text-[#687076]">{advancedParams.stride[0]}</span>
+                            <label htmlFor="prediction-stride" className="text-xs sm:text-sm font-medium text-ink-secondary">{t('prediction.stride')}</label>
+                            <span className="text-xs sm:text-sm text-muted">{advancedParams.stride[0]}</span>
                           </div>
                           <input
                             id="prediction-stride"
@@ -786,7 +788,7 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
                               const value = parseInt(e.target.value);
                               setAdvancedParams(prev => ({ ...prev, stride: [value, value] as [number, number] }));
                             }}
-                            className="w-full h-2 bg-[#f2f3f6] rounded-lg appearance-none cursor-pointer"
+                            className="w-full h-2 bg-surface-sunken rounded-lg appearance-none cursor-pointer"
                           />
                         </div>
                       </>
@@ -798,12 +800,12 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
           </div>
 
           {/* Prediction Summary */}
-          <div className="bg-[#f7f8fa] rounded-lg shadow-glass border border-[#ededf2] p-6 flex-1">
-            <h3 className="text-lg font-semibold text-[#11181c] mb-4">{t('prediction.summary')}</h3>
+          <div className="bg-surface-muted rounded-lg shadow-card border border-hairline p-6 flex-1">
+            <h3 className="text-lg font-semibold text-ink mb-4">{t('prediction.summary')}</h3>
             
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-[#3f4650]">{t('prediction.selected_items')}：</span>
+                <span className="text-ink-secondary">{t('prediction.selected_items')}：</span>
                 <span className="font-medium">
                   {folderOnlySelection
                     ? `${selectedRealFolder?.name}（${t('prediction.folder_whole')}）`
@@ -812,12 +814,12 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
               </div>
 
               <div className="flex justify-between">
-                <span className="text-[#3f4650]">{t('prediction.estimated_images')}：</span>
+                <span className="text-ink-secondary">{t('prediction.estimated_images')}：</span>
                 <span className="font-medium">{summaryImageCount}</span>
               </div>
 
               <div className="flex justify-between">
-                <span className="text-[#3f4650]">{t('prediction.estimated_time')}：</span>
+                <span className="text-ink-secondary">{t('prediction.estimated_time')}：</span>
                 <span className="font-medium">{getEstimatedTime()} {t('tasks.seconds')}</span>
               </div>
             </div>
@@ -825,7 +827,7 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
             <button
               onClick={handleStartPrediction}
               disabled={(summaryItemCount === 0 && !folderOnlySelection) || loading}
-              className="w-full mt-4 sm:mt-6 flex items-center justify-center px-3 py-2 sm:px-4 sm:py-3 bg-[#0070e0] text-white rounded-lg hover:bg-[#005cb8] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm sm:text-base"
+              className="w-full mt-4 sm:mt-6 flex items-center justify-center px-3 py-2 sm:px-4 sm:py-3 bg-brand-fill text-white rounded-lg hover:bg-brand-fill-hover disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm sm:text-base"
             >
               {loading ? <span className="animate-spin mr-2"><Play className="w-4 h-4 sm:w-5 sm:h-5" /></span> : <Play className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />}
               {t('prediction.create_task')}
@@ -840,12 +842,12 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-[rgba(15,23,42,0.28)]" onClick={() => setShowNameModal(false)} />
           <div className="relative card rounded-lg shadow-xl p-6 w-full max-w-md mx-auto z-10">
-            <h3 className="text-lg font-semibold mb-4 text-[#11181c]">{t('prediction.task_name_prompt')}</h3>
+            <h3 className="text-lg font-semibold mb-4 text-ink">{t('prediction.task_name_prompt')}</h3>
             <input
               id="prediction-task-name-modal"
               name="prediction-task-name-modal"
               type="text"
-              className="w-full border rounded px-2 py-1.5 sm:px-3 sm:py-2 focus:outline-none focus:ring-2 focus:ring-[#0a84ff] mb-4 text-sm sm:text-base"
+              className="w-full border rounded px-2 py-1.5 sm:px-3 sm:py-2 focus:outline-none focus:ring-2 focus:ring-accent-line mb-4 text-sm sm:text-base"
               value={taskName}
               onChange={e => setTaskName(e.target.value)}
               placeholder={t('prediction.task_name_prompt')}
@@ -853,8 +855,8 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
               autoFocus
             />
             <div className="flex justify-end gap-2 sm:gap-4">
-              <button className="px-3 py-1.5 sm:px-4 sm:py-2 rounded bg-[#f2f3f6] text-[#3f4650] hover:bg-gray-200 text-sm sm:text-base" onClick={() => setShowNameModal(false)}>{t('prediction.cancel')}</button>
-              <button className="px-3 py-1.5 sm:px-4 sm:py-2 rounded bg-[#0070e0] text-white hover:bg-[#005cb8] disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base" onClick={handleConfirmName} disabled={loading}>{t('prediction.confirm')}</button>
+              <button className="px-3 py-1.5 sm:px-4 sm:py-2 rounded bg-surface-sunken text-ink-secondary hover:bg-gray-200 text-sm sm:text-base" onClick={() => setShowNameModal(false)}>{t('prediction.cancel')}</button>
+              <button className="px-3 py-1.5 sm:px-4 sm:py-2 rounded bg-brand-fill text-white hover:bg-brand-fill-hover disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base" onClick={handleConfirmName} disabled={loading}>{t('prediction.confirm')}</button>
             </div>
           </div>
         </div>

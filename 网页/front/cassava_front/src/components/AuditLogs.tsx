@@ -146,7 +146,7 @@ const AuditLogs: React.FC<AuditLogsProps> = () => {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2 text-[#3f4650]">{t('navigation.audit_logs.loading')}</span>
+        <span className="ml-2 text-ink-secondary">{t('navigation.audit_logs.loading')}</span>
       </div>
     );
   }
@@ -157,23 +157,23 @@ const AuditLogs: React.FC<AuditLogsProps> = () => {
         <div className="card rounded-2xl overflow-hidden">
           <div className="p-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-              <h2 className="text-2xl font-bold text-[#11181c]">{t('navigation.audit_logs.title')}</h2>
+              <h2 className="text-2xl font-bold text-ink">{t('navigation.audit_logs.title')}</h2>
               <div className="flex items-center space-x-4">
-                <span className="text-sm text-[#3f4650] bg-[rgba(10,132,255,0.08)] px-3 py-1 rounded-full">
+                <span className="text-sm text-ink-secondary bg-[rgba(10,132,255,0.08)] px-3 py-1 rounded-full">
                   {t('navigation.audit_logs.total_records', { count: total })}
                 </span>
               </div>
             </div>
 
             {/* 查询条件 */}
-            <div className="mb-5 rounded-[16px] border border-[#ededf2] bg-[#f7f8fa] p-5">
+            <div className="mb-5 rounded-[16px] border border-hairline bg-surface-muted p-5">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                  <label htmlFor="audit-action-type" className="block text-sm font-medium text-[#3f4650] mb-2">{t('navigation.audit_logs.action_type')}</label>
+                  <label htmlFor="audit-action-type" className="block text-sm font-medium text-ink-secondary mb-2">{t('navigation.audit_logs.action_type')}</label>
                   <select 
                     id="audit-action-type"
                     name="audit-action-type"
-                    className="w-full px-4 py-3 border border-[#e4e5eb] rounded-[12px] outline-none focus:border-[#0a84ff] focus:ring-2 focus:ring-[rgba(10,132,255,0.10)] focus:border-transparent transition-all duration-200 bg-white hover:bg-white"
+                    className="w-full px-4 py-3 border border-hairline-strong rounded-[12px] outline-none focus:border-accent-line focus:ring-2 focus:ring-[rgba(10,132,255,0.10)] focus:border-transparent transition-all duration-200 bg-white hover:bg-white"
                     value={queryParams.action || ''}
                     onChange={(e) => handleQueryChange({ action: e.target.value as AuditAction || undefined })}
                   >
@@ -187,12 +187,12 @@ const AuditLogs: React.FC<AuditLogsProps> = () => {
                 </div>
                 
                 <div>
-                  <label htmlFor="audit-resource-type" className="block text-sm font-medium text-[#3f4650] mb-2">{t('navigation.audit_logs.resource_type')}</label>
+                  <label htmlFor="audit-resource-type" className="block text-sm font-medium text-ink-secondary mb-2">{t('navigation.audit_logs.resource_type')}</label>
                   <input 
                     id="audit-resource-type"
                     name="audit-resource-type"
                     type="text"
-                    className="w-full px-4 py-3 border border-[#e4e5eb] rounded-[12px] outline-none focus:border-[#0a84ff] focus:ring-2 focus:ring-[rgba(10,132,255,0.10)] focus:border-transparent transition-all duration-200 bg-white hover:bg-white"
+                    className="w-full px-4 py-3 border border-hairline-strong rounded-[12px] outline-none focus:border-accent-line focus:ring-2 focus:ring-[rgba(10,132,255,0.10)] focus:border-transparent transition-all duration-200 bg-white hover:bg-white"
                     placeholder={t('navigation.audit_logs.input_resource_type')}
                     value={queryParams.resourceType || ''}
                     onChange={(e) => handleQueryChange({ resourceType: e.target.value || undefined })}
@@ -200,11 +200,11 @@ const AuditLogs: React.FC<AuditLogsProps> = () => {
                 </div>
                 
                 <div>
-                  <label htmlFor="audit-status" className="block text-sm font-medium text-[#3f4650] mb-2">{t('navigation.audit_logs.status')}</label>
+                  <label htmlFor="audit-status" className="block text-sm font-medium text-ink-secondary mb-2">{t('navigation.audit_logs.status')}</label>
                   <select 
                     id="audit-status"
                     name="audit-status"
-                    className="w-full px-4 py-3 border border-[#e4e5eb] rounded-[12px] outline-none focus:border-[#0a84ff] focus:ring-2 focus:ring-[rgba(10,132,255,0.10)] focus:border-transparent transition-all duration-200 bg-white hover:bg-white"
+                    className="w-full px-4 py-3 border border-hairline-strong rounded-[12px] outline-none focus:border-accent-line focus:ring-2 focus:ring-[rgba(10,132,255,0.10)] focus:border-transparent transition-all duration-200 bg-white hover:bg-white"
                     value={queryParams.success === undefined ? '' : queryParams.success.toString()}
                     onChange={(e) => handleQueryChange({ 
                       success: e.target.value === '' ? undefined : e.target.value === 'true' 
@@ -217,11 +217,11 @@ const AuditLogs: React.FC<AuditLogsProps> = () => {
                 </div>
                 
                 <div>
-                  <label htmlFor="audit-page-size" className="block text-sm font-medium text-[#3f4650] mb-2">{t('navigation.audit_logs.page_size')}</label>
+                  <label htmlFor="audit-page-size" className="block text-sm font-medium text-ink-secondary mb-2">{t('navigation.audit_logs.page_size')}</label>
                   <select 
                     id="audit-page-size"
                     name="audit-page-size"
-                    className="w-full px-4 py-3 border border-[#e4e5eb] rounded-[12px] outline-none focus:border-[#0a84ff] focus:ring-2 focus:ring-[rgba(10,132,255,0.10)] focus:border-transparent transition-all duration-200 bg-white hover:bg-white"
+                    className="w-full px-4 py-3 border border-hairline-strong rounded-[12px] outline-none focus:border-accent-line focus:ring-2 focus:ring-[rgba(10,132,255,0.10)] focus:border-transparent transition-all duration-200 bg-white hover:bg-white"
                     value={pageSize}
                     onChange={(e) => {
                       const newSize = parseInt(e.target.value);
@@ -251,9 +251,9 @@ const AuditLogs: React.FC<AuditLogsProps> = () => {
             )}
 
             {/* 日志列表 */}
-            <div className="overflow-x-auto rounded-[16px] border border-[#ededf2]">
-              <table className="min-w-full divide-y divide-[#f2f3f6]/60 bg-transparent">
-                <thead className="bg-[#f7f8fa] text-[#3f4650]">
+            <div className="overflow-x-auto rounded-[16px] border border-hairline" role="region" aria-label={t('a11y.audit_table')} tabIndex={0}>
+              <table className="min-w-full divide-y divide-surface-sunken/60 bg-transparent">
+                <thead className="bg-surface-muted text-ink-secondary">
                   <tr>
                     <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider">
                       {t('navigation.audit_logs.time')}
@@ -275,31 +275,31 @@ const AuditLogs: React.FC<AuditLogsProps> = () => {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-transparent divide-y divide-[#f2f3f6]/60">
+                <tbody className="bg-transparent divide-y divide-surface-sunken/60">
                   {logs.map((log) => (
                     <tr key={log.id} className="hover:bg-white transition-colors duration-200">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#11181c]">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-ink">
                         {formatDateTime(log.timestamp)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#11181c]">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-ink">
                         <div>
                           <div className="font-medium">{log.username}</div>
-                          <div className="text-[#687076] text-xs">ID: {log.userId}</div>
+                          <div className="text-muted text-xs">ID: {log.userId}</div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#11181c]">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-ink">
                         <span className="bg-purple-50 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">
                           {getActionDescription(log.action)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#11181c]">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-ink">
                         <div>
                           <div className="font-medium">{log.resourceType}</div>
                           {log.resourceName && (
-                            <div className="text-[#687076] text-xs">{log.resourceName}</div>
+                            <div className="text-muted text-xs">{log.resourceName}</div>
                           )}
                           {log.resourceId && (
-                            <div className="text-[#687076] text-xs">ID: {log.resourceId}</div>
+                            <div className="text-muted text-xs">ID: {log.resourceId}</div>
                           )}
                         </div>
                       </td>
@@ -308,21 +308,21 @@ const AuditLogs: React.FC<AuditLogsProps> = () => {
                           {log.success ? t('navigation.audit_logs.success') : t('navigation.audit_logs.failed')}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#11181c]">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-ink">
                         {log.details && Object.keys(log.details).length > 0 ? (
                           <details className="text-xs">
-                            <summary className="cursor-pointer text-[#0a84ff] hover:text-blue-800 flex items-center">
+                            <summary className="cursor-pointer text-accent-text hover:text-blue-800 flex items-center">
                               <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                               </svg>
                               {t('navigation.audit_logs.view_details')}
                             </summary>
-                            <pre className="mt-2 p-3 bg-[#f2f3f6] rounded-lg text-[#3f4650] overflow-x-auto shadow-inner">
+                            <pre className="mt-2 p-3 bg-surface-sunken rounded-lg text-ink-secondary overflow-x-auto shadow-inner">
                               {JSON.stringify(log.details, null, 2)}
                             </pre>
                           </details>
                         ) : (
-                          <span className="text-[#687076] flex items-center">
+                          <span className="text-muted flex items-center">
                             <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                             </svg>
@@ -339,7 +339,7 @@ const AuditLogs: React.FC<AuditLogsProps> = () => {
             {/* 分页 */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between mt-6 p-4 card-soft rounded-xl">
-                <div className="text-sm text-[#3f4650]">
+                <div className="text-sm text-ink-secondary">
                   {t('navigation.audit_logs.pagination_info', { 
                     start: (page - 1) * pageSize + 1, 
                     end: Math.min(page * pageSize, total), 
@@ -350,7 +350,7 @@ const AuditLogs: React.FC<AuditLogsProps> = () => {
                   <button
                     onClick={() => handlePageChange(page - 1)}
                     disabled={page <= 1}
-                    className="px-4 py-2 border border-[#e4e5eb] rounded-xl text-sm font-medium text-[#3f4650] bg-white hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
+                    className="px-4 py-2 border border-hairline-strong rounded-xl text-sm font-medium text-ink-secondary bg-white hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
                   >
                     {t('navigation.audit_logs.prev_page')}
                   </button>
@@ -363,7 +363,7 @@ const AuditLogs: React.FC<AuditLogsProps> = () => {
                       <button
                         key={pageNum}
                         onClick={() => handlePageChange(pageNum)}
-                        className={`px-4 py-2 border text-sm font-medium rounded-xl transition-all duration-200 shadow-sm hover:shadow-md ${pageNum === page ? 'bg-[#0070e0] text-white border-blue-500 ' : 'bg-white text-[#3f4650] border-[#e4e5eb] hover:bg-white'}`}
+                        className={`px-4 py-2 border text-sm font-medium rounded-xl transition-all duration-200 shadow-sm hover:shadow-md ${pageNum === page ? 'bg-brand-fill text-white border-blue-500 ' : 'bg-white text-ink-secondary border-hairline-strong hover:bg-white'}`}
                       >
                         {pageNum}
                       </button>
@@ -373,7 +373,7 @@ const AuditLogs: React.FC<AuditLogsProps> = () => {
                   <button
                     onClick={() => handlePageChange(page + 1)}
                     disabled={page >= totalPages}
-                    className="px-4 py-2 border border-[#e4e5eb] rounded-xl text-sm font-medium text-[#3f4650] bg-white hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
+                    className="px-4 py-2 border border-hairline-strong rounded-xl text-sm font-medium text-ink-secondary bg-white hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
                   >
                     {t('navigation.audit_logs.next_page')}
                   </button>
@@ -384,12 +384,12 @@ const AuditLogs: React.FC<AuditLogsProps> = () => {
             {logs.length === 0 && !loading && (
               <div className="text-center py-12 card-soft rounded-xl">
                 <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-[#0a84ff]" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-8 h-8 text-accent-text" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                   </svg>
                 </div>
-                <div className="text-[#687076] text-lg font-medium">{t('navigation.audit_logs.no_logs')}</div>
-                <div className="text-[#687076] text-sm mt-2">{t('navigation.audit_logs.no_logs_desc')}</div>
+                <div className="text-muted text-lg font-medium">{t('navigation.audit_logs.no_logs')}</div>
+                <div className="text-muted text-sm mt-2">{t('navigation.audit_logs.no_logs_desc')}</div>
               </div>
             )}
           </div>

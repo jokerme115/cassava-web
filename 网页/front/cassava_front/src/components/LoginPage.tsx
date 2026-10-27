@@ -103,18 +103,18 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate, systemSettin
   };
 
   return (
-    <div className="min-h-[calc(100vh-92px)] bg-[#f7f8fa] px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-[calc(100vh-92px)] bg-surface-muted px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto grid max-w-6xl items-start gap-6 lg:grid-cols-[1.08fr_0.92fr]">
-        <section className="relative overflow-hidden rounded-[24px] border border-[#ededf2] bg-white px-6 py-8 text-[#11181c] shadow-[0_10px_30px_rgba(17,17,26,0.045)] sm:px-8 sm:py-10 lg:px-10">
+        <section className="relative overflow-hidden rounded-[24px] border border-hairline bg-white px-6 py-8 text-ink shadow-[0_10px_30px_rgba(17,17,26,0.045)] sm:px-8 sm:py-10 lg:px-10">
           <div className="absolute inset-x-0 top-0 h-40 bg-[radial-gradient(120%_100%_at_50%_0%,rgba(10,132,255,0.10),transparent_70%)]" />
           <div className="relative flex h-full flex-col">
             <div>
-              <div className="inline-flex items-center gap-2.5 rounded-full border border-[#ededf2] bg-[#f7f8fa] px-3.5 py-1.5 text-[13px] text-[#3f4650]">
-                <Sparkles className="h-4 w-4 text-[#0a84ff]" />
+              <div className="inline-flex items-center gap-2.5 rounded-full border border-hairline bg-surface-muted px-3.5 py-1.5 text-[13px] text-ink-secondary">
+                <Sparkles className="h-4 w-4 text-accent-text" />
                 {t('system.subtitle')}
               </div>
               <div className="mt-8 flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-3xl border border-[#ededf2] bg-white shadow-lg">
+                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-3xl border border-hairline bg-white shadow-lg">
                   <img src={logoImage} alt={t('system.title')} className="h-full w-full object-cover" />
                 </div>
                 <div>
@@ -123,7 +123,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate, systemSettin
                   </h1>
                 </div>
               </div>
-              <p className="mt-6 max-w-xl text-[15px] leading-7 text-[#687076]">
+              <p className="mt-6 max-w-xl text-[15px] leading-7 text-muted">
                 {t('homepage.hero.description')}
               </p>
             </div>
@@ -131,27 +131,27 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate, systemSettin
           </div>
         </section>
 
-        <section className="rounded-[24px] border border-[#ededf2] bg-white p-6 shadow-[0_10px_30px_rgba(17,17,26,0.045)] sm:p-8">
+        <section className="rounded-[24px] border border-hairline bg-white p-6 shadow-[0_10px_30px_rgba(17,17,26,0.045)] sm:p-8">
           <div className="flex h-full flex-col">
             <div className="mb-8">
-              <h2 className="mt-3 text-3xl font-semibold tracking-tight text-[#11181c]">
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
                 {t('login.title')}
               </h2>
             </div>
 
             {loginError && (
-              <div className="mb-6 rounded-3xl border border-[rgba(243,18,96,0.24)] bg-[rgba(243,18,96,0.08)] px-4 py-3 text-sm text-[#d00b52]">
+              <div className="mb-6 rounded-3xl border border-[rgba(243,18,96,0.24)] bg-[rgba(243,18,96,0.08)] px-4 py-3 text-sm text-danger-text">
                 {loginError}
               </div>
             )}
 
             <form className="space-y-5" onSubmit={handlePasswordLogin}>
               <div>
-                <label htmlFor="loginId" className="mb-2 block text-sm font-medium text-[#3f4650]">
+                <label htmlFor="loginId" className="mb-2 block text-sm font-medium text-ink-secondary">
                   {t('login.username_or_email')}
                 </label>
                 <div className="relative">
-                  <User2 className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#687076]" />
+                  <User2 className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
                   <input
                     id="loginId"
                     name="loginId"
@@ -160,18 +160,18 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate, systemSettin
                     autoComplete="username"
                     value={loginId}
                     onChange={(e) => setLoginId(e.target.value)}
-                    className="h-12 w-full rounded-2xl border border-[#ededf2] bg-white pl-11 pr-4 text-sm text-[#11181c] outline-none transition placeholder:text-[#8b9199] focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                    className="h-12 w-full rounded-2xl border border-hairline bg-white pl-11 pr-4 text-sm text-ink outline-none transition placeholder:text-muted focus:border-accent-line focus:bg-white focus:ring-4 focus:ring-accent-line/15"
                     placeholder={t('login.username_or_email_placeholder')}
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="password" className="mb-2 block text-sm font-medium text-[#3f4650]">
+                <label htmlFor="password" className="mb-2 block text-sm font-medium text-ink-secondary">
                   {t('login.password_label')}
                 </label>
                 <div className="relative">
-                  <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#687076]" />
+                  <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
                   <input
                     id="password"
                     name="password"
@@ -180,25 +180,25 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate, systemSettin
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="h-12 w-full rounded-2xl border border-[#ededf2] bg-white pl-11 pr-4 text-sm text-[#11181c] outline-none transition placeholder:text-[#8b9199] focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                    className="h-12 w-full rounded-2xl border border-hairline bg-white pl-11 pr-4 text-sm text-ink outline-none transition placeholder:text-muted focus:border-accent-line focus:bg-white focus:ring-4 focus:ring-accent-line/15"
                     placeholder={t('login.password_placeholder')}
                   />
                 </div>
               </div>
 
               <div className="flex items-center justify-between gap-4 text-sm">
-                <label className="inline-flex items-center gap-2 text-[#3f4650]">
+                <label className="inline-flex items-center gap-2 text-ink-secondary">
                   <input
                     id="remember-me"
                     name="remember-me"
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    className="h-4 w-4 rounded border-[#e4e5eb] text-[#0a84ff] focus:ring-[#17c964]"
+                    className="h-4 w-4 rounded border-hairline-strong text-accent-text focus:ring-ok"
                   />
                   {t('login.remember_me')}
                 </label>
-                <button type="button" className="font-medium text-[#0a84ff] transition hover:text-emerald-800">
+                <button type="button" className="font-medium text-accent-text transition hover:text-brand-fill-hover">
                   {t('login.forgot_password')}
                 </button>
               </div>
@@ -206,10 +206,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate, systemSettin
               <button
                 type="submit"
                 disabled={isLoading}
-                className="inline-flex h-12 w-full items-center justify-center rounded-full bg-[#0070e0] px-5 text-sm font-medium text-white transition hover:bg-[#0070d6] disabled:cursor-not-allowed disabled:bg-slate-400"
+                className="inline-flex h-12 w-full items-center justify-center rounded-full bg-brand-fill px-5 text-sm font-medium text-white transition hover:bg-brand-fill-hover disabled:cursor-not-allowed disabled:bg-slate-400"
               >
                 {isLoading ? (
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#ededf2] border-t-white" />
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-hairline border-t-white" />
                 ) : (
                   <>
                     {t('login.sign_in')}
@@ -220,16 +220,16 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate, systemSettin
             </form>
 
             <div className="my-8 flex items-center gap-4">
-              <div className="h-px flex-1 bg-[#ededf2]" />
-              <span className="text-xs uppercase tracking-[0.22em] text-[#687076]">{t('login.or')}</span>
-              <div className="h-px flex-1 bg-[#ededf2]" />
+              <div className="h-px flex-1 bg-hairline" />
+              <span className="text-xs uppercase tracking-[0.22em] text-muted">{t('login.or')}</span>
+              <div className="h-px flex-1 bg-hairline" />
             </div>
 
             <div className="space-y-3">
               {systemSettings.enable_guest_access !== false && (
                 <button
                   onClick={handleGuestLogin}
-                  className="inline-flex h-12 w-full items-center justify-center rounded-full card px-5 text-sm font-medium text-[#3f4650] transition hover:border-[#e4e5eb] hover:bg-white"
+                  className="inline-flex h-12 w-full items-center justify-center rounded-full card px-5 text-sm font-medium text-ink-secondary transition hover:border-hairline-strong hover:bg-white"
                 >
                   {t('login.guest_login')}
                 </button>
@@ -237,7 +237,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate, systemSettin
 
               <button
                 onClick={() => onNavigate('home')}
-                className="inline-flex h-12 w-full items-center justify-center rounded-full text-sm font-medium text-[#687076] transition hover:bg-white hover:text-[#3f4650]"
+                className="inline-flex h-12 w-full items-center justify-center rounded-full text-sm font-medium text-muted transition hover:bg-white hover:text-ink-secondary"
               >
                 返回首页
               </button>

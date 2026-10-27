@@ -1,13 +1,18 @@
 import colors from 'tailwindcss/colors';
 
 /**
- * 全站视觉基线：iOS 26「Liquid Glass」取向的磨砂玻璃体系。
+ * 全站视觉基线：HeroUI 口径（柔和现代 · 单一强调色 · 实底卡片）。
  *
  * 设计约束：
- * - 底色是带极淡冷色渐变的雾面白，卡片是半透明白 + 大半径模糊 + 内高光；
- * - 品牌/强调色采用 iOS 系统色（蓝 #0A84FF 为主），不再使用纯黑白；
- * - 语义色沿用 iOS 习惯：绿=完成、蓝=进行中、橙=等待/警告、红=失败/危险；
- * - 所有色阶由系统色按固定比例调配，保证同一色相内明度一致，避免出现脏色。
+ * - 页面底是纯色 #f7f8fa，卡片是纯白实底 + 1px 发丝描边 + 极淡投影；
+ * - 强调色只有一支：#0a84ff 做图标/描边/装饰，#0070e0（--brand-fill/--brand-text）做底与文字；
+ * - 语义色沿用 status 口径：绿=完成、蓝=进行中、橙=等待/警告、红=失败/危险；
+ * - 色阶仍由系统色按固定比例生成，保证同一色相内明度一致，避免脏色。
+ *
+ * 历史说明：本文件曾以「iOS 26 Liquid Glass 磨砂玻璃」为基线（glass 半透明白、
+ * 28px 模糊、28px 圆角、玻璃投影）。全站已切到实底卡片，glass 系列类名在本仓库
+ * 已无消费者，故移除，避免新代码再写回去。色阶生成保留——历史页面大量使用
+ * text-blue-600 / bg-green-50 这类既有类名，重新映射到系统色才能保持观感一致。
  */
 
 /** 以 iOS 系统色为 500，生成 50→950 的完整色阶。 */
@@ -83,29 +88,42 @@ export default {
         warning: iosOrange,
         danger: iosRed,
 
-        // 玻璃层叠用到的半透明白/雾面灰
-        glass: {
-          DEFAULT: 'rgba(255, 255, 255, 0.62)',
-          soft: 'rgba(255, 255, 255, 0.44)',
-          strong: 'rgba(255, 255, 255, 0.82)',
-          line: 'rgba(255, 255, 255, 0.72)',
-        },
+        // 实底主色（白字按钮/选中填充，白底 4.78 达标）
+        'brand-fill': '#0070e0',
+        'brand-fill-hover': '#005cb8',
+        // 文字档语义色（白底对比 ≥4.5:1，可承载正文）
+        'accent-text': '#0070e0',
+        // 描边/焦点环/装饰档（不承载正文，对应 --accent）
+        'accent-line': '#0a84ff',
+        'success-text': '#12805c',
+        'warning-text': '#b54708',
+        'danger-text': '#d92d20',
+        // 浅粉底（rgba(243,18,96,0.08) 叠白）上仍 ≥4.5 的深一档
+        'danger-strong': '#b3122f',
+
+        // 中性面：与 index.css 的 CSS 变量一一对应，方便在 className 里直接用
+        ink: '#11181c',
+        'ink-secondary': '#3f4650',
+        muted: '#687076',
+        'muted-light': '#8b9199',
+        surface: '#ffffff',
+        'surface-muted': '#f7f8fa',
+        'surface-sunken': '#f2f3f6',
+        hairline: '#ededf2',
+        'hairline-strong': '#e4e5eb',
       },
       boxShadow: {
-        glass: '0 20px 60px rgba(15, 23, 42, 0.06)',
-        'glass-lg': '0 30px 120px rgba(15, 23, 42, 0.12)',
-        'glass-inset': 'inset 0 1px 0 rgba(255,255,255,0.9)',
-        float: '0 12px 40px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(15, 23, 42, 0.04)',
+        // 普通卡片一层极淡投影；只有浮层才用大投影（与 --shadow-card/--shadow-float 对齐）
+        card: '0 4px 16px rgba(17, 24, 28, 0.05)',
+        float: '0 18px 44px rgba(17, 17, 26, 0.09), 0 0 0 1px rgba(17, 17, 26, 0.03)',
       },
       borderRadius: {
-        glass: '28px',
-      },
-      backdropBlur: {
-        glass: '28px',
-      },
-      backgroundImage: {
-        'glass-sheen':
-          'linear-gradient(135deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.36) 42%, rgba(255,255,255,0.58) 100%)',
+        // 与 index.css 的 --radius-* 对齐
+        hero: '24px',
+        xl: '16px',
+        md: '12px',
+        sm: '10px',
+        pill: '999px',
       },
     },
   },

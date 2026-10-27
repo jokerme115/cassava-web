@@ -195,9 +195,9 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNavigate }) =
   };
 
   return (
-    <div className="min-h-[calc(100vh-92px)] bg-[#f7f8fa] px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-[calc(100vh-92px)] bg-surface-muted px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto grid min-h-[calc(100vh-140px)] max-w-6xl items-stretch gap-6 lg:grid-cols-[0.94fr_1.06fr]">
-        <section className="rounded-[24px] border border-[#ededf2] bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur sm:p-8">
+        <section className="rounded-[24px] border border-hairline bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)] sm:p-8">
           <div className="flex h-full flex-col">
             <div className="mb-8">
               <div className="flex items-center gap-4">
@@ -205,38 +205,38 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNavigate }) =
                   <img src={logoImage} alt={t('system.title')} className="h-full w-full object-cover" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#0a84ff]">
+                  <p className="text-sm font-semibold uppercase tracking-[0.22em] text-accent-text">
                     Create Account
                   </p>
-                  <h2 className="mt-2 text-3xl font-semibold tracking-tight text-[#11181c]">
+                  <h2 className="mt-2 text-3xl font-semibold tracking-tight text-ink">
                     {t('register.title')}
                   </h2>
                 </div>
               </div>
-              <p className="mt-5 text-sm leading-7 text-[#687076]">
+              <p className="mt-5 text-sm leading-7 text-muted">
                 注册后可以继续进入任务、结果和数据管理页面，浏览首页与联系我们无需账号。
               </p>
             </div>
 
             {registerError && (
-              <div className="mb-5 rounded-3xl border border-[rgba(243,18,96,0.24)] bg-[rgba(243,18,96,0.08)] px-4 py-3 text-sm text-[#d00b52]">
+              <div className="mb-5 rounded-3xl border border-[rgba(243,18,96,0.24)] bg-[rgba(243,18,96,0.08)] px-4 py-3 text-sm text-danger-text">
                 {registerError}
               </div>
             )}
 
             {registerSuccess && (
-              <div className="mb-5 rounded-3xl border border-[rgba(23,201,100,0.28)] bg-[rgba(10,132,255,0.08)] px-4 py-3 text-sm text-[#0a84ff]">
+              <div className="mb-5 rounded-3xl border border-[rgba(23,201,100,0.28)] bg-[rgba(10,132,255,0.08)] px-4 py-3 text-sm text-accent-text">
                 {registerSuccess}
               </div>
             )}
 
             <form className="space-y-5" onSubmit={handleRegister}>
               <div>
-                <label htmlFor="firstName" className="mb-2 block text-sm font-medium text-[#3f4650]">
+                <label htmlFor="firstName" className="mb-2 block text-sm font-medium text-ink-secondary">
                   {t('register.first_name')}
                 </label>
                 <div className="relative">
-                  <User2 className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#687076]" />
+                  <User2 className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
                   <input
                     id="firstName"
                     name="firstName"
@@ -244,17 +244,17 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNavigate }) =
                     autoComplete="given-name"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    className="h-12 w-full rounded-2xl border border-[#ededf2] bg-white pl-11 pr-4 text-sm text-[#11181c] outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                    className="h-12 w-full rounded-2xl border border-hairline bg-white pl-11 pr-4 text-sm text-ink outline-none transition focus:border-accent-line focus:bg-white focus:ring-4 focus:ring-accent-line/15"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="email" className="mb-2 block text-sm font-medium text-[#3f4650]">
+                <label htmlFor="email" className="mb-2 block text-sm font-medium text-ink-secondary">
                   {t('register.email')}
                 </label>
                 <div className="relative">
-                  <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#687076]" />
+                  <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
                   <input
                     id="email"
                     name="email"
@@ -262,13 +262,13 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNavigate }) =
                     autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="h-12 w-full rounded-2xl border border-[#ededf2] bg-white pl-11 pr-4 text-sm text-[#11181c] outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                    className="h-12 w-full rounded-2xl border border-hairline bg-white pl-11 pr-4 text-sm text-ink outline-none transition focus:border-accent-line focus:bg-white focus:ring-4 focus:ring-accent-line/15"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="emailCode" className="mb-2 block text-sm font-medium text-[#3f4650]">
+                <label htmlFor="emailCode" className="mb-2 block text-sm font-medium text-ink-secondary">
                   {t('register.email_code')}
                 </label>
                 <div className="flex gap-3">
@@ -279,14 +279,14 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNavigate }) =
                     autoComplete="one-time-code"
                     value={emailCode}
                     onChange={(e) => setEmailCode(e.target.value)}
-                    className="h-12 min-w-0 flex-1 rounded-2xl border border-[#ededf2] bg-white px-4 text-sm text-[#11181c] outline-none transition placeholder:text-[#8b9199] focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                    className="h-12 min-w-0 flex-1 rounded-2xl border border-hairline bg-white px-4 text-sm text-ink outline-none transition placeholder:text-muted focus:border-accent-line focus:bg-white focus:ring-4 focus:ring-accent-line/15"
                     placeholder={t('register.email_code_placeholder')}
                   />
                   <button
                     type="button"
                     onClick={handleSendCode}
                     disabled={cooldown > 0 || isSendingCode}
-                    className="inline-flex h-12 shrink-0 items-center justify-center rounded-2xl border border-[#ededf2] px-4 text-sm font-medium text-[#3f4650] transition hover:border-[#e4e5eb] hover:bg-white disabled:cursor-not-allowed disabled:text-[#687076]"
+                    className="inline-flex h-12 shrink-0 items-center justify-center rounded-2xl border border-hairline px-4 text-sm font-medium text-ink-secondary transition hover:border-hairline-strong hover:bg-white disabled:cursor-not-allowed disabled:text-muted"
                   >
                     {cooldown > 0
                       ? t('register.resend_code', { seconds: cooldown })
@@ -297,7 +297,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNavigate }) =
 
               <div className="grid gap-5 sm:grid-cols-2">
                 <div>
-                  <label htmlFor="password" className="mb-2 block text-sm font-medium text-[#3f4650]">
+                  <label htmlFor="password" className="mb-2 block text-sm font-medium text-ink-secondary">
                     {t('register.password')}
                   </label>
                   <input
@@ -307,12 +307,12 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNavigate }) =
                     autoComplete="new-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="h-12 w-full rounded-2xl border border-[#ededf2] bg-white px-4 text-sm text-[#11181c] outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                    className="h-12 w-full rounded-2xl border border-hairline bg-white px-4 text-sm text-ink outline-none transition focus:border-accent-line focus:bg-white focus:ring-4 focus:ring-accent-line/15"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="confirmPassword" className="mb-2 block text-sm font-medium text-[#3f4650]">
+                  <label htmlFor="confirmPassword" className="mb-2 block text-sm font-medium text-ink-secondary">
                     {t('register.confirm_password')}
                   </label>
                   <input
@@ -322,7 +322,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNavigate }) =
                     autoComplete="new-password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="h-12 w-full rounded-2xl border border-[#ededf2] bg-white px-4 text-sm text-[#11181c] outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                    className="h-12 w-full rounded-2xl border border-hairline bg-white px-4 text-sm text-ink outline-none transition focus:border-accent-line focus:bg-white focus:ring-4 focus:ring-accent-line/15"
                   />
                 </div>
               </div>
@@ -330,10 +330,10 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNavigate }) =
               <button
                 type="submit"
                 disabled={isLoading}
-                className="inline-flex h-12 w-full items-center justify-center rounded-full bg-[#0070e0] px-5 text-sm font-medium text-white transition hover:bg-[#0070d6] disabled:cursor-not-allowed disabled:bg-slate-400"
+                className="inline-flex h-12 w-full items-center justify-center rounded-full bg-brand-fill px-5 text-sm font-medium text-white transition hover:bg-brand-fill-hover disabled:cursor-not-allowed disabled:bg-slate-400"
               >
                 {isLoading ? (
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#ededf2] border-t-white" />
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-hairline border-t-white" />
                 ) : (
                   <>
                     {t('register.register')}
@@ -344,32 +344,32 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNavigate }) =
             </form>
 
             <div className="my-8 flex items-center gap-4">
-              <div className="h-px flex-1 bg-[#ededf2]" />
-              <span className="text-xs uppercase tracking-[0.22em] text-[#687076]">{t('register.or')}</span>
-              <div className="h-px flex-1 bg-[#ededf2]" />
+              <div className="h-px flex-1 bg-hairline" />
+              <span className="text-xs uppercase tracking-[0.22em] text-muted">{t('register.or')}</span>
+              <div className="h-px flex-1 bg-hairline" />
             </div>
 
             <button
               onClick={() => onNavigate('login')}
-              className="inline-flex h-12 w-full items-center justify-center rounded-full card px-5 text-sm font-medium text-[#3f4650] transition hover:border-[#e4e5eb] hover:bg-white"
+              className="inline-flex h-12 w-full items-center justify-center rounded-full card px-5 text-sm font-medium text-ink-secondary transition hover:border-hairline-strong hover:bg-white"
             >
               {t('register.already_have_account')}
             </button>
           </div>
         </section>
 
-        <section className="relative overflow-hidden rounded-[24px] bg-[#0070e0] px-6 py-8 text-white shadow-[0_4px_16px_rgba(17,24,28,0.05)] sm:px-8 sm:py-10 lg:px-10">
+        <section className="relative overflow-hidden rounded-[24px] bg-brand-fill px-6 py-8 text-white shadow-[0_4px_16px_rgba(17,24,28,0.05)] sm:px-8 sm:py-10 lg:px-10">
           <div className="absolute inset-0 bg-[rgba(255,255,255,0.35)]" />
           <div className="relative flex h-full flex-col justify-between">
             <div>
               <div className="inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm text-slate-100 backdrop-blur">
-                <ShieldCheck className="h-4 w-4 text-emerald-300" />
+                <ShieldCheck className="h-4 w-4 text-ok" />
                 Secure Research Workspace
               </div>
               <h3 className="mt-8 max-w-lg text-4xl font-semibold leading-tight">
                 创建账号后即可进入完整的木薯检测与结果协作流程。
               </h3>
-              <p className="mt-6 max-w-xl text-base leading-8 text-[#687076]">
+              <p className="mt-6 max-w-xl text-base leading-8 text-muted">
                 账号用于保护样本数据、预测结果、任务中心与权限管理。公共展示内容仍然保持可访问，让首次访客先看见系统价值，再决定是否登录。
               </p>
             </div>
@@ -380,8 +380,8 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNavigate }) =
                 { title: 'Workflow', desc: '从上传、预测到结果沉淀一体化' },
                 { title: 'Collaboration', desc: '支持访客浏览，正式用户再进入操作页' }
               ].map((item) => (
-                <div key={item.title} className="rounded-3xl border border-[#ededf2] bg-white/8 p-4 backdrop-blur">
-                  <p className="text-xs uppercase tracking-[0.22em] text-[#687076]">{item.title}</p>
+                <div key={item.title} className="rounded-3xl border border-hairline bg-white/8 p-4 backdrop-blur">
+                  <p className="text-xs uppercase tracking-[0.22em] text-muted">{item.title}</p>
                   <p className="mt-3 text-sm leading-6 text-slate-100">{item.desc}</p>
                 </div>
               ))}
