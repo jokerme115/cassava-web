@@ -342,7 +342,8 @@
       "try_again": "登录失败，请稍后重试。",
       "admin_login": "管理员登录",
       "back_to_login": "返回登录"
-    }
+    },
+    "back_to_login": "返回登录"
   },
   "register": {
     "title": "注册木薯智能管理系统",

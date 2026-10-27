@@ -278,7 +278,8 @@
       "try_again": "Login failed, please try again later",
       "admin_login": "Admin Login",
       "back_to_login": "Back to Login"
-    }
+    },
+    "back_to_login": "Back to sign in"
   },
   "register": {
     "title": "Register for Cassava System",

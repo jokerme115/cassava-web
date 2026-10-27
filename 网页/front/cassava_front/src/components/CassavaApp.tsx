@@ -325,10 +325,10 @@ const CassavaApp: React.FC = () => {
     if (activeSection === 'register') {
       return (
         <div className="min-h-[70vh] bg-surface-muted px-4 py-10">
-          <div className="mx-auto max-w-xl rounded-[16px] card p-8 text-center shadow-[0_24px_80px_rgba(15,23,42,0.06)]">
-            <h3 className="text-2xl font-semibold text-ink">
+          <div className="mx-auto max-w-xl rounded-xl border border-hairline bg-white p-8 text-center shadow-card">
+            <h2 className="text-xl font-semibold text-ink">
               {t('register.registration_closed')}
-            </h3>
+            </h2>
             <p className="mt-3 text-sm leading-7 text-ink-secondary">
               {t('register.registration_closed_desc')}
             </p>
