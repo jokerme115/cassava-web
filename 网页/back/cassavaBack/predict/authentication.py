@@ -3,7 +3,7 @@ from rest_framework import exceptions
 from django.utils import timezone
 from django.conf import settings
 from django.core.cache import cache
-from .models import UserProfile
+from .models import UserProfile, LoginSession
 
 class ExpiringTokenAuthentication(TokenAuthentication):
     """
@@ -12,7 +12,10 @@ class ExpiringTokenAuthentication(TokenAuthentication):
     如果是Token认证请求，检查无操作时长。
     如果超过阈值，则使Token失效。
     """
-    
+
+    # 使用可多端并存的登录会话模型（DRF Token 的 user 是一对一，无法同时在线）
+    model = LoginSession
+
     def authenticate_credentials(self, key):
         try:
             token = self.get_model().objects.select_related('user').get(key=key)
@@ -27,14 +30,16 @@ class ExpiringTokenAuthentication(TokenAuthentication):
         expire_seconds = getattr(settings, 'TOKEN_EXPIRE_SECONDS', 1800)
         
         # 获取最后活跃时间
-        # 优先从UserProfile获取
-        last_activity = None
-        try:
-            if hasattr(token.user, 'profile'):
-                last_activity = token.user.profile.last_activity
-        except Exception:
-            pass
-            
+        # 多端会话下按「本会话」计时：优先取本次登录会话的 last_seen，
+        # 这样手机闲置超时只失效该会话，不会顺带把正在使用的电脑踢下线。
+        last_activity = getattr(token, 'last_seen', None)
+        if not last_activity:
+            try:
+                if hasattr(token.user, 'profile'):
+                    last_activity = token.user.profile.last_activity
+            except Exception:
+                pass
+
         # 如果没有记录，则以Token创建时间为准（或者直接通过，视策略而定）
         # 这里选择以Token创建时间作为兜底
         if not last_activity:
@@ -51,9 +56,12 @@ class ExpiringTokenAuthentication(TokenAuthentication):
         # 更新活跃时间
         # 使用Cache防抖，避免每次请求都写数据库
         user_id = token.user.id
-        cache_key = f'last_seen_update_{user_id}'
+        cache_key = f'last_seen_update_{user_id}_{token.key}'
         if not cache.get(cache_key):
             try:
+                token.last_seen = now
+                token.save(update_fields=['last_seen'])
+
                 # 更新UserProfile
                 if hasattr(token.user, 'profile'):
                     token.user.profile.last_activity = now
