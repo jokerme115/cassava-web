@@ -214,27 +214,27 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
         </div>
       )}
 
-      <section className="relative overflow-hidden px-4 pb-8 pt-6 sm:px-6 lg:px-8">
+      <section className="relative overflow-hidden px-4 pb-6 pt-5 sm:px-6 lg:px-8">
         
-        <div className="relative mx-auto grid max-w-[1440px] items-start gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="flex flex-col gap-10 rounded-[24px] border border-hairline bg-white px-6 py-8 text-ink shadow-[0_10px_30px_rgba(17,17,26,0.045)] sm:px-8 sm:py-10 lg:px-10">
+        <div className="relative mx-auto grid max-w-[1440px] items-start gap-5 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="flex flex-col gap-7 rounded-[24px] border border-hairline bg-white px-6 py-7 text-ink shadow-[0_10px_30px_rgba(17,17,26,0.045)] sm:px-8 sm:py-8 lg:px-9">
             <div>
               <div className="inline-flex items-center gap-3 rounded-full border border-hairline bg-surface-muted px-4 py-2 text-sm text-ink-secondary">
                 <Leaf className="h-4 w-4 text-accent-text" />
                 {t('homepage.hero.tagline')}
               </div>
 
-              <h1 className="mt-7 max-w-3xl text-4xl font-semibold leading-[1.08] tracking-tight [word-break:keep-all] sm:text-5xl lg:text-[56px]">
+              <h1 className="mt-6 max-w-3xl text-4xl font-semibold leading-[1.08] tracking-tight [word-break:keep-all] sm:text-5xl lg:text-[56px]">
                 {currentHero.title}
               </h1>
-              <p className="mt-5 max-w-2xl text-lg leading-8 text-ink-secondary sm:text-xl">
+              <p className="mt-4 max-w-2xl text-lg leading-8 text-ink-secondary sm:text-xl">
                 {currentHero.subtitle}
               </p>
-              <p className="mt-4 max-w-2xl text-base leading-8 text-muted">
+              <p className="mt-3 max-w-2xl text-base leading-8 text-muted">
                 {currentHero.description}
               </p>
 
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <button
                   onClick={() => onSectionChange(currentHero.action)}
                   className="inline-flex h-12 items-center justify-center rounded-full bg-brand-fill px-6 text-sm font-semibold text-white transition hover:bg-brand-fill-hover"
@@ -271,7 +271,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
                 ))}
               </div>
 
-              <div className="mt-5 flex gap-2">
+              <div className="mt-4 flex gap-2">
                 {slides.map((slide, index) => (
                   <button
                     key={slide.key}
@@ -286,8 +286,8 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
             </div>
           </div>
 
-          <div className="grid gap-6">
-            <div className="relative min-h-[360px] overflow-hidden rounded-[24px] border border-hairline bg-white shadow-[0_4px_16px_rgba(17,24,28,0.05)]">
+          <div className="grid gap-5">
+            <div className="relative min-h-[320px] overflow-hidden rounded-[24px] border border-hairline bg-white shadow-[0_4px_16px_rgba(17,24,28,0.05)]">
               {slides.map((slide, index) => (
                 <div
                   key={slide.key}
@@ -317,17 +317,17 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
               ))}
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2">
               {strengths.map((item) => (
                 <div
                   key={item.title}
-                  className="rounded-[16px] border border-hairline bg-white p-5"
+                  className="rounded-[16px] border border-hairline bg-white p-4"
                 >
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(10,132,255,0.08)] text-brand-fill-hover">
                     <item.icon className="h-5 w-5" />
                   </div>
-                  <h2 className="mt-4 text-base font-semibold text-ink">{item.title}</h2>
-                  <p className="mt-2 text-sm leading-6 text-ink-secondary">{item.description}</p>
+                  <h2 className="mt-3 text-base font-semibold text-ink">{item.title}</h2>
+                  <p className="mt-1.5 text-sm leading-6 text-ink-secondary">{item.description}</p>
                 </div>
               ))}
             </div>
@@ -335,16 +335,16 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
         </div>
       </section>
 
-      <section className="px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-[1440px] gap-6 lg:grid-cols-[0.82fr_1.18fr]">
-          <div className="rounded-[24px] border border-hairline bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.06)] sm:p-8">
+      <section className="px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto grid max-w-[1440px] gap-5 lg:grid-cols-[0.82fr_1.18fr]">
+          <div className="rounded-[24px] border border-hairline bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.06)] sm:p-7">
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent-text">
               {t('homepage.advantages.title')}
             </p>
             <h2 className="mt-4 text-3xl font-semibold tracking-tight text-ink">
               {t('homepage.advantages.subtitle')}
             </h2>
-            <div className="mt-8 space-y-5">
+            <div className="mt-6 space-y-4">
               {[
                 t('homepage.advantages.background_desc'),
                 t('homepage.advantages.highlights_desc'),
@@ -362,7 +362,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
             {researchBlocks.map((block) => (
               <article
                 key={block.title}
-                className="rounded-[24px] border border-hairline bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.06)] sm:p-8"
+                className="rounded-[24px] border border-hairline bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.06)] sm:p-7"
               >
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-fill text-white">
                   <block.icon className="h-5 w-5" />
@@ -396,9 +396,9 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
         </div>
       </section>
 
-      <section className="px-4 pb-10 pt-2 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[1440px] rounded-[24px] bg-brand-fill px-6 py-8 text-white shadow-[0_4px_16px_rgba(17,24,28,0.05)] sm:px-8 sm:py-10">
-          <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
+      <section className="px-4 pb-8 pt-1 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1440px] rounded-[24px] bg-brand-fill px-6 py-7 text-white shadow-[0_4px_16px_rgba(17,24,28,0.05)] sm:px-8 sm:py-8">
+          <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-white">
                 {t('homepage.cta.title')}

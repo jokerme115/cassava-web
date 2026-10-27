@@ -315,7 +315,7 @@ body {
 .page-shell {
   width: min(calc(100% - var(--page-gutter) * 2), var(--page-max));
   margin-inline: auto;
-  padding-block: 24px 40px;
+  padding-block: 18px 28px;
 }
 
 .page-shell--wide {
@@ -329,13 +329,13 @@ body {
 .workspace {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
-  gap: 24px;
+  gap: 20px;
   align-items: start;
 }
 
 .workspace > aside {
   position: sticky;
-  top: 88px;
+  top: 80px;
   align-self: start;
 }
 
@@ -396,7 +396,7 @@ body {
     --page-gutter: 16px;
   }
   .page-shell {
-    padding-block: 16px 32px;
+    padding-block: 14px 24px;
   }
   .page-title {
     font-size: 24px;

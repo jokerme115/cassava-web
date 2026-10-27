@@ -1791,7 +1791,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
             <>
             {/* Selection Controls */}
             {filteredAndSortedImages.length > 0 && (
-              <div className="flex items-center justify-between mb-4 p-3 card rounded-lg shadow-sm">
+              <div className="mb-3 flex items-center justify-between rounded-lg card px-3 py-2 shadow-sm">
                 <label className="flex items-center cursor-pointer group">
                   <input
                     type="checkbox"
@@ -1809,9 +1809,9 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
 
             {/* Subfolders Grid */}
             {getCurrentSubfolders().length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-sm font-medium text-muted mb-3 uppercase tracking-wider">{t('images.folders')}</h3>
-                <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
+              <div className="mb-4">
+                <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">{t('images.folders')}</h3>
+                <div className="grid grid-cols-2 gap-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
                   {getCurrentSubfolders().map(folder => (
                     <Dropdown key={folder.id} menu={getFolderMenuItems(folder)} trigger={['contextMenu']}>
                         <div 
@@ -1831,23 +1831,23 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                           e.stopPropagation();
                           moveImages(ids, folder.id);
                         }}
-                        className="group relative flex cursor-pointer flex-col items-center justify-center gap-1 rounded-[12px] border border-hairline bg-white px-2 py-3 text-center transition-colors hover:border-accent-line/40 hover:bg-surface-muted"
+                        className="group relative flex cursor-pointer items-center gap-2 rounded-lg border border-hairline bg-white px-2.5 py-2 text-left transition-colors hover:border-accent-line/40 hover:bg-surface-muted"
                         >
-                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute right-1 top-1 opacity-0 transition-opacity group-hover:opacity-100">
                             <Dropdown menu={getFolderMenuItems(folder)} trigger={['click']}>
                                 <div className="p-1 hover:bg-white rounded-full" onClick={e => e.stopPropagation()}>
                                     <MoreVertical className="w-4 h-4 text-muted" />
                                 </div>
                             </Dropdown>
                         </div>
-                        <FolderOpen className="h-6 w-6 text-accent-text/70 transition-colors group-hover:text-accent-text" />
-                        <span className="w-full truncate text-xs font-medium text-ink-secondary group-hover:text-accent-text">{folder.name}</span>
-                        <span className="text-xs text-muted">{t('images.folder_items', { count: folder.imageCount })}</span>
+                        <FolderOpen className="h-4 w-4 shrink-0 text-accent-text/70 transition-colors group-hover:text-accent-text" />
+                        <span className="min-w-0 flex-1 truncate text-xs font-medium text-ink-secondary group-hover:text-accent-text">{folder.name}</span>
+                        <span className="shrink-0 text-xs text-muted group-hover:opacity-0">{folder.imageCount}</span>
                         </div>
                     </Dropdown>
                   ))}
                 </div>
-                <div className="border-b border-hairline my-6"></div>
+                <div className="my-4 border-b border-hairline"></div>
               </div>
             )}
 
@@ -1867,13 +1867,13 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
               </div>
             ) : (
               <div className={viewMode === 'grid' 
-                ? 'grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-5'
+                ? 'grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3'
                 : 'space-y-3'
               }>
                 {groupedImages.map(group => (
                   <React.Fragment key={group.key}>
                     {group.key && (
-                      <div id={`group-divider-${group.key}`} className="col-span-full flex items-center my-4">
+                      <div id={`group-divider-${group.key}`} className="col-span-full my-3 flex items-center">
                         <div className="flex-1 border-t-2 border-dashed border-hairline-strong"></div>
                         <span className="mx-4 text-ink-secondary text-sm font-semibold card px-4 py-1 rounded-full shadow-sm">{group.key}</span>
                         <div className="flex-1 border-t-2 border-dashed border-hairline-strong"></div>
@@ -1926,28 +1926,17 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                                   </div>
                                 )}
                               </div>
-                              <div className="p-3">
-                                <p className="text-sm font-semibold text-ink truncate" title={image.name}>
+                              <div className="px-2.5 pb-2 pt-1.5">
+                                <p className="truncate text-[13px] font-semibold text-ink" title={image.name}>
                                   {image.name}
                                 </p>
-                                <ImageResolutionLabel width={image.pixel_width} height={image.pixel_height} />
-                                <div className="flex flex-col mt-2 space-y-1">
-                                  <p className="text-xs text-muted flex items-center" title={t('images.upload_time')}>
-                                    <Upload className="w-3 h-3 mr-1" />
-                                    {image.created_time ? new Date(image.created_time).toLocaleString() : ''}
-                                  </p>
-                                  {image.capture_time && (
-                                    <p className="text-xs text-muted flex items-center" title={t('images.capture_time')}>
-                                      <Calendar className="w-3 h-3 mr-1" />
-                                      {new Date(image.capture_time).toLocaleString()}
-                                    </p>
-                                  )}
-                                  <p className="text-xs text-muted">
-                                    {t('images.size')}: {formatFileSize(image.size)}
-                                  </p>
+                                <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted" title={`${image.created_time ? new Date(image.created_time).toLocaleString() : ''}`}>
+                                  <ImageResolutionLabel width={image.pixel_width} height={image.pixel_height} />
+                                  <span className="text-hairline-strong" aria-hidden="true">·</span>
+                                  <span className="truncate">{formatFileSize(image.size)}</span>
                                 </div>
                                 {image.hasPPD && (
-                                  <div className="flex items-center mt-2">
+                                  <div className="mt-1 flex items-center">
                                     <div className={`w-3 h-3 rounded-full mr-2 ${
                                       ppdToneClass(image.ppdValue, 'dot')
                                     }`}></div>

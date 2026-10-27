@@ -265,7 +265,7 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
             </div>
           </section>
 
-          <section className="grid items-start gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+          <section className="grid items-start gap-3 xl:grid-cols-[1.2fr_0.8fr]">
             <div className="grid grid-cols-2 items-start gap-3 xl:grid-cols-4">
               {metricCards.map((card) => (
                 <article key={card.label} className="rounded-[12px] border border-hairline bg-white p-3.5">
@@ -320,7 +320,7 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
                   const tone = 'border-hairline bg-white';
                   const severityDot = severity === 'severe' ? 'bg-danger' : severity === 'mild' ? 'bg-warn' : severity === 'healthy' ? 'bg-ok' : 'bg-slate-300';
                   return (
-                    <article key={result.id} className={`group card rounded-[16px] border p-3 transition-shadow hover:shadow-lg ${tone}`}>
+                    <article key={result.id} className={`group card flex flex-col rounded-[16px] border p-3 transition-shadow hover:shadow-lg ${tone}`}>
                         <button className="relative block w-full overflow-hidden rounded-[12px]" onClick={() => { setSelectedResult(result); setEditorOpen(true); }}>
                         <img src={fileUrl(result.imageUrl)} alt={result.imageName} className="aspect-square w-full object-cover" />
                         <div className="absolute inset-x-2 bottom-2 truncate rounded-lg border border-hairline bg-white/95 px-2 py-1 text-center text-xs font-semibold text-ink shadow-sm">
@@ -338,7 +338,7 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
                           <Eye className="h-4 w-4" />
                         </button>
                       </div>
-                      {result.ensemble_details?.members?.length === 2 && <button type="button" onClick={() => { setSelectedResult(result); setModalOpen(true); }} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-hairline-strong bg-white px-3 py-1.5 text-xs font-medium text-ink-secondary transition-colors hover:border-accent-line hover:bg-surface-sunken hover:text-accent-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-line">{t('results.vote_score')}</button>}
+                      {result.ensemble_details?.members?.length === 2 && <button type="button" onClick={() => { setSelectedResult(result); setModalOpen(true); }} className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-lg border border-hairline-strong bg-white px-3 py-1.5 text-xs font-medium text-ink-secondary transition-colors hover:border-accent-line hover:bg-surface-sunken hover:text-accent-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-line">{t('results.vote_score')}</button>}
                     </article>
                   );
                 })}
@@ -367,7 +367,7 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
                         <button className="rounded-xl border border-hairline bg-white p-2 text-ink-secondary transition hover:text-ink" onClick={() => openZoom(fileUrl(result.imageUrl), [fileUrl(result.imageUrl)])} aria-label={t('results.preview')}><Eye className="h-4 w-4" /></button>
                         <a href={fileUrl(result.imageUrl)} download className="rounded-xl border border-hairline bg-white p-2 text-ink-secondary transition hover:text-ink" aria-label={t('results.download')}><Download className="h-4 w-4" /></a>
                       </div>
-                      {result.ensemble_details?.members?.length === 2 && <button type="button" onClick={() => { setSelectedResult(result); setModalOpen(true); }} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-hairline-strong bg-white px-3 py-1.5 text-xs font-medium text-ink-secondary transition-colors hover:border-accent-line hover:bg-surface-sunken hover:text-accent-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-line">{t('results.vote_score')}</button>}
+                      {result.ensemble_details?.members?.length === 2 && <button type="button" onClick={() => { setSelectedResult(result); setModalOpen(true); }} className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-lg border border-hairline-strong bg-white px-3 py-1.5 text-xs font-medium text-ink-secondary transition-colors hover:border-accent-line hover:bg-surface-sunken hover:text-accent-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-line">{t('results.vote_score')}</button>}
                     </article>
                   );
                 })}
