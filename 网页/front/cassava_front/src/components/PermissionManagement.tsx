@@ -49,14 +49,14 @@ const StatCard = ({ icon: Icon, title, value, color }: {
   value: number; 
   color: string; 
 }) => (
-  <div className="rounded-[16px] border border-[#ededf2] bg-white p-4 transition-colors hover:bg-[#fafafc]" data-tone={color}>
+  <div className="rounded-[16px] border border-hairline bg-white p-4 transition-colors hover:bg-surface-muted" data-tone={color}>
     <div className="flex items-center gap-3">
-      <div className="rounded-[12px] bg-[rgba(10,132,255,0.08)] p-2.5 text-[#0a84ff]">
+      <div className="rounded-[12px] bg-[rgba(10,132,255,0.08)] p-2.5 text-accent-text">
         <Icon className="h-5 w-5" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-medium text-[#687076]">{title}</p>
-        <p className="mt-0.5 text-2xl font-semibold tracking-tight text-[#11181c]">{value}</p>
+        <p className="truncate text-[13px] font-medium text-muted">{title}</p>
+        <p className="mt-0.5 text-2xl font-semibold tracking-tight text-ink">{value}</p>
       </div>
     </div>
   </div>
@@ -72,8 +72,8 @@ const TabButton = ({ active, onClick, children }: {
     onClick={onClick}
     className={`inline-flex items-center rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
       active 
-        ? 'bg-[#0070e0] text-white shadow-[0_14px_30px_rgba(15,23,42,0.16)]' 
-        : 'text-[#3f4650] hover:bg-white hover:text-[#11181c]'
+        ? 'bg-brand-fill text-white shadow-[0_14px_30px_rgba(15,23,42,0.16)]' 
+        : 'text-ink-secondary hover:bg-white hover:text-ink'
     }`}
   >
     {children}
@@ -86,9 +86,9 @@ const PermissionManagement = () => {
   const managementDescription = t('permissions.management_description') === 'permissions.management_description'
     ? '集中管理系统用户、角色与权限，保持授权链路清晰、可追踪、可快速操作。'
     : t('permissions.management_description');
-  const primaryActionClass = 'inline-flex items-center justify-center rounded-full bg-[#0070e0] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#0070d6]';
-  const secondaryActionClass = 'inline-flex items-center justify-center rounded-full card px-5 py-2.5 text-sm font-medium text-[#3f4650] transition hover:border-[#e4e5eb] hover:bg-white';
-  const fieldClass = 'w-full rounded-2xl card px-4 py-3 text-sm text-[#11181c] outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100';
+  const primaryActionClass = 'inline-flex items-center justify-center rounded-full bg-brand-fill px-5 py-2.5 text-sm font-medium text-white transition hover:bg-brand-fill-hover';
+  const secondaryActionClass = 'inline-flex items-center justify-center rounded-full card px-5 py-2.5 text-sm font-medium text-ink-secondary transition hover:border-hairline-strong hover:bg-white';
+  const fieldClass = 'w-full rounded-2xl card px-4 py-3 text-sm text-ink outline-none transition focus:border-accent-line focus:ring-4 focus:ring-accent-line/15';
   // State management
   const [activeTab, setActiveTab] = useState<'permissions' | 'roles' | 'users' | 'config' | 'audit' | 'editor'>('users');
   const [permissions, setPermissions] = useState<Permission[]>([]);
@@ -453,7 +453,7 @@ const PermissionManagement = () => {
   const renderPermissions = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-2xl font-bold text-[#11181c]">{t('permissions.title')}</h3>
+        <h3 className="text-2xl font-bold text-ink">{t('permissions.title')}</h3>
         <PermissionGuard permission={PERMISSIONS.PERMISSIONS.ADD_PERMISSION}>
           <button
             onClick={() => { setShowCreatePermissionModal(true); setFormError(null); }}
@@ -467,36 +467,36 @@ const PermissionManagement = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {displayPermissions.map(permission => (
-          <div key={permission.id} className="rounded-[16px] border border-[#ededf2] bg-white p-6 shadow-[0_4px_16px_rgba(17,24,28,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+          <div key={permission.id} className="rounded-[16px] border border-hairline bg-white p-6 shadow-[0_4px_16px_rgba(17,24,28,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-purple-100 rounded-lg">
                   <Key className="h-6 w-6 text-purple-600" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-[#11181c]">{permission.name}</h4>
-                  <p className="text-sm text-[#3f4650]">{permission.codename}</p>
+                  <h4 className="font-semibold text-ink">{permission.name}</h4>
+                  <p className="text-sm text-ink-secondary">{permission.codename}</p>
                 </div>
               </div>
               <div className="dropdown dropdown-end">
                 <button className="p-2 hover:bg-white rounded-lg transition-colors">
-                  <MoreVertical className="h-4 w-4 text-[#687076]" />
+                  <MoreVertical className="h-4 w-4 text-muted" />
                 </button>
                 <ul className="dropdown-content menu card shadow-lg rounded-xl p-2 w-32">
                   <PermissionGuard permission={PERMISSIONS.PERMISSIONS.CHANGE_PERMISSION}>
-                    <li><button className="text-[#3f4650] hover:bg-white rounded-lg p-2">{t('permissions.edit')}</button></li>
+                    <li><button className="text-ink-secondary hover:bg-white rounded-lg p-2">{t('permissions.edit')}</button></li>
                   </PermissionGuard>
                   <PermissionGuard permission={PERMISSIONS.PERMISSIONS.DELETE_PERMISSION}>
                     <li><button 
                       onClick={() => handleDeletePermission(permission.id)}
-                      className="text-[#f31260] hover:bg-red-50 rounded-lg p-2"
+                      className="text-danger-text hover:bg-red-50 rounded-lg p-2"
                     >{t('images.delete')}</button></li>
                   </PermissionGuard>
                 </ul>
               </div>
             </div>
-            <p className="text-[#3f4650] text-sm mb-4">{t(getPermissionDescription(permission.codename))}</p>
-            <div className="flex items-center justify-between text-xs text-[#687076]">
+            <p className="text-ink-secondary text-sm mb-4">{t(getPermissionDescription(permission.codename))}</p>
+            <div className="flex items-center justify-between text-xs text-muted">
               <span>ID: {permission.id}</span>
               <span>{t('images.created_time')}: {new Date().toLocaleDateString()}</span>
             </div>
@@ -526,7 +526,7 @@ const PermissionManagement = () => {
   const renderRoles = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-2xl font-bold text-[#11181c]">{t('permissions.roles')}</h3>
+        <h3 className="text-2xl font-bold text-ink">{t('permissions.roles')}</h3>
         <PermissionGuard permission={PERMISSIONS.PERMISSIONS.ADD_ROLE}>
           <button
             onClick={() => { setShowCreateRoleModal(true); setFormError(null); }}
@@ -540,20 +540,20 @@ const PermissionManagement = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {displayRoles.map(role => (
-          <div key={role.id} className="rounded-[16px] border border-[#ededf2] bg-white p-6 shadow-[0_4px_16px_rgba(17,24,28,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+          <div key={role.id} className="rounded-[16px] border border-hairline bg-white p-6 shadow-[0_4px_16px_rgba(17,24,28,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-blue-100 rounded-lg">
-                  <Shield className="h-6 w-6 text-[#0a84ff]" />
+                  <Shield className="h-6 w-6 text-accent-text" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-[#11181c]">{role.name}</h4>
-                  <p className="text-sm text-[#3f4650]">{t('permissions.user_count', { count: role.user_count ?? 0 })}</p>
+                  <h4 className="font-semibold text-ink">{role.name}</h4>
+                  <p className="text-sm text-ink-secondary">{t('permissions.user_count', { count: role.user_count ?? 0 })}</p>
                 </div>
               </div>
               <Menu as="div" className="relative inline-block text-left">
                 <MenuButton className="p-2 hover:bg-white rounded-lg transition-colors">
-                  <MoreVertical className="h-4 w-4 text-[#687076]" />
+                  <MoreVertical className="h-4 w-4 text-muted" />
                 </MenuButton>
                 <Transition
                   as={Fragment}
@@ -575,7 +575,7 @@ const PermissionManagement = () => {
                                 setSelectedPermissions(role.permissions || []);
                                 setShowEditRoleModal(true);
                               }}
-                              className={`${focus ? 'bg-[#f7f8fa]' : ''} group flex rounded-lg items-center w-full p-2 text-sm text-[#3f4650]`}
+                              className={`${focus ? 'bg-surface-muted' : ''} group flex rounded-lg items-center w-full p-2 text-sm text-ink-secondary`}
                             >
                               {t('permissions.edit_role')}
                             </button>
@@ -587,7 +587,7 @@ const PermissionManagement = () => {
                           {({ focus }: { focus: boolean }) => (
                             <button 
                               onClick={() => handleDeleteRole(role.id)}
-                              className={`${focus ? 'bg-red-50' : ''} group flex rounded-lg items-center w-full p-2 text-sm text-[#f31260]`}
+                              className={`${focus ? 'bg-red-50' : ''} group flex rounded-lg items-center w-full p-2 text-sm text-danger-text`}
                             >
                               {t('images.delete')}
                             </button>
@@ -599,16 +599,16 @@ const PermissionManagement = () => {
                 </Transition>
               </Menu>
             </div>
-            <p className="text-[#3f4650] text-sm mb-4">{role.description}</p>
+            <p className="text-ink-secondary text-sm mb-4">{role.description}</p>
             <div className="flex items-center justify-between">
-              <span className="text-xs text-[#687076]">{t('permissions.permission_count', { count: role.permissions_count ?? role.permissions?.length ?? 0 })}</span>
+              <span className="text-xs text-muted">{t('permissions.permission_count', { count: role.permissions_count ?? role.permissions?.length ?? 0 })}</span>
               <button 
                 onClick={() => {
                   setEditingRole(role);
                   setSelectedPermissions(role.permissions || []);
                   setShowEditRoleModal(true);
                 }}
-                className="text-[#0a84ff] hover:text-blue-700 text-sm font-medium transition-colors"
+                className="text-accent-text hover:text-blue-700 text-sm font-medium transition-colors"
               >
                 {t('permissions.view_permissions')}
               </button>
@@ -639,7 +639,7 @@ const PermissionManagement = () => {
   const renderUsers = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-2xl font-bold text-[#11181c]">{t('permissions.users')}</h3>
+        <h3 className="text-2xl font-bold text-ink">{t('permissions.users')}</h3>
         <PermissionGuard permission={PERMISSIONS.PERMISSIONS.ADD_USER}>
           <button
             onClick={() => { setShowCreateUserModal(true); setFormError(null); }}
@@ -651,17 +651,17 @@ const PermissionManagement = () => {
         </PermissionGuard>
       </div>
 
-      <div className="overflow-hidden rounded-[16px] border border-[#ededf2]/80 bg-white shadow-[0_4px_16px_rgba(17,24,28,0.05)]">
+      <div className="overflow-hidden rounded-[16px] border border-hairline/80 bg-white shadow-[0_4px_16px_rgba(17,24,28,0.05)]">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-[#f7f8fa]">
+            <thead className="bg-surface-muted">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[#687076]">{t('permissions.user')}</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[#687076]">{t('permissions.email')}</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[#687076]">{t('permissions.role')}</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[#687076]">{t('permissions.status')}</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[#687076]">{t('permissions.last_login')}</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[#687076]">{t('permissions.actions')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.16em] text-muted">{t('permissions.user')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.16em] text-muted">{t('permissions.email')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.16em] text-muted">{t('permissions.role')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.16em] text-muted">{t('permissions.status')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.16em] text-muted">{t('permissions.last_login')}</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.16em] text-muted">{t('permissions.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -669,11 +669,11 @@ const PermissionManagement = () => {
                 <tr key={user.id} className="transition-colors hover:bg-white">
                   <td className="px-6 py-4">
                     <div>
-                      <div className="font-medium text-[#11181c]">{user.username}</div>
-                      <div className="text-sm text-[#3f4650]">{user.first_name} {user.last_name}</div>
+                      <div className="font-medium text-ink">{user.username}</div>
+                      <div className="text-sm text-ink-secondary">{user.first_name} {user.last_name}</div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-[#11181c]">{user.email}</td>
+                  <td className="px-6 py-4 text-sm text-ink">{user.email}</td>
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-1">
                       {(() => {
@@ -700,7 +700,7 @@ const PermissionManagement = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center">
                       {user.is_active ? (
-                        <CheckCircle className="h-5 w-5 text-[#0a84ff]" />
+                        <CheckCircle className="h-5 w-5 text-accent-text" />
                       ) : (
                         <XCircle className="h-5 w-5 text-red-500" />
                       )}
@@ -709,7 +709,7 @@ const PermissionManagement = () => {
                       </span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-[#687076]">
+                  <td className="px-6 py-4 text-sm text-muted">
                     {user.last_login ? new Date(user.last_login).toLocaleString(i18n.language === 'zh' ? 'zh-CN' : 'en-US') : t('permissions.never_login')}
                   </td>
                   <td className="px-6 py-4">
@@ -721,7 +721,7 @@ const PermissionManagement = () => {
                             setSelectedUserRoles(user.roles || []);
                             setShowAssignRoleModal(true);
                           }}
-                          className="p-2 text-[#0a84ff] hover:bg-[rgba(10,132,255,0.08)] rounded-lg transition-colors"
+                          className="p-2 text-accent-text hover:bg-[rgba(10,132,255,0.08)] rounded-lg transition-colors"
                           title={t('permissions.assign_user_roles')}
                         >
                           <Users className="h-4 w-4" />
@@ -733,7 +733,7 @@ const PermissionManagement = () => {
                             setEditingUser(user);
                             setShowEditUserModal(true);
                           }}
-                          className="p-2 text-[#0a84ff] hover:bg-[rgba(10,132,255,0.08)] rounded-lg transition-colors"
+                          className="p-2 text-accent-text hover:bg-[rgba(10,132,255,0.08)] rounded-lg transition-colors"
                           title={t('permissions.edit_user')}
                         >
                           <Edit3 className="h-4 w-4" />
@@ -742,7 +742,7 @@ const PermissionManagement = () => {
                       <PermissionGuard permission={PERMISSIONS.PERMISSIONS.DELETE_USER}>
                         <button
                           onClick={() => handleDeleteUser(user.id)}
-                          className="p-2 text-[#f31260] hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-2 text-danger-text hover:bg-red-50 rounded-lg transition-colors"
                           title={t('images.delete')}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -787,8 +787,8 @@ const PermissionManagement = () => {
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f4f5f7] p-6">
-        <div className="h-12 w-12 animate-spin rounded-full border-2 border-emerald-100 border-t-emerald-600"></div>
+      <div className="flex min-h-screen items-center justify-center bg-surface-sunken p-6">
+        <div className="h-12 w-12 animate-spin rounded-full border-2 border-accent-line/20 border-t-brand-fill"></div>
       </div>
     );
   }
@@ -796,9 +796,9 @@ const PermissionManagement = () => {
   // Permission denied state
   if (!hasAnyPermission(requiredPermissions)) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f4f5f7] p-6">
+      <div className="flex min-h-screen items-center justify-center bg-surface-sunken p-6">
         <div className="max-w-md rounded-[16px] border border-[rgba(243,18,96,0.24)] bg-white p-8 text-center shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
-          <AlertCircle className="h-12 w-12 text-[#f31260] mx-auto mb-4" />
+          <AlertCircle className="h-12 w-12 text-danger-text mx-auto mb-4" />
           <h3 className="text-xl font-bold text-red-800 mb-2">{t('permissions.access_denied')}</h3>
           <p className="text-red-700">{t('permissions.access_denied_desc')}</p>
         </div>
@@ -809,26 +809,26 @@ const PermissionManagement = () => {
   return (
     <div className="page-shell page-shell--flush">
       <div className="mx-auto max-w-[1440px] space-y-6">
-        <section className="overflow-hidden rounded-[24px] border border-[#ededf2] bg-white shadow-[0_10px_30px_rgba(17,17,26,0.045)]">
+        <section className="overflow-hidden rounded-[24px] border border-hairline bg-white shadow-[0_10px_30px_rgba(17,17,26,0.045)]">
           <div className="grid gap-6 px-6 py-7 sm:px-8 lg:grid-cols-[1.2fr_0.8fr] lg:px-10">
             <div>
-              <h1 className="mt-4 text-[28px] font-semibold tracking-tight text-[#11181c] sm:text-[32px]">
+              <h1 className="mt-4 text-[28px] font-semibold tracking-tight text-ink sm:text-[32px]">
                 {t('permissions.title')}
               </h1>
-              <p className="mt-2 max-w-3xl text-sm leading-7 text-[#687076]">{managementDescription}</p>
+              <p className="mt-2 max-w-3xl text-sm leading-7 text-muted">{managementDescription}</p>
             </div>
-            <div className="grid gap-4 rounded-[16px] border border-[#ededf2] bg-[#f7f8fa] p-5 text-sm sm:grid-cols-2">
+            <div className="grid gap-4 rounded-[16px] border border-hairline bg-surface-muted p-5 text-sm sm:grid-cols-2">
               <div>
-                <p className="text-[11px] uppercase tracking-[0.18em] text-[#687076]">当前焦点</p>
-                <p className="mt-1.5 text-[15px] font-medium text-[#11181c]">{activeTab === 'editor' ? editorTabLabel : t(`permissions.${activeTab}`)}</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-muted">当前焦点</p>
+                <p className="mt-1.5 text-[15px] font-medium text-ink">{activeTab === 'editor' ? editorTabLabel : t(`permissions.${activeTab}`)}</p>
               </div>
               <div>
-                <p className="text-[11px] uppercase tracking-[0.18em] text-[#687076]">工作区状态</p>
-                <p className="mt-1.5 text-[15px] font-medium text-[#11181c]">{totalUserCount || users.length} 位用户 / {totalRoleCount || roles.length} 个角色</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-muted">工作区状态</p>
+                <p className="mt-1.5 text-[15px] font-medium text-ink">{totalUserCount || users.length} 位用户 / {totalRoleCount || roles.length} 个角色</p>
               </div>
               <div className="sm:col-span-2">
-                <p className="text-[11px] uppercase tracking-[0.18em] text-[#687076]">使用建议</p>
-                <p className="mt-1.5 text-[13px] leading-6 text-[#687076]">
+                <p className="text-xs uppercase tracking-[0.18em] text-muted">使用建议</p>
+                <p className="mt-1.5 text-[13px] leading-6 text-muted">
                   先在用户列表完成账户操作，再进入权限工作台处理细粒度授权，效率最高。
                 </p>
               </div>
@@ -848,13 +848,13 @@ const PermissionManagement = () => {
             icon={Shield} 
             title={t('permissions.total_roles')} 
             value={totalRoleCount || roles?.length || 0} 
-            color="text-[#0a84ff]" 
+            color="text-accent-text" 
           />
           <StatCard 
             icon={Users} 
             title={t('permissions.total_users')} 
             value={totalUserCount || users?.length || 0} 
-            color="text-[#0a84ff]" 
+            color="text-accent-text" 
           />
           <StatCard 
             icon={Users} 
@@ -871,9 +871,9 @@ const PermissionManagement = () => {
         </div>
 
         {/* Main content area */}
-        <div className="overflow-hidden rounded-[24px] border border-[#ededf2]/80 bg-white shadow-[0_32px_110px_rgba(15,23,42,0.08)]">
+        <div className="overflow-hidden rounded-[24px] border border-hairline/80 bg-white shadow-[0_32px_110px_rgba(15,23,42,0.08)]">
           {/* Tab navigation */}
-          <div className="border-b border-[#ededf2] bg-white px-4 py-4 sm:px-6">
+          <div className="border-b border-hairline bg-white px-4 py-4 sm:px-6">
             <div className="flex flex-wrap gap-2">
               <TabButton 
                 active={activeTab === 'permissions'} 
@@ -917,10 +917,10 @@ const PermissionManagement = () => {
 
           {/* Search and filter bar */}
           {activeTab !== 'editor' && (
-          <div className="border-b border-[#ededf2] bg-white px-4 py-4 sm:px-6">
+          <div className="border-b border-hairline bg-white px-4 py-4 sm:px-6">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#687076]" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted" />
                 <input
                   type="text"
                   placeholder={t('permissions.search_placeholder', { 
@@ -932,16 +932,17 @@ const PermissionManagement = () => {
                       setSearchTerm(e.target.value);
                       if (activeTab === 'users') setUserPage(1); // Reset to first page when search changes
                   }}
-                  className="w-full rounded-full border border-[#ededf2] bg-white py-3 pl-10 pr-4 text-sm text-[#11181c] outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                  className="w-full rounded-full border border-hairline bg-white py-3 pl-10 pr-4 text-sm text-ink outline-none transition focus:border-accent-line focus:bg-white focus:ring-4 focus:ring-accent-line/15"
                 />
               </div>
               {activeTab === 'users' && (
                 <div className="flex items-center gap-3">
-                  <Filter className="h-4 w-4 text-[#687076]" />
+                  <Filter className="h-4 w-4 text-muted" />
                   <select
                     value={filterActive === null ? '' : filterActive.toString()}
+                    aria-label={t('permissions.filter_status')}
                     onChange={(e) => setFilterActive(e.target.value === '' ? null : e.target.value === 'true')}
-                    className="rounded-full border border-[#ededf2] bg-white px-4 py-3 text-sm text-[#3f4650] outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                    className="rounded-full border border-hairline bg-white px-4 py-3 text-sm text-ink-secondary outline-none transition focus:border-accent-line focus:bg-white focus:ring-4 focus:ring-accent-line/15"
                   >
                     <option value="">{t('permissions.all_status')}</option>
                     <option value="true">{t('permissions.active')}</option>
@@ -971,7 +972,7 @@ const PermissionManagement = () => {
         {showCreatePermissionModal && (
           <div className="fixed inset-0 bg-[rgba(15,23,42,0.28)] z-50 flex items-center justify-center p-4">
             <div className="w-full max-w-md rounded-[16px] card shadow-[0_32px_110px_rgba(15,23,42,0.14)]">
-              <div className="rounded-t-[16px] border-b border-[#ededf2] bg-[#0070e0] px-6 py-5">
+              <div className="rounded-t-[16px] border-b border-hairline bg-brand-fill px-6 py-5">
                 <div className="flex items-center space-x-3">
                   <Plus className="h-6 w-6 text-white" />
                   <h3 className="text-xl font-bold text-white">{t('permissions.create_permission')}</h3>
@@ -980,14 +981,14 @@ const PermissionManagement = () => {
               <form onSubmit={handleCreatePermission}>
                 <div className="px-6 py-6 space-y-5">
                   {formError && (
-                    <div className="bg-red-50 border border-red-200 text-[#f31260] px-4 py-3 rounded-xl text-sm flex items-center">
+                    <div className="bg-red-50 border border-red-200 text-danger-text px-4 py-3 rounded-xl text-sm flex items-center">
                       <AlertCircle className="h-5 w-5 mr-2" />
                       {formError}
                     </div>
                   )}
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-semibold text-[#3f4650] mb-2">{t('permissions.permission_name')}</label>
+                      <label className="block text-sm font-semibold text-ink-secondary mb-2">{t('permissions.permission_name')}</label>
                       <input
                         type="text"
                         required
@@ -998,7 +999,7 @@ const PermissionManagement = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-[#3f4650] mb-2">{t('permissions.permission_codename')}</label>
+                      <label className="block text-sm font-semibold text-ink-secondary mb-2">{t('permissions.permission_codename')}</label>
                       <input
                         type="text"
                         required
@@ -1009,7 +1010,7 @@ const PermissionManagement = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-[#3f4650] mb-2">{t('permissions.permission_description')}</label>
+                      <label className="block text-sm font-semibold text-ink-secondary mb-2">{t('permissions.permission_description')}</label>
                       <textarea
                         value={newPermission.description}
                         onChange={(e) => setNewPermission({...newPermission, description: e.target.value})}
@@ -1043,7 +1044,7 @@ const PermissionManagement = () => {
         {showCreateRoleModal && (
           <div className="fixed inset-0 bg-[rgba(15,23,42,0.28)] z-50 flex items-center justify-center p-4">
             <div className="w-full max-w-md rounded-[16px] card shadow-[0_32px_110px_rgba(15,23,42,0.14)]">
-              <div className="rounded-t-[16px] border-b border-[#ededf2] bg-[#0070e0] px-6 py-5">
+              <div className="rounded-t-[16px] border-b border-hairline bg-brand-fill px-6 py-5">
                 <div className="flex items-center space-x-3">
                   <Plus className="h-6 w-6 text-white" />
                   <h3 className="text-xl font-bold text-white">{t('permissions.create_role')}</h3>
@@ -1052,14 +1053,14 @@ const PermissionManagement = () => {
               <form onSubmit={handleCreateRole}>
                 <div className="px-6 py-6 space-y-5">
                   {formError && (
-                    <div className="bg-red-50 border border-red-200 text-[#f31260] px-4 py-3 rounded-xl text-sm flex items-center">
+                    <div className="bg-red-50 border border-red-200 text-danger-text px-4 py-3 rounded-xl text-sm flex items-center">
                       <AlertCircle className="h-5 w-5 mr-2" />
                       {formError}
                     </div>
                   )}
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-semibold text-[#3f4650] mb-2">{t('permissions.role_name')}</label>
+                      <label className="block text-sm font-semibold text-ink-secondary mb-2">{t('permissions.role_name')}</label>
                       <input
                         type="text"
                         required
@@ -1070,7 +1071,7 @@ const PermissionManagement = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-[#3f4650] mb-2">{t('permissions.role_description')}</label>
+                      <label className="block text-sm font-semibold text-ink-secondary mb-2">{t('permissions.role_description')}</label>
                       <textarea
                         value={newRole.description}
                         onChange={(e) => setNewRole({...newRole, description: e.target.value})}
@@ -1104,7 +1105,7 @@ const PermissionManagement = () => {
         {showCreateUserModal && (
           <div className="fixed inset-0 bg-[rgba(15,23,42,0.28)] z-50 flex items-center justify-center p-4">
             <div className="w-full max-w-md rounded-[16px] card shadow-[0_32px_110px_rgba(15,23,42,0.14)]">
-              <div className="rounded-t-[16px] border-b border-[#ededf2] bg-[#0070e0] px-6 py-5">
+              <div className="rounded-t-[16px] border-b border-hairline bg-brand-fill px-6 py-5">
                 <div className="flex items-center space-x-3">
                   <Plus className="h-6 w-6 text-white" />
                   <h3 className="text-xl font-bold text-white">{t('permissions.create_user')}</h3>
@@ -1113,14 +1114,14 @@ const PermissionManagement = () => {
               <form onSubmit={handleCreateUser}>
                 <div className="px-6 py-6 space-y-5">
                   {formError && (
-                    <div className="bg-red-50 border border-red-200 text-[#f31260] px-4 py-3 rounded-xl text-sm flex items-center">
+                    <div className="bg-red-50 border border-red-200 text-danger-text px-4 py-3 rounded-xl text-sm flex items-center">
                       <AlertCircle className="h-5 w-5 mr-2" />
                       {formError}
                     </div>
                   )}
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-semibold text-[#3f4650] mb-2">{t('permissions.username')}</label>
+                      <label className="block text-sm font-semibold text-ink-secondary mb-2">{t('permissions.username')}</label>
                       <input
                         type="text"
                         required
@@ -1131,7 +1132,7 @@ const PermissionManagement = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-[#3f4650] mb-2">{t('permissions.email')}</label>
+                      <label className="block text-sm font-semibold text-ink-secondary mb-2">{t('permissions.email')}</label>
                       <input
                         type="email"
                         required
@@ -1142,7 +1143,7 @@ const PermissionManagement = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-[#3f4650] mb-2">{t('permissions.password')}</label>
+                      <label className="block text-sm font-semibold text-ink-secondary mb-2">{t('permissions.password')}</label>
                       <input
                         type="password"
                         required
@@ -1154,7 +1155,7 @@ const PermissionManagement = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-semibold text-[#3f4650] mb-2">{t('permissions.first_name')}</label>
+                        <label className="block text-sm font-semibold text-ink-secondary mb-2">{t('permissions.first_name')}</label>
                         <input
                           type="text"
                           value={newUser.first_name}
@@ -1164,7 +1165,7 @@ const PermissionManagement = () => {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-[#3f4650] mb-2">{t('permissions.last_name')}</label>
+                        <label className="block text-sm font-semibold text-ink-secondary mb-2">{t('permissions.last_name')}</label>
                         <input
                           type="text"
                           value={newUser.last_name}
@@ -1179,9 +1180,9 @@ const PermissionManagement = () => {
                         type="checkbox"
                         checked={newUser.is_active}
                         onChange={(e) => setNewUser({...newUser, is_active: e.target.checked})}
-                        className="h-4 w-4 text-[#0a84ff] focus:ring-[#0a84ff] border-[#e4e5eb] rounded"
+                        className="h-4 w-4 text-accent-text focus:ring-accent-line border-hairline-strong rounded"
                       />
-                      <label className="ml-2 block text-sm text-[#11181c]">{t('permissions.active_user')}</label>
+                      <label className="ml-2 block text-sm text-ink">{t('permissions.active_user')}</label>
                     </div>
                   </div>
                 </div>
@@ -1209,7 +1210,7 @@ const PermissionManagement = () => {
         {showEditRoleModal && editingRole && (
           <div className="fixed inset-0 bg-[rgba(15,23,42,0.28)] z-50 flex items-center justify-center p-4">
             <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[16px] card shadow-[0_32px_110px_rgba(15,23,42,0.14)]">
-              <div className="sticky top-0 z-10 rounded-t-[16px] border-b border-[#ededf2] bg-[#0070e0] px-6 py-5">
+              <div className="sticky top-0 z-10 rounded-t-[16px] border-b border-hairline bg-brand-fill px-6 py-5">
                 <div className="flex items-center space-x-3">
                   <Edit3 className="h-6 w-6 text-white" />
                   <h3 className="text-xl font-bold text-white">{t('permissions.edit_role')}</h3>
@@ -1218,14 +1219,14 @@ const PermissionManagement = () => {
               <form onSubmit={handleUpdateRole}>
                 <div className="px-6 py-6 space-y-5">
                   {formError && (
-                    <div className="bg-red-50 border border-red-200 text-[#f31260] px-4 py-3 rounded-xl text-sm flex items-center">
+                    <div className="bg-red-50 border border-red-200 text-danger-text px-4 py-3 rounded-xl text-sm flex items-center">
                       <AlertCircle className="h-5 w-5 mr-2" />
                       {formError}
                     </div>
                   )}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-[#3f4650] mb-2">{t('permissions.role_name')}</label>
+                      <label className="block text-sm font-semibold text-ink-secondary mb-2">{t('permissions.role_name')}</label>
                       <input
                         type="text"
                         required
@@ -1235,7 +1236,7 @@ const PermissionManagement = () => {
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-[#3f4650] mb-2">{t('permissions.role_description')}</label>
+                      <label className="block text-sm font-semibold text-ink-secondary mb-2">{t('permissions.role_description')}</label>
                       <textarea
                         value={editingRole.description}
                         onChange={(e) => setEditingRole({...editingRole, description: e.target.value})}
@@ -1245,8 +1246,8 @@ const PermissionManagement = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-semibold text-[#3f4650] mb-3">{t('permissions.permissions')}</label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto p-2 border border-gray-100 rounded-xl bg-[#f7f8fa]">
+                    <label className="block text-sm font-semibold text-ink-secondary mb-3">{t('permissions.permissions')}</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto p-2 border border-gray-100 rounded-xl bg-surface-muted">
                       {permissions.map(perm => (
                         <div key={perm.id} className="flex items-start space-x-3 p-2 hover:card rounded-lg transition-colors">
                           <input
@@ -1260,11 +1261,11 @@ const PermissionManagement = () => {
                                 setSelectedPermissions(selectedPermissions.filter(id => id !== perm.id));
                               }
                             }}
-                            className="mt-1 h-4 w-4 text-[#0a84ff] focus:ring-blue-500 border-[#e4e5eb] rounded"
+                            className="mt-1 h-4 w-4 text-accent-text focus:ring-blue-500 border-hairline-strong rounded"
                           />
                           <label htmlFor={`perm-${perm.id}`} className="text-sm cursor-pointer select-none">
-                            <div className="font-medium text-[#11181c]">{perm.name}</div>
-                            <div className="text-xs text-[#687076]">{t(getPermissionDescription(perm.codename))}</div>
+                            <div className="font-medium text-ink">{perm.name}</div>
+                            <div className="text-xs text-muted">{t(getPermissionDescription(perm.codename))}</div>
                           </label>
                         </div>
                       ))}
@@ -1295,7 +1296,7 @@ const PermissionManagement = () => {
         {showAssignRoleModal && selectedUser && (
           <div className="fixed inset-0 bg-[rgba(15,23,42,0.28)] z-50 flex items-center justify-center p-4">
             <div className="w-full max-w-md rounded-[16px] card shadow-[0_32px_110px_rgba(15,23,42,0.14)]">
-              <div className="rounded-t-[16px] border-b border-[#ededf2] bg-[#0070e0] px-6 py-5">
+              <div className="rounded-t-[16px] border-b border-hairline bg-brand-fill px-6 py-5">
                 <div className="flex items-center space-x-3">
                   <Shield className="h-6 w-6 text-white" />
                   <h3 className="text-xl font-bold text-white">{t('permissions.assign_roles')}</h3>
@@ -1321,11 +1322,11 @@ const PermissionManagement = () => {
                               setSelectedUserRoles(selectedUserRoles.filter(id => id !== role.id));
                             }
                           }}
-                          className="h-5 w-5 text-purple-600 focus:ring-purple-500 border-[#e4e5eb] rounded"
+                          className="h-5 w-5 text-purple-600 focus:ring-purple-500 border-hairline-strong rounded"
                         />
                         <label htmlFor={`role-${role.id}`} className="flex-1 cursor-pointer select-none">
-                          <div className="font-medium text-[#11181c]">{role.name}</div>
-                          <div className="text-xs text-[#687076]">{role.description}</div>
+                          <div className="font-medium text-ink">{role.name}</div>
+                          <div className="text-xs text-muted">{role.description}</div>
                         </label>
                       </div>
                     ))}
@@ -1355,7 +1356,7 @@ const PermissionManagement = () => {
         {showEditUserModal && editingUser && (
           <div className="fixed inset-0 bg-[rgba(15,23,42,0.28)] z-50 flex items-center justify-center p-4">
             <div className="w-full max-w-md rounded-[16px] card shadow-[0_32px_110px_rgba(15,23,42,0.14)]">
-              <div className="rounded-t-[16px] border-b border-[#ededf2] bg-[#0070e0] px-6 py-5">
+              <div className="rounded-t-[16px] border-b border-hairline bg-brand-fill px-6 py-5">
                 <div className="flex items-center space-x-3">
                   <Edit3 className="h-6 w-6 text-white" />
                   <h3 className="text-xl font-bold text-white">{t('permissions.edit_user')}</h3>
@@ -1368,7 +1369,7 @@ const PermissionManagement = () => {
                 <div className="px-6 py-6 space-y-5">
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-semibold text-[#3f4650] mb-2">{t('permissions.username')}</label>
+                      <label className="block text-sm font-semibold text-ink-secondary mb-2">{t('permissions.username')}</label>
                       <input
                         type="text"
                         required
@@ -1378,7 +1379,7 @@ const PermissionManagement = () => {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-[#3f4650] mb-2">{t('permissions.email')}</label>
+                      <label className="block text-sm font-semibold text-ink-secondary mb-2">{t('permissions.email')}</label>
                       <input
                         type="email"
                         required
@@ -1389,7 +1390,7 @@ const PermissionManagement = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-semibold text-[#3f4650] mb-2">{t('permissions.first_name')}</label>
+                        <label className="block text-sm font-semibold text-ink-secondary mb-2">{t('permissions.first_name')}</label>
                         <input
                           type="text"
                           value={editingUser.first_name || ''}
@@ -1398,7 +1399,7 @@ const PermissionManagement = () => {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-[#3f4650] mb-2">{t('permissions.last_name')}</label>
+                        <label className="block text-sm font-semibold text-ink-secondary mb-2">{t('permissions.last_name')}</label>
                         <input
                           type="text"
                           value={editingUser.last_name || ''}
@@ -1412,9 +1413,9 @@ const PermissionManagement = () => {
                         type="checkbox"
                         checked={editingUser.is_active}
                         onChange={(e) => setEditingUser({...editingUser, is_active: e.target.checked})}
-                        className="h-4 w-4 text-[#0a84ff] focus:ring-[#0a84ff] border-[#e4e5eb] rounded"
+                        className="h-4 w-4 text-accent-text focus:ring-accent-line border-hairline-strong rounded"
                       />
-                      <label className="ml-2 block text-sm text-[#11181c]">{t('permissions.active_user')}</label>
+                      <label className="ml-2 block text-sm text-ink">{t('permissions.active_user')}</label>
                     </div>
                   </div>
                 </div>

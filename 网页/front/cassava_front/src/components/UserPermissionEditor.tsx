@@ -42,9 +42,9 @@ interface User {
 
 const UserPermissionEditor: React.FC = () => {
   const { t } = useTranslation();
-  const fieldClass = 'w-full rounded-2xl border border-[#ededf2] bg-white px-4 py-3 text-sm text-[#11181c] outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100';
-  const darkButtonClass = 'inline-flex items-center rounded-full bg-[#0070e0] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50';
-  const softButtonClass = 'inline-flex items-center rounded-full border border-[#ededf2] bg-white px-4 py-2.5 text-sm font-medium text-[#3f4650] transition hover:border-[#e4e5eb] hover:bg-white';
+  const fieldClass = 'w-full rounded-2xl border border-hairline bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-accent-line focus:ring-4 focus:ring-accent-line/15';
+  const darkButtonClass = 'inline-flex items-center rounded-full bg-brand-fill px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50';
+  const softButtonClass = 'inline-flex items-center rounded-full border border-hairline bg-white px-4 py-2.5 text-sm font-medium text-ink-secondary transition hover:border-hairline-strong hover:bg-white';
   
   // Data State
   const [users, setUsers] = useState<User[]>([]);
@@ -241,20 +241,20 @@ const UserPermissionEditor: React.FC = () => {
   );
 
   return (
-    <div className="flex min-h-[720px] rounded-[16px] border border-[#ededf2]/80 bg-[#f4f5f7] shadow-[0_4px_16px_rgba(17,24,28,0.05)] overflow-hidden">
+    <div className="flex min-h-[720px] rounded-[16px] border border-hairline/80 bg-surface-sunken shadow-[0_4px_16px_rgba(17,24,28,0.05)] overflow-hidden">
       {/* Sidebar - User List */}
-      <div className="flex w-full flex-col border-r border-[#ededf2] bg-white lg:w-[320px]">
-        <div className="border-b border-[#ededf2] px-5 py-5">
-          <h2 className="mb-4 flex items-center text-lg font-semibold text-[#11181c]">
-            <UserIcon className="mr-2 h-5 w-5 text-[#0a84ff]" />
+      <div className="flex w-full flex-col border-r border-hairline bg-white lg:w-[320px]">
+        <div className="border-b border-hairline px-5 py-5">
+          <h2 className="mb-4 flex items-center text-lg font-semibold text-ink">
+            <UserIcon className="mr-2 h-5 w-5 text-accent-text" />
             {t('user_permission_editor.users_title')}
           </h2>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#687076]" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
             <input
               type="text"
               placeholder={t('user_permission_editor.search_users_placeholder')}
-              className="w-full rounded-full border border-[#ededf2] bg-white py-3 pl-9 pr-4 text-sm text-[#11181c] outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+              className="w-full rounded-full border border-hairline bg-white py-3 pl-9 pr-4 text-sm text-ink outline-none transition focus:border-accent-line focus:bg-white focus:ring-4 focus:ring-accent-line/15"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -266,33 +266,33 @@ const UserPermissionEditor: React.FC = () => {
               key={user.id}
               onClick={() => setSelectedUser(user)}
               className={`cursor-pointer border-b border-slate-100 px-5 py-4 transition-colors ${
-                selectedUser?.id === user.id ? 'border-l-4 border-l-emerald-600 bg-[rgba(10,132,255,0.08)]/70' : 'border-l-4 border-l-transparent hover:bg-white'
+                selectedUser?.id === user.id ? 'border-l-4 border-l-brand-fill bg-[rgba(10,132,255,0.08)]/70' : 'border-l-4 border-l-transparent hover:bg-white'
               }`}
             >
-              <div className="font-medium text-[#11181c]">{user.username}</div>
-              <div className="text-xs text-[#687076]">{user.email}</div>
+              <div className="font-medium text-ink">{user.username}</div>
+              <div className="text-xs text-muted">{user.email}</div>
             </div>
           ))}
         </div>
       </div>
 
       {/* Main Content - Permission Editor */}
-      <div className="flex flex-1 flex-col bg-[#f4f5f7]">
+      <div className="flex flex-1 flex-col bg-surface-sunken">
         {selectedUser ? (
           <>
             {/* Toolbar */}
-            <div className="z-10 border-b border-[#ededf2] bg-white">
+            <div className="z-10 border-b border-hairline bg-white">
               <div className="flex flex-col justify-between gap-4 px-5 py-5 xl:flex-row xl:items-center">
                 <div className="flex items-center space-x-4">
-                  <h2 className="text-xl font-semibold text-[#11181c]">
-                    {t('user_permission_editor.editing')} <span className="text-[#0a84ff]">{selectedUser.username}</span>
+                  <h2 className="text-xl font-semibold text-ink">
+                    {t('user_permission_editor.editing')} <span className="text-accent-text">{selectedUser.username}</span>
                   </h2>
                 </div>
                 
                 <div className="flex flex-wrap gap-3">
-                  <div className="flex items-center space-x-2 rounded-full border border-[#ededf2] bg-[#f7f8fa] p-1.5">
+                  <div className="flex items-center space-x-2 rounded-full border border-hairline bg-surface-muted p-1.5">
                     <select 
-                      className="w-40 border-none bg-transparent text-sm text-[#3f4650] focus:ring-0"
+                      className="w-40 border-none bg-transparent text-sm text-ink-secondary focus:ring-0"
                       onChange={(e) => applyTemplate(e.target.value)}
                       value=""
                     >
@@ -304,7 +304,7 @@ const UserPermissionEditor: React.FC = () => {
                     <div className="h-4 w-px bg-gray-300"></div>
                     <button 
                       onClick={() => setIsSaveTemplateModalOpen(true)}
-                      className="rounded-full p-2 text-[#3f4650] transition hover:bg-white"
+                      className="rounded-full p-2 text-ink-secondary transition hover:bg-white"
                       title={t('user_permission_editor.save_current_as_template')}
                     >
                       <Plus className="w-4 h-4" />
@@ -346,8 +346,8 @@ const UserPermissionEditor: React.FC = () => {
                   onClick={() => setActiveTab('permissions')}
                   className={`inline-flex items-center rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                     activeTab === 'permissions' 
-                      ? 'bg-[#0070e0] text-white' 
-                      : 'text-[#687076] hover:bg-white hover:text-[#11181c]'
+                      ? 'bg-brand-fill text-white' 
+                      : 'text-muted hover:bg-white hover:text-ink'
                   }`}
                 >
                   <Key className="w-4 h-4 mr-2" />
@@ -357,8 +357,8 @@ const UserPermissionEditor: React.FC = () => {
                   onClick={() => setActiveTab('history')}
                   className={`inline-flex items-center rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                     activeTab === 'history' 
-                      ? 'bg-[#0070e0] text-white' 
-                      : 'text-[#687076] hover:bg-white hover:text-[#11181c]'
+                      ? 'bg-brand-fill text-white' 
+                      : 'text-muted hover:bg-white hover:text-ink'
                   }`}
                 >
                   <History className="w-4 h-4 mr-2" />
@@ -379,15 +379,15 @@ const UserPermissionEditor: React.FC = () => {
                   const isIndeterminate = selectedCount > 0 && selectedCount < perms.length;
 
                   return (
-                    <div key={category} className="mb-4 overflow-hidden rounded-[16px] border border-[#ededf2] bg-white shadow-[0_16px_40px_rgba(15,23,42,0.05)]">
+                    <div key={category} className="mb-4 overflow-hidden rounded-[16px] border border-hairline bg-white shadow-[0_16px_40px_rgba(15,23,42,0.05)]">
                       <div 
-                        className="flex cursor-pointer items-center justify-between bg-[#f7f8fa] px-4 py-4 transition-colors hover:bg-white"
+                        className="flex cursor-pointer items-center justify-between bg-surface-muted px-4 py-4 transition-colors hover:bg-white"
                         onClick={() => toggleCategory(category)}
                       >
                         <div className="flex items-center space-x-3">
-                          {isExpanded ? <ChevronDown className="w-5 h-5 text-[#687076]" /> : <ChevronRight className="w-5 h-5 text-[#687076]" />}
-                          <span className="font-semibold capitalize text-[#11181c]">{category}</span>
-                          <span className="rounded-full bg-[#ededf2] px-2 py-0.5 text-xs text-[#3f4650]">
+                          {isExpanded ? <ChevronDown className="w-5 h-5 text-muted" /> : <ChevronRight className="w-5 h-5 text-muted" />}
+                          <span className="font-semibold capitalize text-ink">{category}</span>
+                          <span className="rounded-full bg-hairline px-2 py-0.5 text-xs text-ink-secondary">
                             {selectedCount}/{perms.length}
                           </span>
                         </div>
@@ -397,7 +397,7 @@ const UserPermissionEditor: React.FC = () => {
                         >
                           <input
                             type="checkbox"
-                            className="w-5 h-5 rounded border-[#e4e5eb] text-purple-600 focus:ring-purple-500"
+                            className="w-5 h-5 rounded border-hairline-strong text-purple-600 focus:ring-purple-500"
                             checked={isAllSelected}
                             ref={input => {
                               if (input) input.indeterminate = isIndeterminate;
@@ -415,7 +415,7 @@ const UserPermissionEditor: React.FC = () => {
                               className={`flex items-start space-x-3 p-3 rounded-lg border cursor-pointer transition-all ${
                                 selectedPermissions.includes(perm.id) 
                                   ? 'border-[rgba(23,201,100,0.28)] bg-[rgba(10,132,255,0.08)]' 
-                                  : 'border-[#ededf2] bg-white hover:border-[rgba(23,201,100,0.28)]'
+                                  : 'border-hairline bg-white hover:border-[rgba(23,201,100,0.28)]'
                               }`}
                               onClick={() => togglePermission(perm.id)}
                               title={perm.description}
@@ -424,11 +424,11 @@ const UserPermissionEditor: React.FC = () => {
                                 type="checkbox"
                                 checked={selectedPermissions.includes(perm.id)}
                                 onChange={() => {}} // Handled by div click
-                                className="mt-1 h-4 w-4 rounded border-[#e4e5eb] text-[#0a84ff] focus:ring-[#17c964]"
+                                className="mt-1 h-4 w-4 rounded border-hairline-strong text-accent-text focus:ring-ok"
                               />
                               <div>
-                                <div className="text-sm font-medium text-[#11181c]">{perm.name}</div>
-                                <div className="mt-0.5 text-xs text-[#687076]">{perm.description}</div>
+                                <div className="text-sm font-medium text-ink">{perm.name}</div>
+                                <div className="mt-0.5 text-xs text-muted">{perm.description}</div>
                               </div>
                             </div>
                           ))}
@@ -442,30 +442,30 @@ const UserPermissionEditor: React.FC = () => {
                 <div className="space-y-4">
                   {logs.length > 0 ? (
                     logs.map((log) => (
-                      <div key={log.id} className="rounded-[16px] border border-[#ededf2] bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.05)]">
+                      <div key={log.id} className="rounded-[16px] border border-hairline bg-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.05)]">
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex items-center space-x-2">
                             <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
-                              log.success ? 'bg-green-100 text-[#0a84ff]' : 'bg-red-100 text-red-700'
+                              log.success ? 'bg-green-100 text-accent-text' : 'bg-red-100 text-red-700'
                             }`}>
                               {log.success ? t('user_permission_editor.status_success') : t('user_permission_editor.status_failed')}
                             </span>
-                            <span className="text-sm font-medium text-[#11181c]">{log.action}</span>
+                            <span className="text-sm font-medium text-ink">{log.action}</span>
                           </div>
-                          <span className="text-xs text-[#687076]">{new Date(log.created_at || log.timestamp).toLocaleString()}</span>
+                          <span className="text-xs text-muted">{new Date(log.created_at || log.timestamp).toLocaleString()}</span>
                         </div>
-                        <div className="text-sm text-[#3f4650] mb-2">
-                          <span className="font-medium text-[#3f4650]">{t('user_permission_editor.operator')}</span> {log.username}
+                        <div className="text-sm text-ink-secondary mb-2">
+                          <span className="font-medium text-ink-secondary">{t('user_permission_editor.operator')}</span> {log.username}
                         </div>
                         {log.details && (
-                          <div className="text-xs card-soft p-2 rounded-lg text-[#3f4650] font-mono overflow-x-auto whitespace-pre-wrap">
+                          <div className="text-xs card-soft p-2 rounded-lg text-ink-secondary font-mono overflow-x-auto whitespace-pre-wrap">
                             {typeof log.details === 'string' ? log.details : JSON.stringify(log.details, null, 2)}
                           </div>
                         )}
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-10 text-[#687076]">
+                    <div className="text-center py-10 text-muted">
                       <FileText className="w-10 h-10 mx-auto mb-2 text-gray-300" />
                       <p>{t('user_permission_editor.no_history')}</p>
                     </div>
@@ -475,8 +475,8 @@ const UserPermissionEditor: React.FC = () => {
             </div>
           </>
         ) : (
-          <div className="flex flex-1 flex-col items-center justify-center text-[#687076]">
-            <Shield className="mb-4 h-16 w-16 text-[#687076]" />
+          <div className="flex flex-1 flex-col items-center justify-center text-muted">
+            <Shield className="mb-4 h-16 w-16 text-muted" />
             <p className="text-lg font-medium">{t('user_permission_editor.select_user_tip')}</p>
           </div>
         )}
@@ -485,7 +485,7 @@ const UserPermissionEditor: React.FC = () => {
       {/* Notifications */}
       {notification && (
         <div className={`fixed bottom-4 right-4 z-50 flex items-center rounded-full px-6 py-3 text-sm font-medium text-white shadow-[0_4px_16px_rgba(17,24,28,0.05)] animate-fade-in-up ${
-          notification.type === 'success' ? 'bg-[#17c964]' : 'bg-[#f31260]'
+          notification.type === 'success' ? 'bg-ok' : 'bg-danger'
         }`}>
           {notification.type === 'success' ? <Check className="w-5 h-5 mr-2" /> : <AlertCircle className="w-5 h-5 mr-2" />}
           {notification.message}
@@ -495,8 +495,8 @@ const UserPermissionEditor: React.FC = () => {
       {/* Copy From User Modal */}
       {isCopyModalOpen && (
         <div className="fixed inset-0 bg-[rgba(15,23,42,0.28)] flex items-center justify-center z-50">
-          <div className="w-full max-w-md rounded-[16px] border border-[#ededf2] bg-white p-6 shadow-[0_32px_110px_rgba(15,23,42,0.14)]">
-            <h3 className="mb-4 text-xl font-semibold text-[#11181c]">{t('user_permission_editor.copy_modal_title')}</h3>
+          <div className="w-full max-w-md rounded-[16px] border border-hairline bg-white p-6 shadow-[0_32px_110px_rgba(15,23,42,0.14)]">
+            <h3 className="mb-4 text-xl font-semibold text-ink">{t('user_permission_editor.copy_modal_title')}</h3>
             <div className="mb-4">
               <input
                 type="text"
@@ -505,7 +505,7 @@ const UserPermissionEditor: React.FC = () => {
                 value={copySearchQuery}
                 onChange={(e) => setCopySearchQuery(e.target.value)}
               />
-              <div className="max-h-60 overflow-y-auto rounded-2xl border border-[#ededf2]">
+              <div className="max-h-60 overflow-y-auto rounded-2xl border border-hairline">
                 {filteredCopyUsers.map(user => (
                   <div
                     key={user.id}
@@ -514,8 +514,8 @@ const UserPermissionEditor: React.FC = () => {
                     }`}
                     onClick={() => setSourceUser(user)}
                   >
-                    <span className="font-medium text-[#3f4650]">{user.username}</span>
-                    {sourceUser?.id === user.id && <Check className="h-4 w-4 text-[#0a84ff]" />}
+                    <span className="font-medium text-ink-secondary">{user.username}</span>
+                    {sourceUser?.id === user.id && <Check className="h-4 w-4 text-accent-text" />}
                   </div>
                 ))}
               </div>
@@ -542,11 +542,11 @@ const UserPermissionEditor: React.FC = () => {
       {/* Save Template Modal */}
       {isSaveTemplateModalOpen && (
         <div className="fixed inset-0 bg-[rgba(15,23,42,0.28)] flex items-center justify-center z-50">
-          <div className="w-full max-w-md rounded-[16px] border border-[#ededf2] bg-white p-6 shadow-[0_32px_110px_rgba(15,23,42,0.14)]">
-            <h3 className="mb-4 text-xl font-semibold text-[#11181c]">{t('user_permission_editor.save_template_modal_title')}</h3>
+          <div className="w-full max-w-md rounded-[16px] border border-hairline bg-white p-6 shadow-[0_32px_110px_rgba(15,23,42,0.14)]">
+            <h3 className="mb-4 text-xl font-semibold text-ink">{t('user_permission_editor.save_template_modal_title')}</h3>
             <div className="mb-4 space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-[#3f4650]">{t('user_permission_editor.template_name')}</label>
+                <label className="mb-1 block text-sm font-medium text-ink-secondary">{t('user_permission_editor.template_name')}</label>
                 <input
                   type="text"
                   placeholder={t('user_permission_editor.template_name_placeholder')}
@@ -556,7 +556,7 @@ const UserPermissionEditor: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-[#3f4650]">{t('user_permission_editor.template_desc')}</label>
+                <label className="mb-1 block text-sm font-medium text-ink-secondary">{t('user_permission_editor.template_desc')}</label>
                 <textarea
                   placeholder={t('user_permission_editor.template_desc_placeholder')}
                   className={`${fieldClass} min-h-[80px]`}
@@ -564,7 +564,7 @@ const UserPermissionEditor: React.FC = () => {
                   onChange={(e) => setNewTemplateDesc(e.target.value)}
                 />
               </div>
-              <div className="text-sm text-[#687076]">
+              <div className="text-sm text-muted">
                 <p>{t('user_permission_editor.save_template_hint', { count: selectedPermissions.length })}</p>
               </div>
             </div>

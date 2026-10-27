@@ -20,10 +20,10 @@ export function getPpdTone(ppd?: number | null): PpdTone {
 }
 
 export const PPD_TONE_CLASS: Record<PpdTone, { dot: string; text: string; soft: string }> = {
-  high: { dot: 'bg-[#d92d20]', text: 'text-[#d92d20]', soft: 'bg-[rgba(217,45,32,0.10)]' },
-  mid: { dot: 'bg-[#b54708]', text: 'text-[#b54708]', soft: 'bg-[rgba(181,71,8,0.10)]' },
+  high: { dot: 'bg-[#d92d20]', text: 'text-danger-text', soft: 'bg-[rgba(217,45,32,0.10)]' },
+  mid: { dot: 'bg-[#b54708]', text: 'text-warn-text', soft: 'bg-[rgba(181,71,8,0.10)]' },
   low: { dot: 'bg-[#12805c]', text: 'text-[#12805c]', soft: 'bg-[rgba(18,128,92,0.10)]' },
-  unknown: { dot: 'bg-[#c8ccd2]', text: 'text-[#687076]', soft: 'bg-[rgba(104,112,118,0.10)]' }
+  unknown: { dot: 'bg-[#c8ccd2]', text: 'text-muted', soft: 'bg-[rgba(104,112,118,0.10)]' }
 };
 
 export function ppdToneClass(ppd?: number | null, key: 'dot' | 'text' | 'soft' = 'dot'): string {

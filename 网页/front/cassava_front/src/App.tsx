@@ -1,58 +1,59 @@
 import { ConfigProvider } from 'antd';
 import { BrowserRouter } from 'react-router-dom';
 import CassavaApp from './components/CassavaApp';
+import { colors, overlays, radius, shadows, fontFamily } from './theme/tokens';
 
 /**
  * antd 主题：与站内卡片体系一致（HeroUI 口径）。
  * - 浮层统一纯白实底 + 1px 发丝描边 + 极淡投影，不再用半透明/毛玻璃
- * - 强调色只有 #0a84ff 一支；圆角沿用 24/20/14 三档
- * - hashed: false 让 token 以稳定类名（cssVar）输出，便于 styles/glass-antd.css 精确覆盖
+ * - 颜色一律从 theme/tokens 取，禁止在本文件写十六进制
+ * - colorPrimary 用 brandFill(#0070e0) 而非 accent(#0a84ff)：后者白字对比仅 3.65，撑不住按钮文字
+ * - hashed: false 让 token 以稳定类名（cssVar）输出，便于 styles/ 下样式精确覆盖
  */
 const heroTheme = {
   cssVar: true as const,
   hashed: false,
   token: {
-    colorPrimary: '#0a84ff',
-    colorSuccess: '#17c964',
-    colorWarning: '#f5a524',
-    colorError: '#f31260',
-    colorText: '#11181c',
-    colorTextSecondary: '#687076',
-    colorTextTertiary: '#8b9199',
-    colorBorder: '#ededf2',
-    colorBorderSecondary: '#f2f3f6',
-    colorBgContainer: '#ffffff',
-    colorBgElevated: '#ffffff',
-    colorBgLayout: '#f7f8fa',
-    colorFillAlter: '#f7f8fa',
-    borderRadius: 14,
-    borderRadiusLG: 20,
-    borderRadiusSM: 10,
+    colorPrimary: colors.brandFill,
+    colorSuccess: colors.ok,
+    colorWarning: colors.warn,
+    colorError: colors.danger,
+    colorText: colors.ink,
+    colorTextSecondary: colors.muted,
+    colorTextTertiary: colors.mutedLight,
+    colorBorder: colors.hairline,
+    colorBorderSecondary: colors.surfaceSunken,
+    colorBgContainer: colors.surface,
+    colorBgElevated: colors.surface,
+    colorBgLayout: colors.surfaceMuted,
+    colorFillAlter: colors.surfaceMuted,
+    borderRadius: radius.md,
+    borderRadiusLG: radius.xl,
+    borderRadiusSM: radius.sm,
     controlHeight: 38,
-    fontFamily:
-      '"SF Pro Text", -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif',
-    boxShadow: '0 18px 44px rgba(17,17,26,0.10)',
-    boxShadowSecondary: '0 10px 30px rgba(17,17,26,0.06)',
+    fontFamily,
+    boxShadow: shadows.card,
+    boxShadowSecondary: shadows.float,
   },
   components: {
     Modal: {
-      contentBg: '#ffffff',
+      contentBg: colors.surface,
       headerBg: 'transparent',
       titleFontSize: 17,
     },
     Table: {
-      headerBg: '#f7f8fa',
-      headerColor: '#687076',
+      headerBg: colors.surfaceMuted,
+      headerColor: colors.muted,
       rowHoverBg: '#fafafc',
-      borderColor: '#f2f3f6',
+      borderColor: colors.surfaceSunken,
     },
-    Dropdown: { colorBgElevated: '#ffffff' },
-    Select: { selectorBg: '#ffffff', optionSelectedBg: 'rgba(10,132,255,0.10)' },
+    Dropdown: { colorBgElevated: colors.surface },
+    Select: { selectorBg: colors.surface, optionSelectedBg: overlays.accent10 },
     Button: { primaryShadow: 'none', defaultShadow: 'none', fontWeight: 500 },
-    Input: { activeShadow: '0 0 0 3px rgba(10,132,255,0.10)' },
-    Tooltip: { colorBgSpotlight: '#11181c' },
-    Message: { contentBg: '#ffffff' },
-    Pagination: { itemActiveBg: 'rgba(10,132,255,0.08)' },
+    Input: { activeShadow: `0 0 0 3px ${overlays.accent10}` },
+    Tooltip: { colorBgSpotlight: colors.ink },
+    Message: { contentBg: colors.surface },
+    Pagination: { itemActiveBg: overlays.accent08 },
   },
 };
 

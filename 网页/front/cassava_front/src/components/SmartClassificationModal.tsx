@@ -125,7 +125,7 @@ export const SmartClassificationModal: React.FC<SmartClassificationModalProps> =
     <Modal
       title={
         <div className="flex items-center space-x-2">
-          <Folder className="w-5 h-5 text-[#0a84ff]" />
+          <Folder className="w-5 h-5 text-accent-text" />
           <span>{t('smart_classification.title')}</span>
         </div>
       }
@@ -139,14 +139,14 @@ export const SmartClassificationModal: React.FC<SmartClassificationModalProps> =
       className="rounded-xl"
     >
       <div className="mb-4 bg-[rgba(10,132,255,0.08)] p-3 rounded-lg flex items-start">
-        <AlertCircle className="w-5 h-5 text-[#0a84ff] mr-2 mt-0.5" />
+        <AlertCircle className="w-5 h-5 text-accent-text mr-2 mt-0.5" />
         <div className="text-sm text-blue-700">
           {t('smart_classification.description')}
         </div>
       </div>
 
-      {lowCount > 0 && <div role="alert" className="mb-3 rounded-lg border border-[rgba(245,165,36,0.30)] bg-[rgba(245,165,36,0.12)] p-3 text-sm text-[#b26a00]">检测到 {lowCount} 张低分辨率图片，可能遗漏细小病斑。建议使用相机原图，仍可继续上传。</div>}
-      <p className="mb-3 text-xs text-[#687076]">{RESOLUTION_SCREEN_RULE} 每个切面建议保留约512像素，优先600～800像素。</p>
+      {lowCount > 0 && <div role="alert" className="mb-3 rounded-lg border border-[rgba(245,165,36,0.30)] bg-[rgba(245,165,36,0.12)] p-3 text-sm text-warn-text">检测到 {lowCount} 张低分辨率图片，可能遗漏细小病斑。建议使用相机原图，仍可继续上传。</div>}
+      <p className="mb-3 text-xs text-muted">{RESOLUTION_SCREEN_RULE} 每个切面建议保留约512像素，优先600～800像素。</p>
       <List
         dataSource={fileDataList}
         renderItem={(item, index) => (
@@ -154,14 +154,14 @@ export const SmartClassificationModal: React.FC<SmartClassificationModalProps> =
             <div className="w-full">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-[#f2f3f6] rounded-lg flex items-center justify-center">
-                    <FileText className="w-6 h-6 text-[#687076]" />
+                  <div className="w-10 h-10 bg-surface-sunken rounded-lg flex items-center justify-center">
+                    <FileText className="w-6 h-6 text-muted" />
                   </div>
                   <div>
-                    <div className="font-medium text-[#11181c] truncate max-w-xs" title={item.file.name}>
+                    <div className="font-medium text-ink truncate max-w-xs" title={item.file.name}>
                       {item.file.name}
                     </div>
-                    <div className="text-xs text-[#687076]">
+                    <div className="text-xs text-muted">
                       {(item.file.size / 1024 / 1024).toFixed(2)} MB
                     </div>
                     <ImageResolutionLabel width={dimensions.get(item.file)?.width} height={dimensions.get(item.file)?.height} />
@@ -171,7 +171,7 @@ export const SmartClassificationModal: React.FC<SmartClassificationModalProps> =
 
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <div className="text-xs text-[#687076] mb-1 flex items-center">
+                  <div className="text-xs text-muted mb-1 flex items-center">
                     <Folder className="w-3 h-3 mr-1" />
                     {t('images.folder')}
                   </div>

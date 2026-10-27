@@ -151,16 +151,16 @@ const profiles: ContactProfile[] = [
 
 export default function ContactPage() {
   return (
-    <div className="bg-[#f7f8fa] px-4 py-8 sm:px-6 lg:px-8">
+    <div className="bg-surface-muted px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[1440px] space-y-6">
-        <section className="rounded-[24px] bg-[#0070e0] px-6 py-8 text-white shadow-[0_4px_16px_rgba(17,24,28,0.05)] sm:px-8 sm:py-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-white/85">
+        <section className="rounded-[24px] bg-brand-fill px-6 py-8 text-white shadow-[0_4px_16px_rgba(17,24,28,0.05)] sm:px-8 sm:py-10">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-white">
             Contact & Collaboration
           </p>
           <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">
             联系我们
           </h1>
-          <p className="mt-5 max-w-4xl text-base leading-8 text-white/90">
+          <p className="mt-5 max-w-4xl text-base leading-8 text-white">
             页面聚焦海南师范大学龙海侠教授团队与中国热带农业科学院木薯研究中心合作窗口，
             直接呈现两位核心负责人信息，方便科研合作、数据共享与平台交流快速对接。
           </p>
@@ -171,8 +171,8 @@ export default function ContactPage() {
               { label: "Collaboration", value: "数据共享、平台共建、科研协同与招生交流" },
               { label: "Coverage", value: "高校实验室与国家级科研院所双线联动" }
             ].map((item) => (
-              <div key={item.label} className="rounded-[12px] border border-white/20 bg-white/10 p-4">
-                <p className="text-xs uppercase tracking-[0.12em] text-white/75">{item.label}</p>
+              <div key={item.label} className="rounded-[12px] border border-white/20 bg-[#005cb8] p-4">
+                <p className="text-xs uppercase tracking-[0.12em] text-white">{item.label}</p>
                 <p className="mt-3 text-sm leading-6 text-white">{item.value}</p>
               </div>
             ))}
@@ -183,66 +183,66 @@ export default function ContactPage() {
           {profiles.map((profile) => (
             <article
               key={profile.title}
-              className="h-full rounded-[24px] border border-[#ededf2] bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.06)] sm:p-8"
+              className="h-full rounded-[24px] border border-hairline bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.06)] sm:p-8"
             >
               <div className="flex items-start gap-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0070e0] text-white">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-fill text-white">
                   <Building2 className="h-6 w-6" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0a84ff]">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-text">
                     {profile.badge}
                   </p>
-                  <h2 className="mt-2 text-2xl font-semibold text-[#11181c] sm:text-3xl">
+                  <h2 className="mt-2 text-2xl font-semibold text-ink sm:text-3xl">
                     {profile.title}
                   </h2>
-                  <p className="mt-3 text-sm leading-7 text-[#3f4650]">{profile.institution}</p>
+                  <p className="mt-3 text-sm leading-7 text-ink-secondary">{profile.institution}</p>
                 </div>
               </div>
 
               <div className="mt-6 grid gap-4 md:grid-cols-2">
-                <div className="rounded-[16px] bg-[#f7f8fa] px-5 py-5 md:col-span-2">
-                  <div className="flex items-center gap-3 text-sm text-[#687076]">
+                <div className="rounded-[16px] bg-surface-muted px-5 py-5 md:col-span-2">
+                  <div className="flex items-center gap-3 text-sm text-muted">
                     <MapPin className="h-4 w-4" />
                     地址
                   </div>
-                  <p className="mt-3 text-sm font-medium leading-7 text-[#11181c]">{profile.address}</p>
+                  <p className="mt-3 text-sm font-medium leading-7 text-ink">{profile.address}</p>
                 </div>
 
                 {profile.phone && (
-                  <div className="rounded-[16px] bg-[#f7f8fa] px-5 py-5">
-                    <div className="flex items-center gap-3 text-sm text-[#687076]">
+                  <div className="rounded-[16px] bg-surface-muted px-5 py-5">
+                    <div className="flex items-center gap-3 text-sm text-muted">
                       <Phone className="h-4 w-4" />
                       电话
                     </div>
-                    <p className="mt-3 text-sm font-medium text-[#11181c]">{profile.phone}</p>
+                    <p className="mt-3 text-sm font-medium text-ink">{profile.phone}</p>
                   </div>
                 )}
 
                 {profile.email && (
-                  <div className={`rounded-[16px] bg-[#f7f8fa] px-5 py-5 ${profile.phone ? "" : "md:col-span-2"}`}>
-                    <div className="flex items-center gap-3 text-sm text-[#687076]">
+                  <div className={`rounded-[16px] bg-surface-muted px-5 py-5 ${profile.phone ? "" : "md:col-span-2"}`}>
+                    <div className="flex items-center gap-3 text-sm text-muted">
                       <Mail className="h-4 w-4" />
                       邮箱
                     </div>
-                    <p className="mt-3 break-all text-sm font-medium text-[#11181c]">{profile.email}</p>
+                    <p className="mt-3 break-all text-sm font-medium text-ink">{profile.email}</p>
                   </div>
                 )}
 
                 {profile.contactPerson && (
-                  <div className="rounded-[16px] bg-[#f7f8fa] px-5 py-5 md:col-span-2">
-                    <div className="flex items-center gap-3 text-sm text-[#687076]">
+                  <div className="rounded-[16px] bg-surface-muted px-5 py-5 md:col-span-2">
+                    <div className="flex items-center gap-3 text-sm text-muted">
                       <UserRound className="h-4 w-4" />
                       对接联系人
                     </div>
-                    <p className="mt-3 text-sm font-medium leading-7 text-[#11181c]">{profile.contactPerson}</p>
+                    <p className="mt-3 text-sm font-medium leading-7 text-ink">{profile.contactPerson}</p>
                   </div>
                 )}
               </div>
 
               <div className="mt-6 space-y-3">
                 {profile.summary.map((paragraph, index) => (
-                  <p key={`${profile.title}-summary-${index}`} className="text-sm leading-8 text-[#3f4650]">
+                  <p key={`${profile.title}-summary-${index}`} className="text-sm leading-8 text-ink-secondary">
                     {paragraph}
                   </p>
                 ))}
@@ -253,7 +253,7 @@ export default function ContactPage() {
                   {profile.highlights.map((item) => (
                     <span
                       key={item}
-                      className="rounded-full border border-[rgba(23,201,100,0.28)] bg-[rgba(10,132,255,0.08)] px-4 py-2 text-sm font-medium text-emerald-800"
+                      className="rounded-full border border-[rgba(23,201,100,0.28)] bg-[rgba(10,132,255,0.08)] px-4 py-2 text-sm font-medium text-ok-text"
                     >
                       {item}
                     </span>
@@ -263,12 +263,12 @@ export default function ContactPage() {
 
               <div className="mt-8 space-y-5">
                 {profile.sections.map((section) => (
-                  <section key={section.title} className="rounded-[16px] border border-[#ededf2] bg-white px-5 py-5">
-                    <h3 className="text-lg font-semibold text-[#11181c]">{section.title}</h3>
+                  <section key={section.title} className="rounded-[16px] border border-hairline bg-white px-5 py-5">
+                    <h3 className="text-lg font-semibold text-ink">{section.title}</h3>
                     <div className="mt-4 space-y-3">
                       {section.items.map((item, index) => (
-                        <div key={`${section.title}-${index}`} className="flex items-start gap-3 text-sm leading-7 text-[#3f4650]">
-                          <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[#17c964]" />
+                        <div key={`${section.title}-${index}`} className="flex items-start gap-3 text-sm leading-7 text-ink-secondary">
+                          <span className="mt-2 h-1.5 w-1.5 rounded-full bg-ok" />
                           <span>{item}</span>
                         </div>
                       ))}

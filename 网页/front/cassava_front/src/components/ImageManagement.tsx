@@ -1238,19 +1238,20 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
         }}
       >
         <div className="flex items-center min-w-0">
-          <FolderOpen className={`w-4 h-4 mr-2 flex-shrink-0 ${isSelected ? 'text-[#0a84ff]' : 'text-[#0a84ff]'}`} />
-          <span className={`truncate text-sm ${isSelected ? 'font-semibold text-blue-700' : 'font-medium text-[#3f4650]'}`}>
+          <FolderOpen className={`w-4 h-4 mr-2 flex-shrink-0 ${isSelected ? 'text-accent-text' : 'text-accent-text'}`} />
+          <span className={`truncate text-sm ${isSelected ? 'font-semibold text-blue-700' : 'font-medium text-ink-secondary'}`}>
             {folder.name}
           </span>
         </div>
         <div className="flex items-center flex-shrink-0">
-          <span className={`text-xs px-1.5 py-0.5 rounded-full ml-2 ${isSelected ? 'bg-[rgba(10,132,255,0.08)] text-blue-700' : 'bg-[#f2f3f6] text-[#3f4650]'}`}>
+          <span className={`text-xs px-1.5 py-0.5 rounded-full ml-2 ${isSelected ? 'bg-[rgba(10,132,255,0.08)] text-blue-700' : 'bg-surface-sunken text-ink-secondary'}`}>
             {folder.imageCount}
           </span>
           {!isGuest && (
             <div className="flex items-center ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
                 className="p-1 rounded hover:bg-white"
+                aria-label={t('a11y.create_subfolder', { name: folder.name })}
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -1260,10 +1261,11 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                   setShowCreateFolderModal(true);
                 }}
               >
-                <FolderPlus className="w-3.5 h-3.5 text-[#687076]" />
+                <FolderPlus className="w-3.5 h-3.5 text-muted" />
               </button>
               <button
                 className="p-1 rounded hover:bg-white"
+                aria-label={t('a11y.rename_folder', { name: folder.name })}
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -1273,10 +1275,11 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                   setShowRenameFolderModal(true);
                 }}
               >
-                <Edit className="w-3.5 h-3.5 text-[#687076]" />
+                <Edit className="w-3.5 h-3.5 text-muted" />
               </button>
               <button
                 className="p-1 rounded hover:bg-white"
+                aria-label={t('a11y.delete_folder', { name: folder.name })}
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -1284,7 +1287,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                   setShowDeleteFolderModal(true);
                 }}
               >
-                <Trash2 className="w-3.5 h-3.5 text-[#687076]" />
+                <Trash2 className="w-3.5 h-3.5 text-muted" />
               </button>
             </div>
           )}
@@ -1307,27 +1310,27 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
     return (
       <div className="flex items-center justify-between w-full min-w-0">
         <div className="flex items-center min-w-0">
-          <FolderOpen className={`w-4 h-4 mr-2 flex-shrink-0 ${isSelected ? 'text-[#0a84ff]' : 'text-[#0a84ff]'}`} />
+          <FolderOpen className={`w-4 h-4 mr-2 flex-shrink-0 ${isSelected ? 'text-accent-text' : 'text-accent-text'}`} />
           <div className="min-w-0">
             <div className="flex items-center gap-2 min-w-0">
-              <span className={`truncate text-sm ${isSelected ? 'font-semibold text-blue-700' : 'font-medium text-[#3f4650]'}`}>
+              <span className={`truncate text-sm ${isSelected ? 'font-semibold text-blue-700' : 'font-medium text-ink-secondary'}`}>
                 {folder.name}
               </span>
               {(folder as any).permission && (
-                <span className={`text-[11px] px-1.5 py-0.5 rounded-full ${isSelected ? 'bg-[rgba(10,132,255,0.08)] text-blue-700' : 'bg-[#f2f3f6] text-[#3f4650]'}`}>
+                <span className={`text-xs px-1.5 py-0.5 rounded-full ${isSelected ? 'bg-[rgba(10,132,255,0.08)] text-blue-700' : 'bg-surface-sunken text-ink-secondary'}`}>
                   {permissionLabel((folder as any).permission)}
                 </span>
               )}
             </div>
             {metaParts.length > 0 && (
-              <div className="truncate text-xs text-[#687076]">
+              <div className="truncate text-xs text-muted">
                 {metaParts.join(' · ')}
               </div>
             )}
           </div>
         </div>
         <div className="flex items-center flex-shrink-0">
-          <span className={`text-xs px-1.5 py-0.5 rounded-full ml-2 ${isSelected ? 'bg-[rgba(10,132,255,0.08)] text-blue-700' : 'bg-[#f2f3f6] text-[#3f4650]'}`}>
+          <span className={`text-xs px-1.5 py-0.5 rounded-full ml-2 ${isSelected ? 'bg-[rgba(10,132,255,0.08)] text-blue-700' : 'bg-surface-sunken text-ink-secondary'}`}>
             {folder.imageCount}
           </span>
         </div>
@@ -1338,10 +1341,10 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
   return (
     <div className="h-full flex">
       {/* Left Sidebar - Folders */}
-      <div className="hidden sm:block w-64 border-r border-[#ededf2] bg-white flex flex-col">
-        <div className="p-4 border-b border-[#ededf2] bg-white">
-          <h3 className="font-semibold text-[#11181c] mb-3 flex items-center gap-2">
-            <FolderOpen className="w-5 h-5 text-[#0a84ff]" />
+      <div className="hidden sm:block w-64 border-r border-hairline bg-white flex flex-col">
+        <div className="p-4 border-b border-hairline bg-white">
+          <h3 className="font-semibold text-ink mb-3 flex items-center gap-2">
+            <FolderOpen className="w-5 h-5 text-accent-text" />
             {t('images.folders')}
           </h3>
           {!isGuest && (
@@ -1356,7 +1359,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
               setCreateFolderParentId(parent);
               setShowCreateFolderModal(true);
             }}
-            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#0070e0] text-white text-sm font-medium transition-all duration-200 hover:bg-[#005cb8] active:scale-[0.98]">
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-brand-fill text-white text-sm font-medium transition-all duration-200 hover:bg-brand-fill-hover active:scale-[0.98]">
             <Plus className="w-4 h-4 mr-2" />
             {t('images.create_folder')}
           </button>
@@ -1371,6 +1374,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                 treeDefaultExpandAll
                 showSearch
                 placeholder={t('images.choose_folder')}
+                aria-label={t('images.')}
                 size="small"
               />
               <div className="flex gap-2">
@@ -1398,7 +1402,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
           <button
             onClick={() => setSelectedFolder(null)}
             className={`w-full text-left px-3 py-2 rounded-lg mb-1 transition-all duration-200 ${
-              selectedFolder === null ? 'bg-[#0070e0] text-white shadow-sm' : 'hover:bg-[#f4f5f7]'
+              selectedFolder === null ? 'bg-brand-fill text-white shadow-sm' : 'hover:bg-surface-sunken'
             }`}
           >
             <div className="flex items-center justify-between">
@@ -1409,7 +1413,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
           <button
             onClick={() => setSelectedFolder('uncategorized')}
             className={`w-full text-left px-3 py-2 rounded-lg mb-1 transition-all duration-200 ${
-              selectedFolder === 'uncategorized' ? 'bg-[#0070e0] text-white shadow-sm' : 'hover:bg-[#f4f5f7]'
+              selectedFolder === 'uncategorized' ? 'bg-brand-fill text-white shadow-sm' : 'hover:bg-surface-sunken'
             }`}
             onDragOver={(e) => {
                 e.preventDefault();
@@ -1453,7 +1457,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
           <button
             onClick={() => setSelectedFolder('shared_with_me')}
             className={`w-full text-left px-3 py-2 rounded-lg mb-1 transition-all duration-200 ${
-              selectedFolder === 'shared_with_me' ? 'bg-[#0070e0] text-white shadow-sm' : 'hover:bg-[#f4f5f7]'
+              selectedFolder === 'shared_with_me' ? 'bg-brand-fill text-white shadow-sm' : 'hover:bg-surface-sunken'
             }`}
           >
             <div className="flex items-center justify-between">
@@ -1469,7 +1473,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
           <button
             onClick={() => setSelectedFolder('my_shares')}
             className={`w-full text-left px-3 py-2 rounded-lg mb-1 transition-all duration-200 ${
-              selectedFolder === 'my_shares' ? 'bg-[#0070e0] text-white shadow-sm' : 'hover:bg-[#f4f5f7]'
+              selectedFolder === 'my_shares' ? 'bg-brand-fill text-white shadow-sm' : 'hover:bg-surface-sunken'
             }`}
           >
             <div className="flex items-center justify-between">
@@ -1484,7 +1488,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
           </button>
           )}
           
-          <div className="border-t border-[#ededf2] my-2"></div>
+          <div className="border-t border-hairline my-2"></div>
 
           <div className="px-2 pb-2">
             <Input
@@ -1507,7 +1511,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-medium">{t('common.all')}</span>
-                    <span className="text-xs text-[#687076]">{myShares.length}</span>
+                    <span className="text-xs text-muted">{myShares.length}</span>
                   </div>
                 </button>
                 {mySharesRecipients
@@ -1526,7 +1530,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-medium truncate">{username}</span>
-                        <span className="text-xs text-[#687076]">{count}</span>
+                        <span className="text-xs text-muted">{count}</span>
                       </div>
                     </button>
                   ))}
@@ -1566,21 +1570,21 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col w-full">
         {/* Header */}
-        <div className="bg-white border-b border-[#ededf2] p-4 shadow-sm">
+        <div className="bg-white border-b border-hairline p-4 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center flex-wrap gap-2">
               <h2 
-                className="text-2xl font-semibold text-[#11181c] cursor-pointer hover:underline"
+                className="text-2xl font-semibold text-ink cursor-pointer hover:underline"
                 onClick={() => setSelectedFolder(null)}
               >
                 {t('navigation.images')}
               </h2>
               {getBreadcrumbs().map((folder, index) => (
                 <React.Fragment key={folder.id}>
-                  <ChevronRight className="w-5 h-5 text-[#687076]" />
+                  <ChevronRight className="w-5 h-5 text-muted" />
                   <span 
-                    className={`text-lg font-medium cursor-pointer hover:text-[#0a84ff] ${
-                      index === getBreadcrumbs().length - 1 ? 'text-[#11181c]' : 'text-[#687076]'
+                    className={`text-lg font-medium cursor-pointer hover:text-accent-text ${
+                      index === getBreadcrumbs().length - 1 ? 'text-ink' : 'text-muted'
                     }`}
                     onClick={() => setSelectedFolder(folder.id)}
                   >
@@ -1593,13 +1597,17 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
               <div className="flex card rounded-lg p-1 shadow-sm border">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded-lg transition-all duration-200 ${viewMode === 'grid' ? 'bg-[#0070e0] text-white shadow-md' : 'hover:bg-white'}`}
+                  aria-label={t('a11y.grid_view')}
+                  aria-pressed={viewMode === 'grid'}
+                  className={`p-2 rounded-lg transition-all duration-200 ${viewMode === 'grid' ? 'bg-brand-fill text-white shadow-md' : 'hover:bg-white'}`}
                 >
                   <Grid className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-2 rounded-lg transition-all duration-200 ${viewMode === 'list' ? 'bg-[#0070e0] text-white shadow-md' : 'hover:bg-white'}`}
+                  aria-label={t('a11y.list_view')}
+                  aria-pressed={viewMode === 'list'}
+                  className={`p-2 rounded-lg transition-all duration-200 ${viewMode === 'list' ? 'bg-brand-fill text-white shadow-md' : 'hover:bg-white'}`}
                 >
                   <List className="w-4 h-4" />
                 </button>
@@ -1611,13 +1619,13 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-3 flex-1 w-full sm:w-auto">
               <div className="relative flex-1 max-w-md w-full">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#687076] w-5 h-5" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted w-5 h-5" />
                 <input
                   type="text"
                   placeholder={t('images.search')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-[#e4e5eb] rounded-lg focus:ring-2 focus:ring-[#0a84ff] focus:border-transparent text-sm shadow-sm hover:shadow-md transition-all duration-200"
+                  className="w-full pl-10 pr-4 py-2.5 border border-hairline-strong rounded-lg focus:ring-2 focus:ring-accent-line focus:border-transparent text-sm shadow-sm hover:shadow-md transition-all duration-200"
                 />
               </div>
               
@@ -1625,8 +1633,9 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
               <div className="hidden sm:flex items-center space-x-2 card p-2 rounded-lg shadow-sm border">
                 <select
                   value={sortBy}
+                  aria-label={t('a11y.sort_by')}
                   onChange={(e) => setSortBy(e.target.value as any)}
-                  className="px-3 py-2 border border-[#e4e5eb] rounded-lg focus:ring-2 focus:ring-[#0a84ff] focus:border-transparent text-sm transition-all duration-200"
+                  className="px-3 py-2 border border-hairline-strong rounded-lg focus:ring-2 focus:ring-accent-line focus:border-transparent text-sm transition-all duration-200"
                 >
                   <option value="date">{t('images.sort.date')}</option>
                   <option value="capture_time">{t('images.capture_time')}</option>
@@ -1637,8 +1646,9 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                 { (sortBy === 'date' || sortBy === 'capture_time') && (
                   <select
                     value={dateGroupType}
+                    aria-label={t('a11y.group_by')}
                     onChange={e => setDateGroupType(e.target.value as any)}
-                    className="px-3 py-2 border border-[#e4e5eb] rounded-lg text-sm transition-all duration-200"
+                    className="px-3 py-2 border border-hairline-strong rounded-lg text-sm transition-all duration-200"
                   >
                     <option value="year">{t('images.group.year')}</option>
                     <option value="month">{t('images.group.month')}</option>
@@ -1647,7 +1657,8 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                 )}
                 <button
                   onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                  className="p-2 border border-[#e4e5eb] rounded-lg hover:bg-[rgba(10,132,255,0.08)] hover:text-[#0a84ff] transition-all duration-200"
+                  aria-label={t('a11y.sort_order')}
+                  className="p-2 border border-hairline-strong rounded-lg hover:bg-[rgba(10,132,255,0.08)] hover:text-accent-text transition-all duration-200"
                 >
                   {getSortIcon()}
                 </button>
@@ -1662,7 +1673,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                       setShareResourceIds([selectedFolder]);
                       setShowShareModal(true);
                   }}
-                  className="flex items-center px-3 py-2 bg-white text-[#3f4650] rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 text-sm"
+                  className="flex items-center px-3 py-2 bg-white text-ink-secondary rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 text-sm"
                 >
                   <Share2 className="w-4 h-4 mr-2" />
                   <span>{t('shares.share_folder')}</span>
@@ -1670,42 +1681,42 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
               )}
               {selectedImages.length > 0 && !isGuest && (
                 <>
-                  <span className="hidden sm:block text-sm font-medium text-[#3f4650] card px-3 py-2 rounded-lg shadow-sm border">{t('images.selected_items', { count: selectedImages.length })}</span>
+                  <span className="hidden sm:block text-sm font-medium text-ink-secondary card px-3 py-2 rounded-lg shadow-sm border">{t('images.selected_items', { count: selectedImages.length })}</span>
                   <button
                     onClick={() => {
                         setShareResourceType('image');
                         setShareResourceIds(selectedImages);
                         setShowShareModal(true);
                     }}
-                    className="flex items-center px-3 py-2 bg-white text-[#3f4650] rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 text-sm"
+                    className="flex items-center px-3 py-2 bg-white text-ink-secondary rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 text-sm"
                   >
                     <Share2 className="w-4 h-4 mr-2" />
                     <span>{t('shares.share')}</span>
                   </button>
                   <button
                     onClick={() => handleToggleGuestAccess(true)}
-                    className="flex items-center px-3 py-2 bg-white text-[#3f4650] rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 text-sm"
+                    className="flex items-center px-3 py-2 bg-white text-ink-secondary rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 text-sm"
                   >
                     <Users className="w-4 h-4 mr-2" />
                     <span>{t('images.add_to_public')}</span>
                   </button>
                   <button
                     onClick={() => handleToggleGuestAccess(false)}
-                    className="flex items-center px-3 py-2 bg-white text-[#3f4650] rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 text-sm"
+                    className="flex items-center px-3 py-2 bg-white text-ink-secondary rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 text-sm"
                   >
                     <Users className="w-4 h-4 mr-2" />
                     <span>{t('images.remove_from_public')}</span>
                   </button>
                   <button
                     onClick={() => setShowMoveModal(true)}
-                    className="flex items-center px-3 py-2 bg-[#0070e0] text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 text-sm"
+                    className="flex items-center px-3 py-2 bg-brand-fill text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 text-sm"
                   >
                     <Move className="w-4 h-4 mr-2" />
                     <span>{t('images.move')}</span>
                   </button>
                   <button
                     onClick={handleBatchDelete}
-                    className="flex items-center px-3 py-2 bg-white text-[#3f4650] rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 text-sm"
+                    className="flex items-center px-3 py-2 bg-white text-ink-secondary rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 text-sm"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
                     <span>{t('images.delete')}</span>
@@ -1716,7 +1727,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
               {!isGuest && (
               <>
               <button
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0070e0] text-white text-sm font-medium transition-all duration-200 hover:bg-[#005cb8] active:scale-[0.98] cursor-pointer"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-fill text-white text-sm font-medium transition-all duration-200 hover:bg-brand-fill-hover active:scale-[0.98] cursor-pointer"
                 onClick={e => {
                   e.preventDefault();
                   setShowUploadConfigModal(true);
@@ -1741,18 +1752,18 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                 <div className="card rounded-lg shadow-sm p-4">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <Share2 className="w-5 h-5 text-[#0a84ff] flex-shrink-0" />
-                      <span className="font-semibold text-[#11181c]">{t('shares.my_shares')}</span>
+                      <Share2 className="w-5 h-5 text-accent-text flex-shrink-0" />
+                      <span className="font-semibold text-ink">{t('shares.my_shares')}</span>
                       {mySharesSelectedRecipient && (
-                        <span className="text-sm text-[#687076] truncate">({mySharesSelectedRecipient})</span>
+                        <span className="text-sm text-muted truncate">({mySharesSelectedRecipient})</span>
                       )}
                     </div>
-                    <div className="text-sm text-[#3f4650]">
+                    <div className="text-sm text-ink-secondary">
                       {t('shares.total_shares', { count: mySharesFilteredItems.length })}
                     </div>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <span className="text-xs px-2 py-1 rounded-full bg-[#f2f3f6] text-[#3f4650]">
+                    <span className="text-xs px-2 py-1 rounded-full bg-surface-sunken text-ink-secondary">
                       {t('shares.total_recipients', { count: mySharesRecipients.length })}
                     </span>
                   </div>
@@ -1761,23 +1772,23 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                 {loadingMyShares ? (
                   <div className="flex flex-col items-center justify-center h-64 card rounded-lg shadow-sm">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-t-4 border-green-600 mb-4"></div>
-                    <p className="text-[#3f4650]">{t('images.loading')}</p>
+                    <p className="text-ink-secondary">{t('images.loading')}</p>
                   </div>
                 ) : mySharesFilteredItems.length === 0 ? (
                   <div className="text-center py-16 card rounded-lg shadow-sm">
-                    <div className="mx-auto w-16 h-16 bg-[#f2f3f6] rounded-full flex items-center justify-center mb-4">
-                      <Search className="w-8 h-8 text-[#687076]" />
+                    <div className="mx-auto w-16 h-16 bg-surface-sunken rounded-full flex items-center justify-center mb-4">
+                      <Search className="w-8 h-8 text-muted" />
                     </div>
-                    <h3 className="text-lg font-medium text-[#11181c] mb-2">{t('shares.no_shares')}</h3>
-                    <p className="text-[#687076]">{t('shares.no_shares_desc')}</p>
+                    <h3 className="text-lg font-medium text-ink mb-2">{t('shares.no_shares')}</h3>
+                    <p className="text-muted">{t('shares.no_shares_desc')}</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {mySharesDisplayGroups.map(({ username, items }) => (
                       <div key={username} className="card rounded-lg shadow-sm overflow-hidden">
-                        <div className="flex items-center justify-between px-4 py-3 bg-[#f7f8fa] border-b border-[#ededf2]">
-                          <div className="font-semibold text-[#11181c] truncate">{username}</div>
-                          <div className="text-sm text-[#3f4650]">{items.length}</div>
+                        <div className="flex items-center justify-between px-4 py-3 bg-surface-muted border-b border-hairline">
+                          <div className="font-semibold text-ink truncate">{username}</div>
+                          <div className="text-sm text-ink-secondary">{items.length}</div>
                         </div>
                         <div className="divide-y divide-gray-100">
                           {items.map((s: any) => {
@@ -1792,18 +1803,18 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                                   {thumb ? (
                                     <img src={thumb} alt={name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
                                   ) : s.resource_type === 'folder' ? (
-                                    <FolderOpen className="w-6 h-6 text-[#0a84ff] flex-shrink-0" />
+                                    <FolderOpen className="w-6 h-6 text-accent-text flex-shrink-0" />
                                   ) : (
-                                    <FileText className="w-6 h-6 text-[#687076] flex-shrink-0" />
+                                    <FileText className="w-6 h-6 text-muted flex-shrink-0" />
                                   )}
                                   <div className="min-w-0">
                                     <div className="flex items-center gap-2 min-w-0">
-                                      <span className="font-medium text-[#11181c] truncate">{name}</span>
-                                      <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-[#f2f3f6] text-[#3f4650]">
+                                      <span className="font-medium text-ink truncate">{name}</span>
+                                      <span className="text-xs px-1.5 py-0.5 rounded-full bg-surface-sunken text-ink-secondary">
                                         {permissionLabel(s.permission)}
                                       </span>
                                     </div>
-                                    <div className="text-xs text-[#687076]">
+                                    <div className="text-xs text-muted">
                                       {createdAt}
                                       {expiresAt ? ` · ${t('shares.expires_at')}: ${expiresAt}` : ''}
                                     </div>
@@ -1831,11 +1842,11 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                     type="checkbox"
                     checked={selectedImages.length === filteredAndSortedImages.length && filteredAndSortedImages.length > 0}
                     onChange={handleSelectAll}
-                    className="mr-3 w-5 h-5 text-[#0a84ff] rounded-lg border-[#e4e5eb] focus:ring-2 focus:ring-[#0a84ff] transition-all duration-200 group-hover:scale-110"
+                    className="mr-3 w-5 h-5 text-accent-text rounded-lg border-hairline-strong focus:ring-2 focus:ring-accent-line transition-all duration-200 group-hover:scale-110"
                   />
-                  <span className="text-sm font-medium text-[#3f4650] group-hover:text-[#0a84ff] transition-colors">{t('images.select_all', { count: filteredAndSortedImages.length })}</span>
+                  <span className="text-sm font-medium text-ink-secondary group-hover:text-accent-text transition-colors">{t('images.select_all', { count: filteredAndSortedImages.length })}</span>
                 </label>
-                <div className="text-sm text-[#687076]">
+                <div className="text-sm text-muted">
                   {t('images.page_items', { count: filteredAndSortedImages.length })}
                 </div>
               </div>
@@ -1844,7 +1855,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
             {/* Subfolders Grid */}
             {getCurrentSubfolders().length > 0 && (
               <div className="mb-6">
-                <h3 className="text-sm font-medium text-[#687076] mb-3 uppercase tracking-wider">{t('images.folders')}</h3>
+                <h3 className="text-sm font-medium text-muted mb-3 uppercase tracking-wider">{t('images.folders')}</h3>
                 <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
                   {getCurrentSubfolders().map(folder => (
                     <Dropdown key={folder.id} menu={getFolderMenuItems(folder)} trigger={['contextMenu']}>
@@ -1865,23 +1876,23 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                           e.stopPropagation();
                           moveImages(ids, folder.id);
                         }}
-                        className="group relative flex cursor-pointer flex-col items-center justify-center gap-1 rounded-[12px] border border-[#ededf2] bg-white px-2 py-3 text-center transition-colors hover:border-[#0a84ff]/40 hover:bg-[#f7f8fa]"
+                        className="group relative flex cursor-pointer flex-col items-center justify-center gap-1 rounded-[12px] border border-hairline bg-white px-2 py-3 text-center transition-colors hover:border-accent-line/40 hover:bg-surface-muted"
                         >
                         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Dropdown menu={getFolderMenuItems(folder)} trigger={['click']}>
                                 <div className="p-1 hover:bg-white rounded-full" onClick={e => e.stopPropagation()}>
-                                    <MoreVertical className="w-4 h-4 text-[#687076]" />
+                                    <MoreVertical className="w-4 h-4 text-muted" />
                                 </div>
                             </Dropdown>
                         </div>
-                        <FolderOpen className="h-6 w-6 text-[#0a84ff]/70 transition-colors group-hover:text-[#0a84ff]" />
-                        <span className="w-full truncate text-xs font-medium text-[#3f4650] group-hover:text-[#0a84ff]">{folder.name}</span>
-                        <span className="text-[11px] text-[#687076]">{t('images.folder_items', { count: folder.imageCount })}</span>
+                        <FolderOpen className="h-6 w-6 text-accent-text/70 transition-colors group-hover:text-accent-text" />
+                        <span className="w-full truncate text-xs font-medium text-ink-secondary group-hover:text-accent-text">{folder.name}</span>
+                        <span className="text-xs text-muted">{t('images.folder_items', { count: folder.imageCount })}</span>
                         </div>
                     </Dropdown>
                   ))}
                 </div>
-                <div className="border-b border-[#ededf2] my-6"></div>
+                <div className="border-b border-hairline my-6"></div>
               </div>
             )}
 
@@ -1889,15 +1900,15 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
             {loading ? (
               <div className="flex flex-col items-center justify-center h-64 card rounded-lg shadow-sm">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-t-4 border-green-600 mb-4"></div>
-                <p className="text-[#3f4650]">{t('images.loading')}</p>
+                <p className="text-ink-secondary">{t('images.loading')}</p>
               </div>
             ) : filteredAndSortedImages.length === 0 && getCurrentSubfolders().length === 0 ? (
               <div className="text-center py-16 card rounded-lg shadow-sm">
-                <div className="mx-auto w-16 h-16 bg-[#f2f3f6] rounded-full flex items-center justify-center mb-4">
-                  <Search className="w-8 h-8 text-[#687076]" />
+                <div className="mx-auto w-16 h-16 bg-surface-sunken rounded-full flex items-center justify-center mb-4">
+                  <Search className="w-8 h-8 text-muted" />
                 </div>
-                <h3 className="text-lg font-medium text-[#11181c] mb-2">{t('images.no_images_found')}</h3>
-                <p className="text-[#687076]">{searchQuery ? t('images.no_match') : t('images.no_images')}</p>
+                <h3 className="text-lg font-medium text-ink mb-2">{t('images.no_images_found')}</h3>
+                <p className="text-muted">{searchQuery ? t('images.no_match') : t('images.no_images')}</p>
               </div>
             ) : (
               <div className={viewMode === 'grid' 
@@ -1908,9 +1919,9 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                   <React.Fragment key={group.key}>
                     {group.key && (
                       <div id={`group-divider-${group.key}`} className="col-span-full flex items-center my-4">
-                        <div className="flex-1 border-t-2 border-dashed border-[#e4e5eb]"></div>
-                        <span className="mx-4 text-[#3f4650] text-sm font-semibold card px-4 py-1 rounded-full shadow-sm">{group.key}</span>
-                        <div className="flex-1 border-t-2 border-dashed border-[#e4e5eb]"></div>
+                        <div className="flex-1 border-t-2 border-dashed border-hairline-strong"></div>
+                        <span className="mx-4 text-ink-secondary text-sm font-semibold card px-4 py-1 rounded-full shadow-sm">{group.key}</span>
+                        <div className="flex-1 border-t-2 border-dashed border-hairline-strong"></div>
                       </div>
                     )}
                     {group.images.map((image) => {
@@ -1921,8 +1932,8 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                           id={`image-${globalIndex}`}
                           className={
                             viewMode === 'grid'
-                              ? `group relative card rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 border overflow-hidden ${ selectedImages.includes(image.id) ? 'ring-3 ring-[#0a84ff] border-[#0a84ff] shadow-2xl' : '' }`
-                              : `flex items-center p-4 card rounded-xl hover:shadow-md transition-all duration-300 ${ selectedImages.includes(image.id) ? 'bg-[#f7f8fa] border-[#0a84ff]' : '' }`
+                              ? `group relative card rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 border overflow-hidden ${ selectedImages.includes(image.id) ? 'ring-3 ring-accent-line border-accent-line shadow-2xl' : '' }`
+                              : `flex items-center p-4 card rounded-xl hover:shadow-md transition-all duration-300 ${ selectedImages.includes(image.id) ? 'bg-surface-muted border-accent-line' : '' }`
                           }
                         >
                           {viewMode === 'grid' ? (
@@ -1948,9 +1959,10 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
                                   <button
                                     onClick={() => handleImagePreview(image, globalIndex)}
-                                    className="p-3 rounded-full bg-white shadow-lg transform scale-0 group-hover:scale-100 transition-transform duration-300 hover:bg-[rgba(10,132,255,0.08)]"
+                                    aria-label={t('a11y.preview_image', { name: image.name })}
+                        className="p-3 rounded-full bg-white shadow-lg transform scale-0 group-hover:scale-100 transition-transform duration-300 hover:bg-[rgba(10,132,255,0.08)]"
                                   >
-                                    <Eye className="w-5 h-5 text-[#0a84ff]" />
+                                    <Eye className="w-5 h-5 text-accent-text" />
                                   </button>
                                 </div>
                                 {image.is_guest_accessible && (
@@ -1960,22 +1972,22 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                                 )}
                               </div>
                               <div className="p-3">
-                                <p className="text-sm font-semibold text-[#11181c] truncate" title={image.name}>
+                                <p className="text-sm font-semibold text-ink truncate" title={image.name}>
                                   {image.name}
                                 </p>
                                 <ImageResolutionLabel width={image.pixel_width} height={image.pixel_height} />
                                 <div className="flex flex-col mt-2 space-y-1">
-                                  <p className="text-xs text-[#687076] flex items-center" title={t('images.upload_time')}>
+                                  <p className="text-xs text-muted flex items-center" title={t('images.upload_time')}>
                                     <Upload className="w-3 h-3 mr-1" />
                                     {image.created_time ? new Date(image.created_time).toLocaleString() : ''}
                                   </p>
                                   {image.capture_time && (
-                                    <p className="text-xs text-[#687076] flex items-center" title={t('images.capture_time')}>
+                                    <p className="text-xs text-muted flex items-center" title={t('images.capture_time')}>
                                       <Calendar className="w-3 h-3 mr-1" />
                                       {new Date(image.capture_time).toLocaleString()}
                                     </p>
                                   )}
-                                  <p className="text-xs text-[#687076]">
+                                  <p className="text-xs text-muted">
                                     {t('images.size')}: {formatFileSize(image.size)}
                                   </p>
                                 </div>
@@ -1984,7 +1996,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                                     <div className={`w-3 h-3 rounded-full mr-2 ${
                                       ppdToneClass(image.ppdValue, 'dot')
                                     }`}></div>
-                                    <span className="text-xs font-medium text-[#3f4650]">
+                                    <span className="text-xs font-medium text-ink-secondary">
                                       {t('results.ppd_value')}: {image.ppdValue !== undefined ? image.ppdValue.toFixed(2) : '--'}
                                     </span>
                                   </div>
@@ -1993,15 +2005,16 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                               <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                 <input
                                   type="checkbox"
+                                  aria-label={t('a11y.select_image', { name: image.name })}
                                   checked={selectedImages.includes(image.id)}
                                   onChange={(e) => handleImageSelect(image.id, e.target.checked)}
-                                  className="w-5 h-5 text-[#0a84ff] rounded-lg border-[#e4e5eb] bg-white shadow-md focus:ring-2 focus:ring-[#0a84ff] transition-all duration-200 hover:scale-110"
+                                  className="w-5 h-5 text-accent-text rounded-lg border-hairline-strong bg-white shadow-md focus:ring-2 focus:ring-accent-line transition-all duration-200 hover:scale-110"
                                 />
                               </div>
                               <div className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                 <button 
                                     onClick={(e) => { e.stopPropagation(); setEditingImage(image); }}
-                                    className="p-1.5 rounded-lg bg-white shadow-md hover:bg-[rgba(10,132,255,0.08)] text-[#0a84ff] transition-colors"
+                                    className="p-1.5 rounded-lg bg-white shadow-md hover:bg-[rgba(10,132,255,0.08)] text-brand-fill-hover transition-colors"
                                     title={t('images.edit')}
                                 >
                                     <Edit className="w-4 h-4" />
@@ -2012,9 +2025,10 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                             <>
                               <input
                                 type="checkbox"
+                                  aria-label={t('a11y.select_image', { name: image.name })}
                                 checked={selectedImages.includes(image.id)}
                                 onChange={(e) => handleImageSelect(image.id, e.target.checked)}
-                                className="mr-4 w-5 h-5 text-[#0a84ff] rounded-lg border-[#e4e5eb] focus:ring-2 focus:ring-[#0a84ff] transition-all duration-200 hover:scale-110"
+                                className="mr-4 w-5 h-5 text-accent-text rounded-lg border-hairline-strong focus:ring-2 focus:ring-accent-line transition-all duration-200 hover:scale-110"
                               />
                               <div className="relative w-16 h-16 flex-shrink-0">
                                 <img
@@ -2035,25 +2049,25 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                               </div>
                               <div className="flex-1 ml-4">
                                 <div className="flex items-center justify-between">
-                                  <p className="font-semibold text-[#11181c] truncate">{image.name}</p>
+                                  <p className="font-semibold text-ink truncate">{image.name}</p>
                                   <ImageResolutionLabel width={image.pixel_width} height={image.pixel_height} />
                                   <div className="flex space-x-1">
                                     <button
                                         onClick={() => { setEditingImage(image); }}
-                                        className="p-2 text-[#687076] hover:text-[#0a84ff] hover:bg-[rgba(10,132,255,0.08)] rounded-lg transition-all duration-200"
+                                        className="p-2 text-muted hover:text-accent-text hover:bg-[rgba(10,132,255,0.08)] rounded-lg transition-all duration-200"
                                         title={t('images.edit')}
                                     >
                                         <Edit className="w-4 h-4" />
                                     </button>
                                     <button
                                         onClick={() => handleImagePreview(image, globalIndex)}
-                                        className="p-2 text-[#687076] hover:text-[#0a84ff] hover:bg-[rgba(10,132,255,0.08)] rounded-lg transition-all duration-200"
+                                        className="p-2 text-muted hover:text-accent-text hover:bg-[rgba(10,132,255,0.08)] rounded-lg transition-all duration-200"
                                     >
                                         <Eye className="w-4 h-4" />
                                     </button>
                                   </div>
                                 </div>
-                                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-1 text-sm text-[#687076]">
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-1 text-sm text-muted">
                                   <span className="flex items-center" title={t('images.upload_time')}>
                                     <Upload className="w-3.5 h-3.5 mr-1.5" />
                                     {image.created_time ? new Date(image.created_time).toLocaleString() : ''}
@@ -2080,7 +2094,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                                   )}
                                 </div>
                                 {image.lastPrediction && (
-                                  <p className="text-xs text-[#687076] mt-1">
+                                  <p className="text-xs text-muted mt-1">
                                     {t('images.recent_prediction')}: {image.lastPrediction}
                                   </p>
                                 )}
@@ -2116,12 +2130,12 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
 
           {/* Alphabet Index Sidebar */}
           {filteredAndSortedImages.length > 0 && (
-            <div className="mr-1 hidden w-[68px] shrink-0 flex-col items-center gap-1 rounded-[10px] border border-[#ededf2] bg-white py-2 lg:flex">
+            <div className="mr-1 hidden w-[68px] shrink-0 flex-col items-center gap-1 rounded-[10px] border border-hairline bg-white py-2 lg:flex">
               {groupJumpIndex.map(({ key, index }) => (
                 <button
                   key={key}
                   onClick={() => scrollToIndex(index)}
-                  className="flex h-6 w-full items-center justify-center rounded-full text-[10px] font-medium tabular-nums text-[#687076] transition-colors hover:bg-[#0070e0] hover:text-white"
+                  className="flex h-6 w-full items-center justify-center rounded-full text-xs font-medium tabular-nums text-muted transition-colors hover:bg-brand-fill hover:text-white"
                   title={t('images.jump_to', { key })}
                 >
                   {key}
@@ -2172,21 +2186,21 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                     />
                     {previewImageLoading && !previewImage.image_url && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/25 rounded-lg text-white/90">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-t-4 border-[#ededf2] mb-4"></div>
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-t-4 border-hairline mb-4"></div>
                         <p>{t('images.loading')}</p>
                       </div>
                     )}
                   </div>
                 ) : (
                   <div className="w-[60vw] max-w-4xl h-[60vh] max-h-[80vh] flex flex-col items-center justify-center text-white/80">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-t-4 border-[#ededf2] mb-4"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-t-4 border-hairline mb-4"></div>
                     <p>{t('images.loading')}</p>
                   </div>
                 )}
               </div>
               
               {/* Image Info */}
-              <div className="mt-6 bg-white/10 text-white p-6 rounded-xl max-w-md shadow-xl border border-[#ededf2]">
+              <div className="mt-6 bg-white/10 text-white p-6 rounded-xl max-w-md shadow-xl border border-hairline">
                 <h3 className="font-semibold text-xl mb-4 text-center">{previewImage.name}</h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div className="flex flex-col">
@@ -2220,14 +2234,14 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                   )}
                 </div>
                 {previewImage.lastPrediction && (
-                  <div className="mt-4 pt-4 border-t border-[#ededf2]">
+                  <div className="mt-4 pt-4 border-t border-hairline">
                     <div className="flex flex-col">
                       <span className="text-gray-300 text-xs uppercase tracking-wider">{t('images.recent_prediction')}</span>
                       <span className="font-medium">{previewImage.lastPrediction}</span>
                     </div>
                   </div>
                 )}
-                <div className="mt-4 pt-4 border-t border-[#ededf2] text-center text-gray-300">
+                <div className="mt-4 pt-4 border-t border-hairline text-center text-gray-300">
                   {previewIndex + 1} / {flatImages.length}
                 </div>
               </div>
@@ -2282,12 +2296,12 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
         width={500}
       >
         <div className="p-4">
-            <div className="flex items-center gap-3 mb-4 text-[#f31260] bg-red-50 p-3 rounded-lg">
+            <div className="flex items-center gap-3 mb-4 text-danger-text bg-red-50 p-3 rounded-lg">
                 <Trash2 className="w-6 h-6" />
                 <span className="font-medium">{t('images.confirm_delete_folder')}</span>
             </div>
             
-            <p className="mb-4 text-[#3f4650]">
+            <p className="mb-4 text-ink-secondary">
                 <span className="font-semibold">{contextFolder?.name}</span> 
                 {(contextFolder?.imageCount || 0) > 0 
                     ? ` ${t('images.contains_images', { count: contextFolder?.imageCount || 0 })}`
@@ -2324,7 +2338,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
       {showMoveModal && (
         <div className="fixed inset-0 bg-[rgba(15,23,42,0.28)] flex items-center justify-center p-4 z-50">
           <div className="card card-float rounded-xl p-6 w-full max-w-md shadow-xl">
-            <h3 className="text-xl font-semibold mb-4 text-[#11181c]">{t('images.move_to_folder')}</h3>
+            <h3 className="text-xl font-semibold mb-4 text-ink">{t('images.move_to_folder')}</h3>
             <div className="space-y-3 max-h-72 overflow-y-auto">
               <Tree
                 treeData={folderTreeData}
@@ -2337,7 +2351,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                 }}
               />
               {/* Create Folder Area */}
-              <div className="flex items-center mt-5 p-3 card-soft rounded-lg border border-dashed border-[#e4e5eb]">
+              <div className="flex items-center mt-5 p-3 card-soft rounded-lg border border-dashed border-hairline-strong">
                 <div className="flex-1 mr-3 space-y-2">
                   <TreeSelect
                     className="w-full"
@@ -2347,11 +2361,12 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                     treeDefaultExpandAll
                     showSearch
                     placeholder={t('images.choose_folder')}
+                    aria-label={t('images.')}
                     size="small"
                   />
                   <input
                     type="text"
-                    className="w-full border border-[#e4e5eb] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0a84ff] focus:border-transparent transition-all duration-300"
+                    className="w-full border border-hairline-strong rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent-line focus:border-transparent transition-all duration-300"
                     placeholder={t('images.new_folder_name')}
                     value={moveModalNewFolderName}
                     onChange={e => setMoveModalNewFolderName(e.target.value)}
@@ -2360,7 +2375,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                   />
                 </div>
                 <button
-                  className="px-4 py-2 rounded-xl bg-[#0070e0] text-white text-sm font-medium transition-all duration-200 hover:bg-[#005cb8] active:scale-[0.98] disabled:bg-slate-300 disabled:cursor-not-allowed"
+                  className="px-4 py-2 rounded-xl bg-brand-fill text-white text-sm font-medium transition-all duration-200 hover:bg-brand-fill-hover active:scale-[0.98] disabled:bg-slate-300 disabled:cursor-not-allowed"
                   onClick={handleCreateFolderForMove}
                   disabled={moveModalCreatingFolder || !moveModalNewFolderName.trim()}
                 >{t('images.create')}</button>
@@ -2369,7 +2384,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
             <div className="flex justify-end space-x-3 mt-6">
               <button
                 onClick={() => setShowMoveModal(false)}
-                className="px-5 py-2.5 text-[#3f4650] hover:text-[#11181c] bg-[#f2f3f6] rounded-lg hover:bg-gray-200 transition-all duration-300"
+                className="px-5 py-2.5 text-ink-secondary hover:text-ink bg-surface-sunken rounded-lg hover:bg-gray-200 transition-all duration-300"
               >
                 {t('images.cancel')}
               </button>
@@ -2382,18 +2397,18 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
       {showUploadModal && (
         <div className="fixed inset-0 bg-[rgba(15,23,42,0.28)] flex items-center justify-center p-4 z-50">
           <div className="card card-float rounded-xl p-6 w-full max-w-md shadow-xl">
-            <h3 className="text-xl font-semibold mb-2 text-[#11181c]">{t('images.upload_progress')}</h3>
+            <h3 className="text-xl font-semibold mb-2 text-ink">{t('images.upload_progress')}</h3>
             {uploadBatchHint && (
-              <p className="text-sm text-[#687076] mb-3">{uploadBatchHint}</p>
+              <p className="text-sm text-muted mb-3">{uploadBatchHint}</p>
             )}
             <div className="space-y-4 max-h-72 overflow-y-auto">
               {uploadProgress.map((item, index) => (
                 <div key={index} className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="truncate flex-1 mr-3 font-medium text-[#11181c]">{item.fileName}</span>
+                    <span className="truncate flex-1 mr-3 font-medium text-ink">{item.fileName}</span>
                     <span className={`font-semibold ${
-                      item.status === 'completed' ? 'text-[#0a84ff]' : 
-                      item.status === 'error' ? 'text-[#f31260]' : 'text-[#0a84ff]'
+                      item.status === 'completed' ? 'text-accent-text' : 
+                      item.status === 'error' ? 'text-danger-text' : 'text-accent-text'
                     }`}>
                       {item.status === 'completed' ? t('images.completed') : 
                        item.status === 'error' ? t('images.failed') : `${item.progress}%`}
@@ -2402,8 +2417,8 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                   <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ease-in-out ${
-                        item.status === 'completed' ? 'bg-[#0070e0]' :
-                        item.status === 'error' ? 'bg-white' : 'bg-[#0070e0]'
+                        item.status === 'completed' ? 'bg-brand-fill' :
+                        item.status === 'error' ? 'bg-white' : 'bg-brand-fill'
                       }`}
                       style={{ width: `${item.progress}%` }}
                     />
@@ -2434,6 +2449,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
             treeDefaultExpandAll
             showSearch
             placeholder={t('images.choose_folder')}
+            aria-label={t('images.')}
           />
           <Input
             placeholder={t('images.folder_name_placeholder')}
@@ -2461,7 +2477,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
         <div className="space-y-6">
           {/* Target Folder Selection */}
           <div>
-            <label className="block text-sm font-medium text-[#3f4650] mb-2">{t('images.upload_to_folder')}</label>
+            <label className="block text-sm font-medium text-ink-secondary mb-2">{t('images.upload_to_folder')}</label>
             <TreeSelect
               className="w-full"
               value={(uploadTargetFolder ?? null) === null ? ROOT_NODE_VALUE : uploadTargetFolder}
@@ -2470,26 +2486,27 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
               treeDefaultExpandAll
               showSearch
               placeholder={t('images.select_folder')}
+              aria-label={t('images.')}
             />
           </div>
 
           {/* Duplicate Check */}
           <div className="flex items-center justify-between">
-            <span className="text-[#3f4650]">{t('images.check_duplicate')}</span>
+            <span className="text-ink-secondary">{t('images.check_duplicate')}</span>
             <Switch checked={uploadCheckDuplicate} onChange={setUploadCheckDuplicate} />
           </div>
 
           {/* Rename Settings */}
           <div className="border-t border-gray-100 pt-4">
             <div className="flex items-center justify-between mb-4">
-              <span className="font-medium text-[#11181c]">{t('images.auto_rename')}</span>
+              <span className="font-medium text-ink">{t('images.auto_rename')}</span>
               <Switch checked={renameEnabled} onChange={setRenameEnabled} />
             </div>
             
             {renameEnabled && (
               <div className="space-y-4 card-soft p-4 rounded-lg">
                 <div>
-                  <label className="block text-xs font-medium text-[#687076] mb-1">{t('images.prefix')}</label>
+                  <label className="block text-xs font-medium text-muted mb-1">{t('images.prefix')}</label>
                   <Input 
                     value={renamePrefix} 
                     onChange={e => setRenamePrefix(e.target.value)} 
@@ -2499,7 +2516,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-[#687076] mb-1">{t('images.start_seq')}</label>
+                    <label className="block text-xs font-medium text-muted mb-1">{t('images.start_seq')}</label>
                     <InputNumber 
                       min={1} 
                       value={renameStartSeq} 
@@ -2509,7 +2526,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-[#687076] mb-1">{t('images.digits')}</label>
+                    <label className="block text-xs font-medium text-muted mb-1">{t('images.digits')}</label>
                     <InputNumber 
                       min={1} 
                       max={10} 
@@ -2520,7 +2537,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                     />
                   </div>
                 </div>
-                <div className="text-xs text-[#687076]">
+                <div className="text-xs text-muted">
                   {t('images.preview')}: {renamePrefix}{String(renameStartSeq).padStart(renameDigits, '0')}.jpg
                 </div>
               </div>
@@ -2528,7 +2545,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
           </div>
 
           {/* Upload Area */}
-          <div className="border-2 border-dashed border-[#e4e5eb] rounded-lg p-8 text-center hover:border-[#0a84ff] hover:bg-[rgba(10,132,255,0.08)] transition-all cursor-pointer group"
+          <div className="border-2 border-dashed border-hairline-strong rounded-lg p-8 text-center hover:border-accent-line hover:bg-[rgba(10,132,255,0.08)] transition-all cursor-pointer group"
                onClick={() => document.getElementById('real-upload-input')?.click()}
                onDragOver={(e) => { e.preventDefault(); }}
                onDrop={handleDrop}
@@ -2541,11 +2558,11 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
               className="hidden"
               onChange={handleFileUpload}
             />
-            <div className="w-16 h-16 bg-[rgba(10,132,255,0.12)] text-[#0a84ff] rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+            <div className="w-16 h-16 bg-[rgba(10,132,255,0.12)] text-accent-text rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
               <Upload className="w-8 h-8" />
             </div>
-            <p className="text-lg font-medium text-[#11181c] mb-1">{t('images.click_or_drag_upload')}</p>
-            <p className="text-sm text-[#687076]">{t('images.support_types')}</p>
+            <p className="text-lg font-medium text-ink mb-1">{t('images.click_or_drag_upload')}</p>
+            <p className="text-sm text-muted">{t('images.support_types')}</p>
           </div>
         </div>
       </Modal>
@@ -2559,14 +2576,14 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
         okText={duplicateAction === 'overwrite' ? t('images.overwrite_selected') : t('images.skip_selected')}
         className="rounded-xl shadow-2xl"
       >
-        <div className="mb-4 text-[#3f4650]">{t('images.following_files_exist')}</div>
+        <div className="mb-4 text-ink-secondary">{t('images.following_files_exist')}</div>
         <div className="mb-4 flex space-x-3">
           <button 
-            className={`px-4 py-2 rounded-lg transition-all duration-300 ${duplicateAction==='overwrite'?'bg-[#0070e0] text-white shadow-md':'bg-[#f2f3f6] text-[#3f4650] hover:bg-gray-200'}`} 
+            className={`px-4 py-2 rounded-lg transition-all duration-300 ${duplicateAction==='overwrite'?'bg-brand-fill text-white shadow-md':'bg-surface-sunken text-ink-secondary hover:bg-gray-200'}`} 
             onClick={()=>setDuplicateAction('overwrite')}
           >{t('images.overwrite_all')}</button>
           <button 
-            className={`px-4 py-2 rounded-lg transition-all duration-300 ${duplicateAction==='skip'?'bg-[#0070e0] text-white shadow-md':'bg-[#f2f3f6] text-[#3f4650] hover:bg-gray-200'}`} 
+            className={`px-4 py-2 rounded-lg transition-all duration-300 ${duplicateAction==='skip'?'bg-brand-fill text-white shadow-md':'bg-surface-sunken text-ink-secondary hover:bg-gray-200'}`} 
             onClick={()=>setDuplicateAction('skip')}
           >{t('images.skip_all')}</button>
         </div>
@@ -2575,13 +2592,14 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
             <div key={name} className="flex items-center mb-2 p-2 hover:card rounded-lg transition-all duration-200">
               <input 
                 type="checkbox" 
+                aria-label={t('a11y.select_image', { name })}
                 checked={selectedDuplicates.includes(name)} 
                 onChange={e=>{
                   setSelectedDuplicates(e.target.checked ? [...selectedDuplicates,name] : selectedDuplicates.filter(n=>n!==name));
                 }} 
-                className="w-4 h-4 text-[#0a84ff] rounded focus:ring-2 focus:ring-[#0a84ff]"
+                className="w-4 h-4 text-accent-text rounded focus:ring-2 focus:ring-accent-line"
               />
-              <span className="ml-3 text-[#11181c] font-medium">{name}</span>
+              <span className="ml-3 text-ink font-medium">{name}</span>
             </div>
           ))}
         </div>

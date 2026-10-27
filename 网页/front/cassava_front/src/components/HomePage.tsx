@@ -79,7 +79,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
         imageAlt: '木薯横截面智能分割示意',
         icon: Brain,
         eyebrow: 'AI Segmentation',
-        panelClass: 'from-emerald-500 via-emerald-400 to-sky-400',
+        panelClass: 'from-brand-fill via-[#3b9cf0] to-[#30b0c7]',
         chipClass: 'bg-white/18 text-white',
         action: 'prediction'
       },
@@ -92,8 +92,8 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
         imageAlt: '木薯科研样本图像管理示意',
         icon: BarChart3,
         eyebrow: 'Image Archive',
-        panelClass: 'from-slate-900 via-slate-800 to-emerald-700',
-        chipClass: 'bg-[#f7f8fa] text-[#11181c]',
+        panelClass: 'from-[#11181c] via-[#1f2933] to-brand-fill-hover',
+        chipClass: 'bg-surface-muted text-ink',
         action: 'images'
       },
       {
@@ -105,7 +105,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
         imageAlt: '木薯样本采集与实验室分析场景示意',
         icon: Microscope,
         eyebrow: 'Research Delivery',
-        panelClass: 'from-amber-300 via-emerald-300 to-cyan-300',
+        panelClass: 'from-[#f5a524] via-[#17c964] to-[#30b0c7]',
         chipClass: 'bg-white/22 text-white',
         action: 'results'
       }
@@ -198,9 +198,9 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
   const currentHero = slides[currentSlide];
 
   return (
-    <div className="bg-[#f4f5f7] text-[#11181c]">
+    <div className="bg-surface-sunken text-ink">
       {siteAnnouncement && (
-        <div className="border-b border-[#ededf2] bg-[#f7f8fa] px-4 py-3 text-center text-sm text-[#11181c]">
+        <div className="border-b border-hairline bg-surface-muted px-4 py-3 text-center text-sm text-ink">
           <div className="mx-auto flex max-w-6xl items-center justify-center gap-2">
             <Sparkles className="h-4 w-4" />
             <span>{siteAnnouncement}</span>
@@ -211,34 +211,34 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
       <section className="relative overflow-hidden px-4 pb-8 pt-6 sm:px-6 lg:px-8">
         
         <div className="relative mx-auto grid max-w-[1440px] items-start gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="flex flex-col gap-10 rounded-[24px] border border-[#ededf2] bg-white px-6 py-8 text-[#11181c] shadow-[0_10px_30px_rgba(17,17,26,0.045)] sm:px-8 sm:py-10 lg:px-10">
+          <div className="flex flex-col gap-10 rounded-[24px] border border-hairline bg-white px-6 py-8 text-ink shadow-[0_10px_30px_rgba(17,17,26,0.045)] sm:px-8 sm:py-10 lg:px-10">
             <div>
-              <div className="inline-flex items-center gap-3 rounded-full border border-[#ededf2] bg-[#f7f8fa] px-4 py-2 text-sm text-[#3f4650]">
-                <Leaf className="h-4 w-4 text-[#0a84ff]" />
+              <div className="inline-flex items-center gap-3 rounded-full border border-hairline bg-surface-muted px-4 py-2 text-sm text-ink-secondary">
+                <Leaf className="h-4 w-4 text-accent-text" />
                 {t('homepage.hero.tagline')}
               </div>
 
               <h1 className="mt-7 max-w-3xl text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl lg:text-[56px]">
                 {currentHero.title}
               </h1>
-              <p className="mt-5 max-w-2xl text-lg leading-8 text-[#3f4650] sm:text-xl">
+              <p className="mt-5 max-w-2xl text-lg leading-8 text-ink-secondary sm:text-xl">
                 {currentHero.subtitle}
               </p>
-              <p className="mt-4 max-w-2xl text-base leading-8 text-[#687076]">
+              <p className="mt-4 max-w-2xl text-base leading-8 text-muted">
                 {currentHero.description}
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <button
                   onClick={() => onSectionChange(currentHero.action)}
-                  className="inline-flex h-12 items-center justify-center rounded-full bg-[#0070e0] px-6 text-sm font-semibold text-white transition hover:bg-[#005cb8]"
+                  className="inline-flex h-12 items-center justify-center rounded-full bg-brand-fill px-6 text-sm font-semibold text-white transition hover:bg-brand-fill-hover"
                 >
                   {t('homepage.hero.action')}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </button>
                 <button
                   onClick={() => onSectionChange('contact')}
-                  className="inline-flex h-12 items-center justify-center rounded-full border border-[#e4e5eb] bg-white px-6 text-sm font-medium text-[#3f4650] transition hover:bg-[#f7f8fa]"
+                  className="inline-flex h-12 items-center justify-center rounded-full border border-hairline-strong bg-white px-6 text-sm font-medium text-ink-secondary transition hover:bg-surface-muted"
                 >
                   {t('homepage.hero.demo')}
                 </button>
@@ -248,12 +248,12 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
             <div className="mt-8">
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {stats.map((stat) => (
-                  <div key={stat.label} className="rounded-[12px] border border-[#ededf2] bg-[#f7f8fa] px-3.5 py-3.5">
-                    <div className="text-xl font-semibold tabular-nums text-[#11181c]">
+                  <div key={stat.label} className="rounded-[12px] border border-hairline bg-surface-muted px-3.5 py-3.5">
+                    <div className="text-xl font-semibold tabular-nums text-ink">
                       {stat.value}
                       {stat.suffix}
                     </div>
-                    <div className="mt-1 text-[11px] text-[#687076]">{stat.label}</div>
+                    <div className="mt-1 text-xs text-muted">{stat.label}</div>
                   </div>
                 ))}
               </div>
@@ -264,7 +264,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
                     key={slide.key}
                     onClick={() => setCurrentSlide(index)}
                     className={`h-1.5 rounded-full transition-all ${
-                      currentSlide === index ? 'w-12 bg-[#0070e0]' : 'w-6 bg-[#e4e5eb]'
+                      currentSlide === index ? 'w-12 bg-brand-fill' : 'w-6 bg-hairline-strong'
                     }`}
                     aria-label={slide.title}
                   />
@@ -274,7 +274,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
           </div>
 
           <div className="grid gap-6">
-            <div className="relative min-h-[360px] overflow-hidden rounded-[24px] border border-[#ededf2] bg-white shadow-[0_4px_16px_rgba(17,24,28,0.05)]">
+            <div className="relative min-h-[360px] overflow-hidden rounded-[24px] border border-hairline bg-white shadow-[0_4px_16px_rgba(17,24,28,0.05)]">
               {slides.map((slide, index) => (
                 <div
                   key={slide.key}
@@ -300,13 +300,13 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
               {strengths.map((item) => (
                 <div
                   key={item.title}
-                  className="rounded-[16px] border border-[#ededf2] bg-white p-5"
+                  className="rounded-[16px] border border-hairline bg-white p-5"
                 >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(10,132,255,0.08)] text-[#0a84ff]">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(10,132,255,0.08)] text-brand-fill-hover">
                     <item.icon className="h-5 w-5" />
                   </div>
-                  <h3 className="mt-4 text-base font-semibold text-[#11181c]">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-[#3f4650]">{item.description}</p>
+                  <h3 className="mt-4 text-base font-semibold text-ink">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-ink-secondary">{item.description}</p>
                 </div>
               ))}
             </div>
@@ -316,11 +316,11 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
 
       <section className="px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-[1440px] gap-6 lg:grid-cols-[0.82fr_1.18fr]">
-          <div className="rounded-[24px] border border-[#ededf2] bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.06)] sm:p-8">
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#0a84ff]">
+          <div className="rounded-[24px] border border-hairline bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.06)] sm:p-8">
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent-text">
               {t('homepage.advantages.title')}
             </p>
-            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-[#11181c]">
+            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-ink">
               {t('homepage.advantages.subtitle')}
             </h2>
             <div className="mt-8 space-y-5">
@@ -330,8 +330,8 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
                 '模型精度与PPD误差需要通过独立样本验证；人工校正结果保留独立版本。'
               ].map((text, index) => (
                 <div key={index} className="flex items-start gap-3">
-                  <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-[#0a84ff]" />
-                  <p className="text-sm leading-7 text-[#3f4650]">{text}</p>
+                  <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-accent-text" />
+                  <p className="text-sm leading-7 text-ink-secondary">{text}</p>
                 </div>
               ))}
             </div>
@@ -341,29 +341,29 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
             {researchBlocks.map((block) => (
               <article
                 key={block.title}
-                className="rounded-[24px] border border-[#ededf2] bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.06)] sm:p-8"
+                className="rounded-[24px] border border-hairline bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.06)] sm:p-8"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0070e0] text-white">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-fill text-white">
                   <block.icon className="h-5 w-5" />
                 </div>
-                <h3 className="mt-6 text-2xl font-semibold tracking-tight text-[#11181c]">
+                <h3 className="mt-6 text-2xl font-semibold tracking-tight text-ink">
                   {block.title}
                 </h3>
-                <div className="mt-6 space-y-5 text-sm leading-7 text-[#3f4650]">
+                <div className="mt-6 space-y-5 text-sm leading-7 text-ink-secondary">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.22em] text-[#687076]">
+                    <p className="text-xs uppercase tracking-[0.22em] text-muted">
                       {t('homepage.about.labels.leader')}
                     </p>
                     <p className="mt-2">{block.lead}</p>
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-[0.22em] text-[#687076]">
+                    <p className="text-xs uppercase tracking-[0.22em] text-muted">
                       {t('homepage.about.labels.platform')}
                     </p>
                     <p className="mt-2 whitespace-pre-line">{block.platform}</p>
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-[0.22em] text-[#687076]">
+                    <p className="text-xs uppercase tracking-[0.22em] text-muted">
                       {t('homepage.about.labels.project')}
                     </p>
                     <p className="mt-2 whitespace-pre-line">{block.details}</p>
@@ -376,10 +376,10 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
       </section>
 
       <section className="px-4 pb-10 pt-2 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[1440px] rounded-[24px] bg-[#0070e0] px-6 py-8 text-white shadow-[0_4px_16px_rgba(17,24,28,0.05)] sm:px-8 sm:py-10">
+        <div className="mx-auto max-w-[1440px] rounded-[24px] bg-brand-fill px-6 py-8 text-white shadow-[0_4px_16px_rgba(17,24,28,0.05)] sm:px-8 sm:py-10">
           <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-emerald-200">
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-white">
                 {t('homepage.cta.title')}
               </p>
               <h2 className="mt-4 max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -390,7 +390,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
             <div className="flex flex-col gap-3 sm:flex-row">
               <button
                 onClick={() => onSectionChange('prediction')}
-                className="inline-flex h-12 items-center justify-center rounded-full bg-[#0070e0] px-6 text-sm font-semibold text-white transition hover:bg-[#005cb8]"
+                className="inline-flex h-12 items-center justify-center rounded-full bg-brand-fill px-6 text-sm font-semibold text-white transition hover:bg-brand-fill-hover"
               >
                 {t('homepage.cta.action')}
                 <ChevronRight className="ml-2 h-4 w-4" />

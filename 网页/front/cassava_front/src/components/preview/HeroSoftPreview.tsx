@@ -23,7 +23,7 @@ const MUTED = '#687076';
 
 type Sample = 'tasks' | 'results';
 
-const card = 'rounded-[16px] border border-[#ededf2] bg-white shadow-[0_10px_30px_rgba(17,17,26,0.045)]';
+const card = 'rounded-[16px] border border-hairline bg-white shadow-[0_10px_30px_rgba(17,17,26,0.045)]';
 
 const statusTone: Record<string, { color: string; label: string }> = {
   completed: { color: OK, label: '已完成' },
@@ -143,7 +143,7 @@ const HeroSoftPreview = () => {
               HeroUI 口径：纯色浅底 + 28px 大圆角白卡 + 单一 iOS 蓝强调 + 系统色只做小面积标识。仅视觉样板，不影响主流程。
             </p>
           </div>
-          <div className="inline-flex rounded-full border border-[#e9e9ef] bg-white p-1">
+          <div className="inline-flex rounded-full border border-hairline bg-white p-1">
             {(['tasks', 'results'] as Sample[]).map((key) => (
               <button
                 key={key}
@@ -191,7 +191,7 @@ const HeroSoftPreview = () => {
                 {tasks.slice(0, 6).map((task) => {
                   const tone = statusTone[task.status] ?? statusTone.pending;
                   return (
-                    <div key={task.id} className="grid grid-cols-1 items-center gap-4 px-6 py-4 transition-colors hover:bg-[#fafafc] lg:grid-cols-[minmax(0,1fr)_auto]">
+                    <div key={task.id} className="grid grid-cols-1 items-center gap-4 px-6 py-4 transition-colors hover:bg-surface-muted lg:grid-cols-[minmax(0,1fr)_auto]">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="truncate text-[14px] font-medium" style={{ color: INK }}>{task.name}</p>
@@ -209,7 +209,7 @@ const HeroSoftPreview = () => {
                         {[ExternalLink, RotateCcw, Info, Trash2].map((Icon, index) => (
                           <button
                             key={index}
-                            className="flex h-9 w-9 items-center justify-center rounded-full border border-[#ededf2] text-[color:#687076] transition-colors hover:bg-[#f4f5f7]"
+                            className="flex h-9 w-9 items-center justify-center rounded-full border border-hairline text-[color:#687076] transition-colors hover:bg-surface-sunken"
                             title={['查看结果', '重新执行', '详情', '删除'][index]}
                           >
                             <Icon className="h-4 w-4" />
@@ -246,8 +246,8 @@ const HeroSoftPreview = () => {
                     const thumb = item.original_image_url || item.preview_url || item.result_image_url || null;
                     const tone = value === null ? MUTED : value >= 7 ? DANGER : value >= 4 ? WARN : OK;
                     return (
-                      <div key={item.id} className="flex items-center gap-4 px-6 py-3.5 transition-colors hover:bg-[#fafafc]">
-                        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-[16px] border border-[#ededf2]" style={{ background: '#f4f5f7' }}>
+                      <div key={item.id} className="flex items-center gap-4 px-6 py-3.5 transition-colors hover:bg-surface-muted">
+                        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-[16px] border border-hairline" style={{ background: '#f4f5f7' }}>
                           {thumb && <img src={thumb} alt="" className="h-full w-full object-cover" />}
                         </div>
                         <div className="min-w-0 flex-1">

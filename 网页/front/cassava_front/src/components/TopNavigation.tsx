@@ -90,8 +90,8 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
   const navButtonClass = (active: boolean) =>
     `inline-flex h-10 items-center rounded-full px-4 text-sm font-medium transition ${
       active
-        ? 'bg-[#0070e0] text-white '
-        : 'text-[#3f4650] hover:bg-white hover:text-[#11181c]'
+        ? 'bg-brand-fill text-white '
+        : 'text-ink-secondary hover:bg-white hover:text-ink'
     }`;
 
   const handleNavigate = (section: string) => {
@@ -102,7 +102,7 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
   };
 
   return (
-    <nav className="sticky top-0 z-40 border-b border-[#ededf2] bg-white">
+    <nav className="sticky top-0 z-40 border-b border-hairline bg-white">
       <div className="mx-auto max-w-[1440px] px-4 py-3 sm:px-6 lg:px-8">
         <div className="card flex items-center justify-between gap-4 rounded-full px-4 py-3">
           <button
@@ -113,10 +113,10 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
               <img src={logoImage} alt={t('system.title')} className="h-full w-full object-cover" />
             </div>
             <div className="hidden min-w-0 sm:block">
-              <p className="truncate text-sm font-semibold tracking-[0.18em] text-[#0a84ff]">
+              <p className="truncate text-sm font-semibold tracking-[0.18em] text-accent-text">
                 CASSAVA LAB
               </p>
-              <h1 className="truncate text-base font-semibold text-[#11181c]">
+              <h1 className="truncate text-base font-semibold text-ink">
                 {siteTitle || t('system.title')}
               </h1>
             </div>
@@ -162,8 +162,8 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
                         onClick={() => handleNavigate(item.id)}
                         className={`flex w-full items-center rounded-2xl px-4 py-3 text-left text-sm transition ${
                           activeSection === item.id
-                            ? 'bg-[#0070e0] text-white'
-                            : 'text-[#3f4650] hover:bg-white'
+                            ? 'bg-brand-fill text-white'
+                            : 'text-ink-secondary hover:bg-white'
                         }`}
                       >
                         <Icon className="mr-3 h-4 w-4" />
@@ -180,11 +180,12 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
             <div className="relative" ref={languageRef}>
               <button
                 onClick={() => setLanguageMenuOpen((open) => !open)}
-                className="inline-flex h-10 items-center rounded-full border border-[#ededf2] px-4 text-sm font-medium text-[#3f4650] transition hover:border-[#e4e5eb] hover:bg-white hover:text-[#11181c]"
+              aria-label={t('a11y.toggle_language')}
+                className="inline-flex h-10 items-center rounded-full border border-hairline px-4 text-sm font-medium text-ink-secondary transition hover:border-hairline-strong hover:bg-white hover:text-ink"
               >
                 <Languages className="mr-2 h-4 w-4" />
                 {i18n.language === 'zh' ? t('common.languages.zh') : t('common.languages.en')}
-                <ChevronDown className="ml-2 h-4 w-4 text-[#687076]" />
+                <ChevronDown className="ml-2 h-4 w-4 text-muted" />
               </button>
 
               {languageMenuOpen && (
@@ -195,8 +196,8 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
                       onClick={() => changeLanguage(lng)}
                       className={`block w-full rounded-2xl px-4 py-3 text-left text-sm transition ${
                         i18n.language === lng
-                          ? 'bg-[#0070e0] text-white'
-                          : 'text-[#3f4650] hover:bg-white'
+                          ? 'bg-brand-fill text-white'
+                          : 'text-ink-secondary hover:bg-white'
                       }`}
                     >
                       {lng === 'zh' ? t('common.languages.zh') : t('common.languages.en')}
@@ -211,23 +212,23 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
                 <>
                   <button
                     onClick={() => setUserMenuOpen((open) => !open)}
-                    className="inline-flex h-10 items-center rounded-full border border-[#ededf2] px-4 text-sm font-medium text-[#3f4650] transition hover:border-[#e4e5eb] hover:bg-white"
+                    className="inline-flex h-10 items-center rounded-full border border-hairline px-4 text-sm font-medium text-ink-secondary transition hover:border-hairline-strong hover:bg-white"
                   >
                     <User className="mr-2 h-4 w-4" />
                     <span className="max-w-[120px] truncate">{accountLabel}</span>
-                    <ChevronDown className="ml-2 h-4 w-4 text-[#687076]" />
+                    <ChevronDown className="ml-2 h-4 w-4 text-muted" />
                   </button>
 
                   {userMenuOpen && (
                     <div className="absolute right-0 top-[calc(100%+12px)] w-64 rounded-3xl card p-2 shadow-[0_4px_16px_rgba(17,24,28,0.05)]">
-                      <div className="rounded-2xl bg-[#f7f8fa] px-4 py-4">
-                        <p className="text-sm font-semibold text-[#11181c]">{accountLabel}</p>
-                        <p className="mt-1 text-xs text-[#687076]">{currentUser.username}</p>
+                      <div className="rounded-2xl bg-surface-muted px-4 py-4">
+                        <p className="text-sm font-semibold text-ink">{accountLabel}</p>
+                        <p className="mt-1 text-xs text-muted">{currentUser.username}</p>
                       </div>
                       {!currentUser.is_guest && (
                         <button
                           onClick={() => handleNavigate('profile')}
-                          className="mt-2 flex w-full items-center rounded-2xl px-4 py-3 text-left text-sm text-[#3f4650] transition hover:bg-white"
+                          className="mt-2 flex w-full items-center rounded-2xl px-4 py-3 text-left text-sm text-ink-secondary transition hover:bg-white"
                         >
                           <User className="mr-3 h-4 w-4" />
                           {t('navigation.profile')}
@@ -238,7 +239,7 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
                           onLogout?.();
                           setUserMenuOpen(false);
                         }}
-                        className="mt-1 flex w-full items-center rounded-2xl px-4 py-3 text-left text-sm text-[#3f4650] transition hover:bg-white"
+                        className="mt-1 flex w-full items-center rounded-2xl px-4 py-3 text-left text-sm text-ink-secondary transition hover:bg-white"
                       >
                         <LogOut className="mr-3 h-4 w-4" />
                         {t('navigation.logout')}
@@ -249,7 +250,7 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
               ) : (
                 <button
                   onClick={() => handleNavigate('login')}
-                  className="inline-flex h-10 items-center rounded-full bg-[#0070e0] px-4 text-sm font-medium text-white transition hover:bg-slate-800"
+                  className="inline-flex h-10 items-center rounded-full bg-brand-fill px-4 text-sm font-medium text-white transition hover:bg-slate-800"
                 >
                   <User className="mr-2 h-4 w-4" />
                   {t('navigation.login')}
@@ -261,13 +262,16 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
           <div className="flex items-center gap-2 lg:hidden">
             <button
               onClick={() => setLanguageMenuOpen((open) => !open)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full card text-[#3f4650]"
+              aria-label={t('a11y.toggle_language')}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full card text-ink-secondary"
             >
               <Languages className="h-4 w-4" />
             </button>
             <button
               onClick={() => setMobileMenuOpen((open) => !open)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#0070e0] text-white"
+              aria-label={t('a11y.toggle_menu')}
+              aria-expanded={mobileMenuOpen}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-brand-fill text-white"
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -275,13 +279,13 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
         </div>
 
         {languageMenuOpen && (
-          <div className="mt-3 rounded-[16px] border border-[#ededf2] bg-white p-2 shadow-[0_10px_30px_rgba(17,17,26,0.045)] lg:hidden">
+          <div className="mt-3 rounded-[16px] border border-hairline bg-white p-2 shadow-[0_10px_30px_rgba(17,17,26,0.045)] lg:hidden">
             {['zh', 'en'].map((lng) => (
               <button
                 key={lng}
                 onClick={() => changeLanguage(lng)}
                 className={`block w-full rounded-2xl px-4 py-3 text-left text-sm transition ${
-                  i18n.language === lng ? 'bg-[#0070e0] text-white' : 'text-[#3f4650] hover:bg-white'
+                  i18n.language === lng ? 'bg-brand-fill text-white' : 'text-ink-secondary hover:bg-white'
                 }`}
               >
                 {lng === 'zh' ? t('common.languages.zh') : t('common.languages.en')}
@@ -291,14 +295,14 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
         )}
 
         {mobileMenuOpen && (
-          <div className="mt-3 rounded-[16px] border border-[#ededf2] bg-white p-4 shadow-[0_10px_30px_rgba(17,17,26,0.045)] lg:hidden">
+          <div className="mt-3 rounded-[16px] border border-hairline bg-white p-4 shadow-[0_10px_30px_rgba(17,17,26,0.045)] lg:hidden">
             <div className="space-y-2">
               {mainItems.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => handleNavigate(item.id)}
                   className={`block w-full rounded-2xl px-4 py-3 text-left text-sm font-medium transition ${
-                    activeSection === item.id ? 'bg-[#0070e0] text-white' : 'text-[#3f4650] hover:bg-white'
+                    activeSection === item.id ? 'bg-brand-fill text-white' : 'text-ink-secondary hover:bg-white'
                   }`}
                 >
                   {item.label}
@@ -306,8 +310,8 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
               ))}
             </div>
 
-            <div className="mt-4 border-t border-[#ededf2] pt-4">
-              <p className="px-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#687076]">
+            <div className="mt-4 border-t border-hairline pt-4">
+              <p className="px-2 text-xs font-semibold uppercase tracking-[0.22em] text-muted">
                 {t('navigation.analysis')}
               </p>
               <div className="mt-2 space-y-2">
@@ -317,8 +321,8 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
                     onClick={() => handleNavigate(item.id)}
                     className={`flex w-full items-center rounded-2xl px-4 py-3 text-left text-sm font-medium transition ${
                       activeSection === item.id
-                        ? 'bg-[#0070e0] text-white'
-                        : 'text-[#3f4650] hover:bg-white'
+                        ? 'bg-brand-fill text-white'
+                        : 'text-ink-secondary hover:bg-white'
                     }`}
                   >
                     <item.icon className="mr-3 h-4 w-4" />
@@ -328,17 +332,17 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
               </div>
             </div>
 
-            <div className="mt-4 border-t border-[#ededf2] pt-4">
+            <div className="mt-4 border-t border-hairline pt-4">
               {currentUser ? (
                 <>
-                  <div className="rounded-2xl bg-[#f7f8fa] px-4 py-4">
-                    <p className="text-sm font-semibold text-[#11181c]">{accountLabel}</p>
-                    <p className="mt-1 text-xs text-[#687076]">{currentUser.username}</p>
+                  <div className="rounded-2xl bg-surface-muted px-4 py-4">
+                    <p className="text-sm font-semibold text-ink">{accountLabel}</p>
+                    <p className="mt-1 text-xs text-muted">{currentUser.username}</p>
                   </div>
                   {!currentUser.is_guest && (
                     <button
                       onClick={() => handleNavigate('profile')}
-                      className="mt-2 flex w-full items-center rounded-2xl px-4 py-3 text-left text-sm font-medium text-[#3f4650] transition hover:bg-white"
+                      className="mt-2 flex w-full items-center rounded-2xl px-4 py-3 text-left text-sm font-medium text-ink-secondary transition hover:bg-white"
                     >
                       <User className="mr-3 h-4 w-4" />
                       {t('navigation.profile')}
@@ -349,7 +353,7 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
                       onLogout?.();
                       setMobileMenuOpen(false);
                     }}
-                    className="mt-2 flex w-full items-center rounded-2xl px-4 py-3 text-left text-sm font-medium text-[#3f4650] transition hover:bg-white"
+                    className="mt-2 flex w-full items-center rounded-2xl px-4 py-3 text-left text-sm font-medium text-ink-secondary transition hover:bg-white"
                   >
                     <LogOut className="mr-3 h-4 w-4" />
                     {t('navigation.logout')}
@@ -358,7 +362,7 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
               ) : (
                 <button
                   onClick={() => handleNavigate('login')}
-                  className="flex w-full items-center justify-center rounded-2xl bg-[#0070e0] px-4 py-3 text-sm font-medium text-white"
+                  className="flex w-full items-center justify-center rounded-2xl bg-brand-fill px-4 py-3 text-sm font-medium text-white"
                 >
                   <User className="mr-2 h-4 w-4" />
                   {t('navigation.login')}
