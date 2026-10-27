@@ -1,6 +1,7 @@
 import ImageResolutionLabel from './ImageResolutionLabel';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Brain, Play, Settings, Image as ImageIcon, FolderOpen, Zap, Search, SortAsc, SortDesc } from 'lucide-react';
+import { Brain, Play, Image as ImageIcon, FolderOpen, Zap, Search, SortAsc, SortDesc, SlidersHorizontal } from 'lucide-react';
+import PageHeader from './PageHeader';
 import { useImageStore } from '../hooks/useImageStore';
 import { useTaskStore } from '../hooks/useTaskStore';
 import { message, Tree } from 'antd';
@@ -90,6 +91,8 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
         const id = String(f.id);
         return {
           key: id,
+          name: f.name,
+          count: f.imageCount ?? 0,
           title: `${f.name} (${f.imageCount ?? 0})`,
           children: build(id),
         };
@@ -98,10 +101,14 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
     return [
       {
         key: ALL_NODE_VALUE,
+        name: t('images.all_images'),
+        count: imagesLoading && images.length === 0 ? '...' : (totalImages || images.length),
         title: `${t('images.all_images')} (${imagesLoading && images.length === 0 ? '...' : (totalImages || images.length)})`,
       },
       {
         key: UNCATEGORIZED_NODE_VALUE,
+        name: t('images.uncategorized'),
+        count: imagesLoading && images.length === 0 ? '...' : images.filter(img => !img.folderId).length,
         title: `${t('images.uncategorized')} (${imagesLoading && images.length === 0 ? '...' : images.filter(img => !img.folderId).length})`,
       },
       ...build(null),
@@ -287,8 +294,8 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="mb-6">
-        <h2 className="text-2xl font-semibold text-ink mb-2">{t('navigation.prediction')}</h2>
+      <div className="card mb-4 rounded-[16px] px-5 py-4">
+        <PageHeader title={t('navigation.prediction')} subtitle={t('prediction.subtitle')} />
       </div>
 
       {/* Quick Stats */}
@@ -357,10 +364,17 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
                 <h3 className="font-semibold text-ink mb-3">{t('images.folders')}</h3>
                 <div className="border-t border-hairline my-2"></div>
                 <Tree
+                  className="folder-tree"
                   treeData={folderTreeData}
                   selectedKeys={selectedFolderTreeKeys}
                   defaultExpandAll
                   blockNode
+                  titleRender={(node: any) => (
+                    <span className="flex w-full items-center justify-between gap-2">
+                      <span className="truncate">{node.name ?? node.title}</span>
+                      <span className="shrink-0 rounded-full bg-black/5 px-1.5 text-xs tabular-nums text-current">{node.count}</span>
+                    </span>
+                  )}
                   onSelect={(keys) => {
                     const k = keys?.[0] ? String(keys[0]) : null;
                     if (!k) return;
@@ -386,14 +400,14 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
                     className="pl-10 pr-4 py-2 border border-hairline-strong rounded-lg focus:ring-2 focus:ring-accent-line focus:border-transparent w-full text-sm"
                   />
                 </div>
-                <div className="hidden xs:flex items-center space-x-2">
+                <div className="flex shrink-0 items-center gap-1 rounded-lg border border-hairline bg-surface-muted p-1">
                   <select
                     id="prediction-sort-by"
                     name="prediction-sort-by"
                     aria-label={t('a11y.sort_by')}
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as any)}
-                    className="px-2 py-1 sm:px-3 sm:py-2 border border-hairline-strong rounded-lg focus:ring-2 focus:ring-accent-line focus:border-transparent text-xs sm:text-sm"
+                    className="rounded-lg border border-hairline-strong px-2 py-1.5 text-sm transition-all duration-200 focus:border-transparent focus:ring-2 focus:ring-accent-line"
                   >
                     <option value="date">{t('images.sort.date')}</option>
                     <option value="name">{t('images.sort.name')}</option>
@@ -402,7 +416,7 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
                   <button
                     onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
                     aria-label={t('a11y.sort_order')}
-                    className="p-2 border border-hairline-strong rounded-lg hover:bg-white transition-colors"
+                    className="rounded-lg border border-hairline-strong p-2 transition-all duration-200 hover:border-accent-line hover:text-accent-text"
                   >
                     {sortOrder === 'asc' ? <SortAsc className="w-4 h-4" /> : <SortDesc className="w-4 h-4" />}
                   </button>
@@ -536,7 +550,7 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
                 onClick={() => setShowAdvanced(!showAdvanced)}
                 className="flex items-center text-xs sm:text-sm text-accent-text hover:text-blue-800"
               >
-                <Settings className="w-4 h-4 mr-1" />
+                <SlidersHorizontal className="w-4 h-4 mr-1" />
                 <span className="hidden xs:inline">{showAdvanced ? t('prediction.advanced_settings.hide') : t('prediction.advanced_settings.show')}</span>
                 <span className="xs:hidden">{showAdvanced ? t('prediction.advanced_settings.hide_short') : t('prediction.advanced_settings.show_short')}</span>
               </button>
@@ -827,11 +841,15 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
             <button
               onClick={handleStartPrediction}
               disabled={(summaryItemCount === 0 && !folderOnlySelection) || loading}
-              className="w-full mt-4 sm:mt-6 flex items-center justify-center px-3 py-2 sm:px-4 sm:py-3 bg-brand-fill text-white rounded-lg hover:bg-brand-fill-hover disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm sm:text-base"
+              title={(summaryItemCount === 0 && !folderOnlySelection) ? t('prediction.select_hint') : undefined}
+              className="w-full mt-4 sm:mt-6 flex items-center justify-center px-3 py-2 sm:px-4 sm:py-3 bg-brand-fill text-white rounded-lg hover:bg-brand-fill-hover disabled:bg-[#c8ccd2] disabled:cursor-not-allowed transition-colors text-sm sm:text-base"
             >
               {loading ? <span className="animate-spin mr-2"><Play className="w-4 h-4 sm:w-5 sm:h-5" /></span> : <Play className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />}
               {t('prediction.create_task')}
             </button>
+            {(summaryItemCount === 0 && !folderOnlySelection) && (
+              <p className="mt-2 text-center text-xs text-muted">{t('prediction.select_hint')}</p>
+            )}
             {error && <div className="mt-3 text-red-500 text-sm">{error}</div>}
             </div>
           </div>

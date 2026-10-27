@@ -206,11 +206,11 @@ const UserProfile: React.FC<UserProfileProps> = ({ currentUser, onLogout, onUpda
   };
 
   return (
-    <div className="flex items-start gap-0">
+    <div className="flex min-h-0 flex-col items-stretch sm:flex-row sm:items-start">
       {/* Sidebar */}
-      <div className="w-64 bg-white shadow-lg z-10 flex flex-col fixed h-full">
+      <div className="z-10 flex w-full shrink-0 flex-col border-b border-hairline bg-white sm:sticky sm:top-0 sm:h-[calc(100vh-95px)] sm:w-64 sm:border-b-0 sm:border-r">
          {/* User Info Summary */}
-         <div className="p-6 border-b border-gray-100 flex flex-col items-center">
+         <div className="hidden flex-col items-center border-b border-hairline p-6 sm:flex">
             <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
               <div className="w-20 h-20 rounded-full bg-brand-fill flex items-center justify-center text-white text-3xl font-bold mb-3 shadow-md overflow-hidden">
                  {currentUser?.profile?.avatar_url && !avatarLoadFailed ? (
@@ -229,15 +229,52 @@ const UserProfile: React.FC<UserProfileProps> = ({ currentUser, onLogout, onUpda
               </div>
               <input id="profile-avatar-upload" name="profile-avatar-upload" type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleAvatarChange} />
             </div>
-            <h3 className="font-bold text-ink">{currentUser?.username}</h3>
+            <p className="font-bold text-ink">{currentUser?.username}</p>
             <p className="text-xs text-muted mt-1">{currentUser?.email}</p>
             <div className="mt-2 px-2 py-0.5 bg-[rgba(10,132,255,0.08)] text-brand-fill-hover text-xs rounded-full font-medium">
               {currentUser?.is_superuser ? t('permissions.admin') : t('permissions.user_role')}
             </div>
          </div>
          
+         <div className="flex items-center gap-3 border-b border-hairline px-4 py-3 sm:hidden">
+           <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-fill text-base font-bold text-white">
+             {currentUser?.profile?.avatar_url && !avatarLoadFailed ? (
+               <img src={currentUser.profile.avatar_url} alt="" className="h-full w-full object-cover" onError={() => setAvatarLoadFailed(true)} />
+             ) : (
+               currentUser?.username?.charAt(0).toUpperCase()
+             )}
+           </div>
+           <div className="min-w-0 flex-1">
+             <p className="truncate text-sm font-semibold text-ink">{currentUser?.username}</p>
+             <p className="truncate text-xs text-muted">{currentUser?.email}</p>
+           </div>
+           <span className="shrink-0 rounded-full bg-[rgba(10,132,255,0.08)] px-2 py-0.5 text-xs font-medium text-brand-fill-hover">
+             {currentUser?.is_superuser ? t('permissions.admin') : t('permissions.user_role')}
+           </span>
+         </div>
+         <div className="px-4 py-3 sm:hidden">
+           <label htmlFor="profile-section" className="sr-only">{t('profile.account_settings')}</label>
+           <select
+             id="profile-section"
+             value={activeTab}
+             onChange={(e) => setActiveTab(e.target.value)}
+             className="w-full rounded-lg border border-hairline bg-surface-muted px-3 py-2 text-sm text-ink focus:border-accent-line focus:outline-none focus:ring-2 focus:ring-accent-line/20"
+           >
+             <option value="profile">{t('profile.personal_info')}</option>
+             <option value="security">{t('profile.security')}</option>
+             <option value="preferences">{t('profile.preferences')}</option>
+             {(currentUser?.is_superuser || currentUser?.role_names?.includes('Admin')) && (
+               <option value="system">{t('system.user_role_mgmt')}</option>
+             )}
+             {currentUser?.is_superuser && <option value="site_settings">{t('system.site_settings')}</option>}
+             {(currentUser?.is_superuser || currentUser?.role_names?.includes('Admin')) && (
+               <option value="audit">{t('permissions.audit')}</option>
+             )}
+             {currentUser?.is_superuser && <option value="analytics">{t('profile.visitor_statistics')}</option>}
+           </select>
+         </div>
          {/* Menu */}
-         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+         <nav className="hidden flex-1 space-y-1 overflow-y-auto p-4 sm:block">
             <div className="px-3 mb-2 text-xs font-semibold text-muted uppercase tracking-wider">{t('profile.account_settings')}</div>
             <MenuButton id="profile" icon={User} label={t('profile.personal_info')} active={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
             <MenuButton id="security" icon={Lock} label={t('profile.security')} active={activeTab === 'security'} onClick={() => setActiveTab('security')} />
@@ -259,7 +296,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ currentUser, onLogout, onUpda
             )}
          </nav>
 
-         <div className="p-4 border-t border-gray-100">
+         <div className="p-4 sm:border-t sm:border-gray-100">
            <button 
              onClick={onLogout}
              className="w-full flex items-center px-3 py-2 text-danger-text hover:bg-red-50 rounded-lg transition-colors duration-200"
@@ -272,10 +309,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ currentUser, onLogout, onUpda
 
       {/* Main Content */}
       <div className="min-w-0 flex-1 px-5 py-5 sm:px-6 lg:px-8">
-         <div className="max-w-5xl mx-auto">
+         <div className="mx-auto max-w-4xl">
            {/* Header */}
            <div className="mb-8">
-             <h1 className="text-2xl font-bold text-ink">
+             <h1 className="text-xl font-semibold tracking-tight text-ink">
                {activeTab === 'profile' && t('profile.personal_info')}
                {activeTab === 'security' && t('profile.security')}
                {activeTab === 'preferences' && t('profile.preferences')}
@@ -346,10 +383,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ currentUser, onLogout, onUpda
            {activeTab === 'security' && (
              <div className="space-y-6">
                <div className="card rounded-xl shadow-sm border p-8">
-                 <h3 className="text-lg font-medium text-ink mb-6 flex items-center">
+                 <h2 className="mb-6 flex items-center text-lg font-medium text-ink">
                   <Lock className="w-5 h-5 mr-2 text-accent-text" />
                   {t('profile.change_password')}
-                </h3>
+                </h2>
                 <div className="space-y-4 max-w-md">
                   <div>
                     <label htmlFor="profile-current-password" className="block text-sm font-medium text-ink-secondary mb-2">{t('profile.current_password')}</label>
@@ -385,10 +422,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ currentUser, onLogout, onUpda
               </div>
               
               <div className="card rounded-xl shadow-sm border p-8">
-                <h3 className="text-lg font-medium text-ink mb-6 flex items-center">
+                <h2 className="mb-6 flex items-center text-lg font-medium text-ink">
                   <Shield className="w-5 h-5 mr-2 text-accent-text" />
                   {t('profile.two_factor_auth')}
-                </h3>
+                </h2>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-ink-secondary font-medium">{t('profile.enable_2fa')}</p>
@@ -441,10 +478,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ currentUser, onLogout, onUpda
                <div className="space-y-10">
                  {/* General Settings */}
                  <div>
-                   <h3 className="text-lg font-medium text-ink mb-4 pb-2 border-b border-gray-100 flex items-center">
+                   <h2 className="mb-4 flex items-center border-b border-hairline pb-2 text-lg font-medium text-ink">
                      <span className="w-1 h-5 bg-[rgba(10,132,255,0.08)] rounded-full mr-2"></span>
                      {t('system.general_settings') || 'General Settings'}
-                   </h3>
+                   </h2>
                    <div className="grid grid-cols-1 gap-6">
                      <div>
                        <label htmlFor="system-site-title" className="block text-sm font-medium text-ink-secondary mb-2">{t('system.site_title') || 'Site Title'}</label>
@@ -467,10 +504,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ currentUser, onLogout, onUpda
 
                  {/* Security & Access */}
                  <div>
-                   <h3 className="text-lg font-medium text-ink mb-4 pb-2 border-b border-gray-100 flex items-center">
+                   <h2 className="mb-4 flex items-center border-b border-hairline pb-2 text-lg font-medium text-ink">
                      <span className="w-1 h-5 bg-[rgba(10,132,255,0.08)] rounded-full mr-2"></span>
                      {t('system.security_access') || 'Security & Access'}
-                   </h3>
+                   </h2>
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
                      <div className="flex items-center justify-between p-4 card-soft rounded-lg">
                        <div>
@@ -500,10 +537,10 @@ const UserProfile: React.FC<UserProfileProps> = ({ currentUser, onLogout, onUpda
 
                  {/* Storage & Limits */}
                  <div>
-                   <h3 className="text-lg font-medium text-ink mb-4 pb-2 border-b border-gray-100 flex items-center">
+                   <h2 className="mb-4 flex items-center border-b border-hairline pb-2 text-lg font-medium text-ink">
                      <span className="w-1 h-5 bg-purple-500 rounded-full mr-2"></span>
                      {t('system.storage_limits') || 'Storage & Limits'}
-                   </h3>
+                   </h2>
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                      <div>
                        <label htmlFor="system-upload-size-limit" className="block text-sm font-medium text-ink-secondary mb-2">{t('system.upload_size_limit') || 'Upload Size Limit (MB)'}</label>

@@ -16,6 +16,7 @@ import {
 import { useTaskStore } from '../hooks/useTaskStore';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import PageHeader from './PageHeader';
 import { PredictionTask, User } from '../types';
 
 interface TaskCenterProps {
@@ -126,19 +127,14 @@ const TaskCenter: React.FC<TaskCenterProps> = ({ currentUser }) => {
       <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col gap-3">
         <section className="rounded-[16px] border border-hairline bg-white px-4 py-3 shadow-[0_4px_16px_rgba(17,24,28,0.05)]">
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex min-w-0 items-center gap-2">
-              <span className="rounded-full bg-brand-fill p-1.5 text-white" title={t('navigation.tasks')}>
-                <Activity className="h-3.5 w-3.5" />
-              </span>
-              <h2 className="truncate text-lg font-semibold tracking-tight text-ink">{t('navigation.tasks')}</h2>
-            </div>
+            <PageHeader title={t('navigation.tasks')} className="min-w-0 flex-1" />
 
             <div className="ml-auto flex flex-wrap items-center gap-2">
               {statCards.map((card) => (
                 <span
                   key={card.label}
                   title={card.note}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-white px-3 py-1 text-xs font-medium text-ink-secondary"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface-muted px-3 py-1 text-xs font-medium text-ink-secondary"
                 >
                   {card.icon}
                   <span className="text-muted">{card.label}</span>
@@ -217,11 +213,13 @@ const TaskCenter: React.FC<TaskCenterProps> = ({ currentUser }) => {
                         {statusMeta.icon}
                         <h3 className="truncate text-sm font-semibold text-ink">{task.name}</h3>
                         <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusMeta.chip}`}>{statusMeta.text}</span>
-                        <span className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
-                          <span title={t('tasks.model')}>{task.modelType || '--'}</span>
-                          <span title={t('tasks.image_count')}>{task.imageCount} {t('tasks.images_unit', { defaultValue: '张' })}</span>
-                          <span title={t('tasks.created')}>{new Date(task.createdDate).toLocaleString()}</span>
-                          <span title={t('tasks.duration')}>{formatDuration(task.createdDate, task.completedDate, task.status === 'running')}</span>
+                        <span className="ml-auto flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                          <span className="font-medium text-ink-secondary" title={t('tasks.model')}>{task.modelType || '--'}</span>
+                          <span className="text-muted">{task.imageCount} {t('tasks.images_unit', { defaultValue: '张' })}</span>
+                          <span className="text-hairline-strong" aria-hidden="true">·</span>
+                          <span className="text-muted" title={t('tasks.created')}>{new Date(task.createdDate).toLocaleString()}</span>
+                          <span className="text-hairline-strong" aria-hidden="true">·</span>
+                          <span className="text-muted" title={t('tasks.duration')}>{formatDuration(task.createdDate, task.completedDate, task.status === 'running')}</span>
                         </span>
                       </div>
 
@@ -256,7 +254,10 @@ const TaskCenter: React.FC<TaskCenterProps> = ({ currentUser }) => {
                           </div>
                         </div>
                         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-hairline">
-                          <div className={`h-full rounded-full transition-all duration-500 ${task.status === 'failed' ? 'bg-danger' : task.status === 'running' ? 'bg-brand-fill' : 'bg-brand-fill'}`} style={{ width: `${Math.max(task.progress, 2)}%` }} />
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${task.status === 'failed' ? 'bg-danger' : task.status === 'running' ? 'bg-brand-fill' : 'bg-brand-fill/55'}`}
+                            style={{ width: `${Math.max(task.progress, 2)}%` }}
+                          />
                         </div>
                         {task.error && (
                           <div className={`mt-2 rounded-xl px-2.5 py-1.5 text-xs leading-5 ${task.status === 'failed' ? 'bg-[rgba(243,18,96,0.08)] text-danger-strong ring-1 ring-inset ring-[rgba(243,18,96,0.24)]' : 'bg-[rgba(245,165,36,0.12)] text-warn-text ring-1 ring-inset ring-[rgba(245,165,36,0.30)]'}`}>

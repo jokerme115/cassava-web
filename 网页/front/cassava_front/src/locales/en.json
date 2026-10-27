@@ -20,8 +20,11 @@
     "prev_page": "Previous page",
     "next_page": "Next page",
     "last_page": "Last page",
-    "page_number": "Page {{page}}"
-  },  "common": {
+    "page_number": "Page {{page}}",
+    "toggle_folders": "Open folders panel",
+    "jump_index": "Jump to group"
+  },
+  "common": {
     "loading": "Loading...",
     "enabled": "Enabled",
     "disabled": "Disabled",
@@ -275,7 +278,8 @@
       "try_again": "Login failed, please try again later",
       "admin_login": "Admin Login",
       "back_to_login": "Back to Login"
-    }
+    },
+    "back_to_login": "Back to sign in"
   },
   "register": {
     "title": "Register for Cassava System",
@@ -430,7 +434,8 @@
       "visits": "Total Visits",
       "accuracy": "Recognition Consistency",
       "prediction_usage": "Prediction Usage Count",
-      "images_predicted": "Total Images Predicted"
+      "images_predicted": "Total Images Predicted",
+      "accuracy_pending": "Under validation"
     },
     "hero": {
       "title": "Intelligent Cassava Post-Harvest Rot Area Prediction System",
@@ -615,7 +620,9 @@
     "images": "images",
     "task_name_prompt": "Please enter task name",
     "cancel": "Cancel",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "subtitle": "Pick images and model settings to queue a rot-area prediction job",
+    "select_hint": "Select at least one image or a folder on the left first"
   },
   "tasks": {
     "refresh": "Refresh",
@@ -650,7 +657,7 @@
     "nav_to_results": "View results",
     "failed_reason": "Failure reason",
     "partial_warning": "Task finished, but some images produced no result",
-    "list_end": "You have reached the end",
+    "list_end": "All tasks loaded",
     "processed_count": "Processed {{done}} / {{total}}",
     "avg_confidence_short": "Avg confidence {{value}}%",
     "runtime_short": "Runtime {{value}}s",
@@ -945,7 +952,8 @@
     "update_failed": "Failed to update image",
     "move_success": "Successfully moved {{count}} images",
     "move_failed": "Failed to move images",
-    "page_items": "{{count}} on this page"
+    "page_items": "{{count}} on this page",
+    "search_folder": "Search folders"
   },
   "smart_classification": {
     "title": "Smart Classification Suggestion",

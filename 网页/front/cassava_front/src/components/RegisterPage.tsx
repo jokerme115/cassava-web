@@ -197,7 +197,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNavigate }) =
   return (
     <div className="min-h-[calc(100vh-92px)] bg-surface-muted px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto grid min-h-[calc(100vh-140px)] max-w-6xl items-stretch gap-6 lg:grid-cols-[0.94fr_1.06fr]">
-        <section className="rounded-[24px] border border-hairline bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)] sm:p-8">
+        <section className="rounded-[24px] border border-hairline bg-white p-6 shadow-card sm:p-8">
           <div className="flex h-full flex-col">
             <div className="mb-8">
               <div className="flex items-center gap-4">
@@ -362,14 +362,14 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNavigate }) =
           <div className="absolute inset-0 bg-[rgba(255,255,255,0.35)]" />
           <div className="relative flex h-full flex-col justify-between">
             <div>
-              <div className="inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm text-slate-100 backdrop-blur">
+              <div className="inline-flex items-center gap-3 rounded-full border border-white/20 bg-[#005cb8] px-4 py-2 text-sm text-white">
                 <ShieldCheck className="h-4 w-4 text-ok" />
                 Secure Research Workspace
               </div>
               <h3 className="mt-8 max-w-lg text-4xl font-semibold leading-tight">
                 创建账号后即可进入完整的木薯检测与结果协作流程。
               </h3>
-              <p className="mt-6 max-w-xl text-base leading-8 text-muted">
+              <p className="mt-6 max-w-xl text-base leading-8 text-white/90">
                 账号用于保护样本数据、预测结果、任务中心与权限管理。公共展示内容仍然保持可访问，让首次访客先看见系统价值，再决定是否登录。
               </p>
             </div>
@@ -380,9 +380,9 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNavigate }) =
                 { title: 'Workflow', desc: '从上传、预测到结果沉淀一体化' },
                 { title: 'Collaboration', desc: '支持访客浏览，正式用户再进入操作页' }
               ].map((item) => (
-                <div key={item.title} className="rounded-3xl border border-hairline bg-white/8 p-4 backdrop-blur">
-                  <p className="text-xs uppercase tracking-[0.22em] text-muted">{item.title}</p>
-                  <p className="mt-3 text-sm leading-6 text-slate-100">{item.desc}</p>
+                <div key={item.title} className="rounded-3xl border border-white/15 bg-white/10 p-4">
+                  <p className="text-xs uppercase tracking-[0.22em] text-white/80">{item.title}</p>
+                  <p className="mt-3 text-sm leading-6 text-white">{item.desc}</p>
                 </div>
               ))}
             </div>

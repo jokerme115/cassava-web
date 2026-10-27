@@ -107,6 +107,7 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
         <div className="card flex items-center justify-between gap-4 rounded-full px-4 py-3">
           <button
             onClick={() => handleNavigate('home')}
+            aria-label={t('navigation.home')}
             className="flex min-w-0 items-center gap-3 text-left"
           >
             <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl card shadow-sm">

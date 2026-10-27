@@ -21,7 +21,7 @@ from .models import (
 )
 from .permissions import HasPermission, IsRootUser, is_miniapp_request
 from .view_mixins import PermissionMixin, TaskProcessingMixin, ResponseFormatMixin, FileUploadMixin
-from .services import ShareService, PredictionService, ImageService
+from .services import ShareService, PredictionService, ImageService, AuditService
 from .oss_service import check_oss_configured, upload_file_to_oss, delete_file_from_oss
 from .storage_utils import build_preview_storage_key
 from django.utils import timezone
@@ -183,7 +183,13 @@ class CassavaImageViewSet(viewsets.ModelViewSet, PermissionMixin, TaskProcessing
         serializer.save(owner=self.request.user)
 
     def perform_destroy(self, instance):
+        image_id = instance.id
+        image_name = instance.name
         super().perform_destroy(instance)
+        AuditService.log_action(
+            self.request.user, 'DELETE', 'CassavaImage', image_id,
+            {'name': image_name}, success=True, request=self.request,
+        )
 
     @action(detail=False, methods=['post'], url_path='upload-files')
     def upload_files(self, request):
@@ -1269,6 +1275,11 @@ class ProcessingTaskViewSet(viewsets.ModelViewSet, PermissionMixin, ResponseForm
             save_kwargs['guest_token'] = self.request._guest_token
             
         task = serializer.save(status='pending', **save_kwargs)
+        AuditService.log_action(
+            self.request.user, 'CREATE', 'ProcessingTask', task.id,
+            {'name': task.name, 'type': task.type, 'algorithm': getattr(task, 'algorithm', '')},
+            success=True, request=self.request,
+        )
             
         # Prediction jobs are submitted to a bounded runner after commit. The
         # complete request parameters are persisted on the task itself.

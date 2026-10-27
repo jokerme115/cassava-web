@@ -20,8 +20,11 @@
     "prev_page": "上一页",
     "next_page": "下一页",
     "last_page": "最后一页",
-    "page_number": "第 {{page}} 页"
-  },  "shares": {
+    "page_number": "第 {{page}} 页",
+    "toggle_folders": "打开文件夹面板",
+    "jump_index": "分组跳转"
+  },
+  "shares": {
     "share": "分享",
     "shared_with_me": "与我共享",
     "my_shares": "我共享的",
@@ -339,7 +342,8 @@
       "try_again": "登录失败，请稍后重试。",
       "admin_login": "管理员登录",
       "back_to_login": "返回登录"
-    }
+    },
+    "back_to_login": "返回登录"
   },
   "register": {
     "title": "注册木薯智能管理系统",
@@ -494,10 +498,11 @@
       "visits": "总访问量",
       "accuracy": "识别一致性",
       "prediction_usage": "预测功能使用次数",
-      "images_predicted": "预测图片总数"
+      "images_predicted": "预测图片总数",
+      "accuracy_pending": "独立验证中"
     },
     "hero": {
-      "title": "木薯采后腐烂面积智能预测系统",
+      "title": "木薯采后腐烂面积​智能预测系统",
       "subtitle": "农业农村部木薯种质资源保护与利用重点实验室+海南师范大学龙海侠团队实验室联合出品",
       "description": "1秒预测20张 · PPD分割 mIoU 63.4%",
       "tagline": "中国热带农业科学院&海南师范大学",
@@ -679,7 +684,9 @@
     "images": "图片",
     "task_name_prompt": "请输入任务名称",
     "cancel": "取消",
-    "confirm": "确认"
+    "confirm": "确认",
+    "subtitle": "选择图片与模型配置，创建批量腐烂面积预测任务",
+    "select_hint": "请先在左侧选择至少一张图片或一个文件夹"
   },
   "tasks": {
     "refresh": "刷新",
@@ -714,7 +721,7 @@
     "nav_to_results": "查看结果",
     "failed_reason": "失败原因",
     "partial_warning": "任务完成，但有图片未出结果",
-    "list_end": "已经到底了",
+    "list_end": "已全部加载",
     "processed_count": "已处理 {{done}} / {{total}}",
     "avg_confidence_short": "平均置信度 {{value}}%",
     "runtime_short": "耗时 {{value}}s",
@@ -1009,7 +1016,8 @@
     "update_failed": "更新图片失败",
     "move_success": "成功移动 {{count}} 张图片",
     "move_failed": "移动图片失败",
-    "page_items": "本页 {{count}} 项"
+    "page_items": "本页 {{count}} 项",
+    "search_folder": "搜索文件夹"
   },
   "smart_classification": {
     "title": "智能分类建议",

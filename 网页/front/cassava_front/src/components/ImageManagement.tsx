@@ -1,9 +1,9 @@
 import ImageResolutionLabel from './ImageResolutionLabel';
 import React, { useState, useMemo, useEffect, useRef, useDeferredValue } from 'react';
-import { Upload, Plus, Trash2, Move, Grid, List, Search, SortAsc, SortDesc, X, ChevronLeft, ChevronRight, Calendar, FolderOpen, FileText, Eye, Share2, Users, Edit, MoreVertical, FolderPlus } from 'lucide-react';
+import { Upload, Plus, Trash2, Move, Grid, List, Search, SortAsc, SortDesc, X, ChevronLeft, ChevronRight, Calendar, FolderOpen, FileText, Eye, Share2, Users, Edit, MoreVertical, FolderPlus, Menu } from 'lucide-react';
 import { useImageStore } from '../hooks/useImageStore';
 import { ppdToneClass } from '../utils/ppdTone';
-import { Modal, Switch, Input, message, Button, InputNumber, Dropdown, Tree, TreeSelect, Pagination } from 'antd';
+import { Modal, Switch, Input, message, Button, InputNumber, Dropdown, Tree, TreeSelect, Pagination, Drawer } from 'antd';
 import { foldersApi, sharesApi, guestResourcesApi } from '../services/api';
 import { useTranslation } from 'react-i18next';
 import { Folder, User, Image, ResourceShare } from '../types';
@@ -101,6 +101,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
     void setImageSearchQuery(search, ordering);
   }, [deferredSearchQuery, sortBy, sortOrder, isSharedWithMeView, isMySharesView, setImageSearchQuery, setImageOrdering]);
 
+  const [folderDrawerOpen, setFolderDrawerOpen] = useState(false);
   const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
   const [showRenameFolderModal, setShowRenameFolderModal] = useState(false);
   const [folderRenameValue, setFolderRenameValue] = useState('');
@@ -108,21 +109,9 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
   const [contextFolder, setContextFolder] = useState<Folder | null>(null);
   const [showDeleteFolderModal, setShowDeleteFolderModal] = useState(false);
   const [createFolderParentId, setCreateFolderParentId] = useState<string | null>(null);
-  const [quickCreateFolderName, setQuickCreateFolderName] = useState('');
-  const [quickCreateParentId, setQuickCreateParentId] = useState<string | null>(null);
-  const [quickCreatingFolder, setQuickCreatingFolder] = useState(false);
   const [moveModalNewFolderName, setMoveModalNewFolderName] = useState('');
   const [moveModalNewFolderParentId, setMoveModalNewFolderParentId] = useState<string | null>(null);
   const [moveModalCreatingFolder, setMoveModalCreatingFolder] = useState(false);
-
-  useEffect(() => {
-    if (isGuest) return;
-    const parent =
-      selectedFolder && !['uncategorized', 'shared_with_me', 'my_shares'].includes(selectedFolder)
-        ? selectedFolder
-        : null;
-    setQuickCreateParentId(parent);
-  }, [isGuest, selectedFolder]);
 
   const handleToggleGuestAccess = async (enabled: boolean) => {
     if (selectedImages.length === 0) return;
@@ -804,22 +793,6 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
     }
   };
 
-  const handleQuickCreateFolder = async () => {
-    if (isGuest) return;
-    if (!quickCreateFolderName.trim()) return;
-    setQuickCreatingFolder(true);
-    try {
-      await foldersApi.create({ name: quickCreateFolderName.trim(), parent: quickCreateParentId });
-      await loadFolders?.();
-      setQuickCreateFolderName('');
-      message.success(t('images.folder_created'));
-    } catch {
-      message.error(t('images.create_folder_failed'));
-    } finally {
-      setQuickCreatingFolder(false);
-    }
-  };
-
   const handleRenameFolder = async () => {
     if (!contextFolder || !folderRenameValue.trim()) return;
     try {
@@ -1338,15 +1311,13 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
     );
   };
 
-  return (
-    <div className="h-full flex">
-      {/* Left Sidebar - Folders */}
-      <div className="hidden sm:block w-64 border-r border-hairline bg-white flex flex-col">
+  const folderSidebar = (
+    <div className="flex h-full w-full flex-col bg-white">
         <div className="p-4 border-b border-hairline bg-white">
-          <h3 className="font-semibold text-ink mb-3 flex items-center gap-2">
+          <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-ink">
             <FolderOpen className="w-5 h-5 text-accent-text" />
             {t('images.folders')}
-          </h3>
+          </h2>
           {!isGuest && (
           <button 
             onClick={() => {
@@ -1363,38 +1334,6 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
             <Plus className="w-4 h-4 mr-2" />
             {t('images.create_folder')}
           </button>
-          )}
-          {!isGuest && (
-            <div className="mt-3 space-y-2">
-              <TreeSelect
-                className="w-full"
-                value={(quickCreateParentId ?? null) === null ? ROOT_NODE_VALUE : quickCreateParentId}
-                onChange={(v) => setQuickCreateParentId(v === ROOT_NODE_VALUE || v == null ? null : String(v))}
-                treeData={folderTreeSelectData}
-                treeDefaultExpandAll
-                showSearch
-                placeholder={t('images.choose_folder')}
-                aria-label={t('images.')}
-                size="small"
-              />
-              <div className="flex gap-2">
-                <Input
-                  value={quickCreateFolderName}
-                  onChange={(e) => setQuickCreateFolderName(e.target.value)}
-                  onPressEnter={handleQuickCreateFolder}
-                  placeholder={t('images.enter_folder_name')}
-                  size="small"
-                />
-                <Button
-                  type="primary"
-                  size="small"
-                  loading={quickCreatingFolder}
-                  onClick={handleQuickCreateFolder}
-                >
-                  {t('common.create')}
-                </Button>
-              </div>
-            </div>
           )}
         </div>
         
@@ -1496,7 +1435,8 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
               onChange={(e) => setFolderTreeSearch(e.target.value)}
               allowClear
               size="small"
-              placeholder={isMySharesView ? t('shares.search_recipient') : t('images.search')}
+              placeholder={isMySharesView ? t('shares.search_recipient') : t('images.search_folder')}
+              aria-label={isMySharesView ? t('shares.search_recipient') : t('images.search_folder')}
             />
           </div>
 
@@ -1565,16 +1505,29 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
             )}
           </div>
         </div>
-      </div>
+    </div>
+  );
+
+  return (
+    <div className="h-full flex">
+      <div className="hidden w-64 shrink-0 border-r border-hairline bg-white sm:flex">{folderSidebar}</div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col w-full">
         {/* Header */}
         <div className="bg-white border-b border-hairline p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center flex-wrap gap-2">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <button
+                onClick={() => setFolderDrawerOpen(true)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-hairline-strong text-ink-secondary transition-colors hover:bg-surface-sunken sm:hidden"
+                aria-label={t('a11y.toggle_folders')}
+                aria-expanded={folderDrawerOpen}
+              >
+                <Menu className="h-4 w-4" />
+              </button>
               <h2 
-                className="text-2xl font-semibold text-ink cursor-pointer hover:underline"
+                className="cursor-pointer truncate text-xl font-semibold text-ink hover:underline"
                 onClick={() => setSelectedFolder(null)}
               >
                 {t('navigation.images')}
@@ -1593,26 +1546,6 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                 </React.Fragment>
               ))}
             </div>
-            <div className="flex items-center space-x-3">
-              <div className="flex card rounded-lg p-1 shadow-sm border">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  aria-label={t('a11y.grid_view')}
-                  aria-pressed={viewMode === 'grid'}
-                  className={`p-2 rounded-lg transition-all duration-200 ${viewMode === 'grid' ? 'bg-brand-fill text-white shadow-md' : 'hover:bg-white'}`}
-                >
-                  <Grid className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  aria-label={t('a11y.list_view')}
-                  aria-pressed={viewMode === 'list'}
-                  className={`p-2 rounded-lg transition-all duration-200 ${viewMode === 'list' ? 'bg-brand-fill text-white shadow-md' : 'hover:bg-white'}`}
-                >
-                  <List className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* Search and Actions */}
@@ -1629,13 +1562,14 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                 />
               </div>
               
-              {/* Sort Controls */}
-              <div className="hidden sm:flex items-center space-x-2 card p-2 rounded-lg shadow-sm border">
+              {/* Toolbar: sort / group / view */}
+              <div className="flex shrink-0 items-center gap-1 rounded-lg border border-hairline bg-surface-muted p-1">
+                <div className="hidden items-center gap-1 sm:flex">
                 <select
                   value={sortBy}
                   aria-label={t('a11y.sort_by')}
                   onChange={(e) => setSortBy(e.target.value as any)}
-                  className="px-3 py-2 border border-hairline-strong rounded-lg focus:ring-2 focus:ring-accent-line focus:border-transparent text-sm transition-all duration-200"
+                  className="rounded-lg border border-hairline-strong px-3 py-1.5 text-sm transition-all duration-200 focus:border-transparent focus:ring-2 focus:ring-accent-line"
                 >
                   <option value="date">{t('images.sort.date')}</option>
                   <option value="capture_time">{t('images.capture_time')}</option>
@@ -1648,7 +1582,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                     value={dateGroupType}
                     aria-label={t('a11y.group_by')}
                     onChange={e => setDateGroupType(e.target.value as any)}
-                    className="px-3 py-2 border border-hairline-strong rounded-lg text-sm transition-all duration-200"
+                    className="rounded-lg border border-hairline-strong px-3 py-1.5 text-sm transition-all duration-200 focus:border-transparent focus:ring-2 focus:ring-accent-line"
                   >
                     <option value="year">{t('images.group.year')}</option>
                     <option value="month">{t('images.group.month')}</option>
@@ -1658,10 +1592,30 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                 <button
                   onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
                   aria-label={t('a11y.sort_order')}
-                  className="p-2 border border-hairline-strong rounded-lg hover:bg-[rgba(10,132,255,0.08)] hover:text-accent-text transition-all duration-200"
+                  className="rounded-lg border border-hairline-strong p-2 transition-all duration-200 hover:border-accent-line hover:text-accent-text"
                 >
                   {getSortIcon()}
                 </button>
+                </div>
+                <span className="mx-1 hidden h-5 w-px bg-hairline-strong sm:block" />
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    aria-label={t('a11y.grid_view')}
+                    aria-pressed={viewMode === 'grid'}
+                    className={`rounded-lg p-2 transition-all duration-200 ${viewMode === 'grid' ? 'bg-brand-fill text-white shadow-sm' : 'text-ink-secondary hover:bg-white'}`}
+                  >
+                    <Grid className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    aria-label={t('a11y.list_view')}
+                    aria-pressed={viewMode === 'list'}
+                    className={`rounded-lg p-2 transition-all duration-200 ${viewMode === 'list' ? 'bg-brand-fill text-white shadow-sm' : 'text-ink-secondary hover:bg-white'}`}
+                  >
+                    <List className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </div>
             
@@ -2129,8 +2083,11 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
           </div>
 
           {/* Alphabet Index Sidebar */}
-          {filteredAndSortedImages.length > 0 && (
-            <div className="mr-1 hidden w-[68px] shrink-0 flex-col items-center gap-1 rounded-[10px] border border-hairline bg-white py-2 lg:flex">
+          {filteredAndSortedImages.length > 0 && groupJumpIndex.length > 1 && (
+            <nav
+              aria-label={t('a11y.jump_index')}
+              className="hidden w-[68px] shrink-0 flex-col items-center gap-1 self-start rounded-[10px] border border-hairline bg-white py-2 lg:flex"
+            >
               {groupJumpIndex.map(({ key, index }) => (
                 <button
                   key={key}
@@ -2141,10 +2098,20 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                   {key}
                 </button>
               ))}
-            </div>
+            </nav>
           )}
         </div>
       </div>
+
+      <Drawer
+        placement="left"
+        open={folderDrawerOpen}
+        onClose={() => setFolderDrawerOpen(false)}
+        width={288}
+        styles={{ body: { padding: 0 } }}
+      >
+        {folderSidebar}
+      </Drawer>
 
       {/* Image Preview Modal */}
       {showPreviewModal && previewImage && (

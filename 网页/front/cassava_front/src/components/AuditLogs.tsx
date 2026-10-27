@@ -125,6 +125,47 @@ const AuditLogs: React.FC<AuditLogsProps> = () => {
     return genericActionLabels[actionKey] ?? raw;
   };
 
+  // 资源类型的中文名（后端存的是模型类名，直接展示对使用者没有意义）
+  const getResourceLabel = (resourceType?: string): string => {
+    const raw = String(resourceType || '').trim();
+    if (!raw) return '-';
+    const isChinese = typeof navigator !== 'undefined' && navigator.language.toLowerCase().startsWith('zh');
+    const labels: Record<string, string> = isChinese
+      ? {
+          CassavaImage: '图片',
+          Folder: '文件夹',
+          SegmentationResult: '分割结果',
+          PredictionResult: '预测结果',
+          ProcessingTask: '预测任务',
+          SystemSetting: '系统设置',
+          User: '用户',
+          Role: '角色',
+          Permission: '权限',
+          GuestAccessibleResource: '访客白名单',
+        }
+      : {
+          CassavaImage: 'Image',
+          Folder: 'Folder',
+          SegmentationResult: 'Segmentation',
+          PredictionResult: 'Prediction result',
+          ProcessingTask: 'Prediction task',
+          SystemSetting: 'System settings',
+          User: 'User',
+          Role: 'Role',
+          Permission: 'Permission',
+          GuestAccessibleResource: 'Guest whitelist',
+        };
+    return labels[raw] ?? raw;
+  };
+
+  const getActionStyle = (action: AuditAction): string => {
+    const key = String(action || '').trim().toUpperCase();
+    if (key === 'DELETE') return 'bg-surface-sunken text-danger-strong';
+    if (key === 'CREATE') return 'bg-surface-sunken text-ok-text';
+    if (key === 'UPDATE' || key === 'ASSIGN') return 'bg-surface-sunken text-brand-fill-hover';
+    return 'bg-surface-sunken text-ink-secondary';
+  };
+
   // 格式化时间
   const formatDateTime = (timestamp: string): string => {
     const date = new Date(timestamp);
@@ -133,8 +174,8 @@ const AuditLogs: React.FC<AuditLogsProps> = () => {
 
   // 获取状态样式
   const getStatusStyle = (success: boolean): string => {
-    return success 
-      ? 'bg-green-100 text-green-800 border-green-200' 
+    return success
+      ? 'bg-green-100 text-green-800 border-green-200'
       : 'bg-red-100 text-red-800 border-red-200';
   };
 
@@ -277,7 +318,7 @@ const AuditLogs: React.FC<AuditLogsProps> = () => {
                 </thead>
                 <tbody className="bg-transparent divide-y divide-surface-sunken/60">
                   {logs.map((log) => (
-                    <tr key={log.id} className="hover:bg-white transition-colors duration-200">
+                    <tr key={log.id} className="transition-colors duration-200 hover:bg-surface-muted">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-ink">
                         {formatDateTime(log.timestamp)}
                       </td>
@@ -288,18 +329,18 @@ const AuditLogs: React.FC<AuditLogsProps> = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-ink">
-                        <span className="bg-purple-50 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">
+                        <span className={`rounded-full px-2 py-1 text-xs font-medium ${getActionStyle(log.action)}`}>
                           {getActionDescription(log.action)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-ink">
                         <div>
-                          <div className="font-medium">{log.resourceType}</div>
-                          {log.resourceName && (
-                            <div className="text-muted text-xs">{log.resourceName}</div>
-                          )}
-                          {log.resourceId && (
-                            <div className="text-muted text-xs">ID: {log.resourceId}</div>
+                          <div className="font-medium">
+                            {getResourceLabel(log.resourceType)}
+                            {log.resourceId ? <span className="ml-1.5 text-xs font-normal text-muted tabular-nums">#{log.resourceId}</span> : null}
+                          </div>
+                          {log.resourceName && log.resourceName !== log.resourceType && (
+                            <div className="truncate text-xs text-muted">{log.resourceName}</div>
                           )}
                         </div>
                       </td>

@@ -150,7 +150,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
 
   const stats = [
     { label: t('homepage.stats.visits'), value: animatedNumbers.visits, suffix: '+' },
-    { label: '精度评估', value: '独立验证中', suffix: '' },
+    { label: t('homepage.stats.accuracy'), value: t('homepage.stats.accuracy_pending'), suffix: '', status: true },
     { label: t('homepage.stats.prediction_usage'), value: animatedNumbers.prediction_usage, suffix: '+' },
     { label: t('homepage.stats.images_predicted'), value: animatedNumbers.images_predicted, suffix: '+' }
   ];
@@ -218,7 +218,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
                 {t('homepage.hero.tagline')}
               </div>
 
-              <h1 className="mt-7 max-w-3xl text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl lg:text-[56px]">
+              <h1 className="mt-7 max-w-3xl text-4xl font-semibold leading-[1.08] tracking-tight [word-break:keep-all] sm:text-5xl lg:text-[56px]">
                 {currentHero.title}
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-ink-secondary sm:text-xl">
@@ -249,10 +249,17 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {stats.map((stat) => (
                   <div key={stat.label} className="rounded-[12px] border border-hairline bg-surface-muted px-3.5 py-3.5">
-                    <div className="text-xl font-semibold tabular-nums text-ink">
-                      {stat.value}
-                      {stat.suffix}
-                    </div>
+                    {stat.status ? (
+                      <div className="flex items-center gap-1.5 text-sm font-medium text-warn-text">
+                        <span className="h-1.5 w-1.5 rounded-full bg-warn-text" aria-hidden="true" />
+                        {stat.value}
+                      </div>
+                    ) : (
+                      <div className="text-xl font-semibold tabular-nums text-ink">
+                        {stat.value}
+                        {stat.suffix}
+                      </div>
+                    )}
                     <div className="mt-1 text-xs text-muted">{stat.label}</div>
                   </div>
                 ))}
@@ -305,7 +312,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(10,132,255,0.08)] text-brand-fill-hover">
                     <item.icon className="h-5 w-5" />
                   </div>
-                  <h3 className="mt-4 text-base font-semibold text-ink">{item.title}</h3>
+                  <h2 className="mt-4 text-base font-semibold text-ink">{item.title}</h2>
                   <p className="mt-2 text-sm leading-6 text-ink-secondary">{item.description}</p>
                 </div>
               ))}
