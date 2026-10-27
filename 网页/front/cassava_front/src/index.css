@@ -430,3 +430,10 @@ body {
   background: rgba(17, 24, 28, 0.24);
   background-clip: padding-box;
 }
+
+/* 文件夹树（预测页等）：节点铺满整行，选中态与左侧导航胶囊保持一致 */
+.folder-tree .ant-tree-treenode { width: 100%; padding-bottom: 2px; }
+.folder-tree .ant-tree-node-content-wrapper { flex: 1; min-width: 0; border-radius: 8px; padding: 2px 6px; }
+.folder-tree .ant-tree-node-content-wrapper.ant-tree-node-selected { background: var(--brand-fill); color: #fff; }
+.folder-tree .ant-tree-node-content-wrapper:hover { background: var(--surface-sunken); }
+.folder-tree .ant-tree-node-content-wrapper.ant-tree-node-selected:hover { background: var(--brand-fill-hover); }

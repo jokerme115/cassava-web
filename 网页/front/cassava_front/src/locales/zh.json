@@ -682,7 +682,9 @@
     "images": "图片",
     "task_name_prompt": "请输入任务名称",
     "cancel": "取消",
-    "confirm": "确认"
+    "confirm": "确认",
+    "subtitle": "选择图片与模型配置，创建批量腐烂面积预测任务",
+    "select_hint": "请先在左侧选择至少一张图片或一个文件夹"
   },
   "tasks": {
     "refresh": "刷新",

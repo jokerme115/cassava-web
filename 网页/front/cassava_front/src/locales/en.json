@@ -618,7 +618,9 @@
     "images": "images",
     "task_name_prompt": "Please enter task name",
     "cancel": "Cancel",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "subtitle": "Pick images and model settings to queue a rot-area prediction job",
+    "select_hint": "Select at least one image or a folder on the left first"
   },
   "tasks": {
     "refresh": "Refresh",
