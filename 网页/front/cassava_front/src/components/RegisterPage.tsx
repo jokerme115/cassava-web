@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight, Mail, ShieldCheck, User2 } from 'lucide-react';
-import logoImage from '/assets/logo.jpg';
 import { User } from '../types';
 
 interface RegisterPageProps {
@@ -202,7 +201,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNavigate }) =
             <div className="mb-8">
               <div className="flex items-center gap-4">
                 <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-3xl card shadow-sm">
-                  <img src={logoImage} alt={t('system.title')} className="h-full w-full object-cover" />
+                  <img src="/assets/logo-128.webp" alt={t('system.title')} className="h-full w-full object-cover" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-[0.22em] text-accent-text">

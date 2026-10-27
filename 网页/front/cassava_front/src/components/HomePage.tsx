@@ -76,6 +76,8 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
         description: '上传木薯切面图像，进行病变区域分割、人工校正与面积比例量化。',
         key: 'prediction',
         image: '/banners/segmentation.png',
+        imageWebp: '/banners/segmentation.webp',
+        imageWebpSm: '/banners/segmentation-sm.webp',
         imageAlt: '木薯横截面智能分割示意',
         icon: Brain,
         eyebrow: 'AI Segmentation',
@@ -89,6 +91,8 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
         description: '围绕上传、预测、结果归档建立清晰链路，先浏览公共内容，再按需进入登录操作。',
         key: 'images',
         image: '/banners/archive.png',
+        imageWebp: '/banners/archive.webp',
+        imageWebpSm: '/banners/archive-sm.webp',
         imageAlt: '木薯科研样本图像管理示意',
         icon: BarChart3,
         eyebrow: 'Image Archive',
@@ -102,6 +106,8 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
         description: '把木薯采后腐烂量化研究转化为可视化、可回溯、可协作的检测界面。',
         key: 'results',
         image: '/banners/research.png',
+        imageWebp: '/banners/research.webp',
+        imageWebpSm: '/banners/research-sm.webp',
         imageAlt: '木薯样本采集与实验室分析场景示意',
         icon: Microscope,
         eyebrow: 'Research Delivery',
@@ -291,14 +297,22 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
                       : 'pointer-events-none translate-y-4 opacity-0'
                   }`}
                 >
-                  <img
-                    src={slide.image}
-                    alt={slide.imageAlt}
-                    className="absolute inset-0 h-full w-full object-cover"
-                    style={{ objectPosition: 'center top' }}
-                    loading={index === 0 ? 'eager' : 'lazy'}
-                    decoding="async"
-                  />
+                  <picture>
+                    <source
+                      type="image/webp"
+                      srcSet={`${slide.imageWebpSm} 900w, ${slide.imageWebp} 1586w`}
+                      sizes="(min-width: 1024px) 46vw, 100vw"
+                    />
+                    <img
+                      src={slide.image}
+                      alt={slide.imageAlt}
+                      className="absolute inset-0 h-full w-full object-cover"
+                      style={{ objectPosition: 'center top' }}
+                      loading={index === 0 ? 'eager' : 'lazy'}
+                      decoding="async"
+                      {...(index === 0 ? { fetchpriority: 'high' } : {})}
+                    />
+                  </picture>
                 </div>
               ))}
             </div>

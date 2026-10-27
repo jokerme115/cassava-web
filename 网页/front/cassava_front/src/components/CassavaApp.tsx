@@ -7,6 +7,7 @@ import { getAuthToken, clearAuthToken } from '../utils/authToken';
 import { loadGuestSession, clearGuestSession } from '../utils/guestSession';
 import { useLocation, useNavigate } from 'react-router-dom';
 
+const AntdThemeProvider = lazy(() => import('../theme/AntdThemeProvider'));
 const HomePage = lazy(() => import('./HomePage'));
 const ImageManagement = lazy(() => import('./ImageManagement'));
 const PredictionModule = lazy(() => import('./PredictionModule'));
@@ -390,6 +391,20 @@ const CassavaApp: React.FC = () => {
     }
   };
 
+  // 首页/联系我们/登录/注册不引用 antd，套主题提供者会把 antd（含 rc-*，约 285 kB gzip）
+  // 一起拉进首屏；其余路由（图片、预测、结果、任务、权限、个人中心）需要它。
+  const needsAntd = !['home', 'contact', 'login', 'register'].includes(activeSection);
+  const pageShell = (
+    <div
+      className="flex h-[calc(100vh-95px)] min-h-0 flex-col overflow-x-hidden"
+      role="region"
+      aria-label={t('a11y.main_region')}
+      tabIndex={0}
+    >
+      {renderContent()}
+    </div>
+  );
+
   return (
     <div className="min-h-screen text-ink">
       <TopNavigation
@@ -409,14 +424,7 @@ const CassavaApp: React.FC = () => {
           </div>
         }
       >
-        <div
-          className="flex h-[calc(100vh-95px)] min-h-0 flex-col overflow-x-hidden"
-          role="region"
-          aria-label={t('a11y.main_region')}
-          tabIndex={0}
-        >
-          {renderContent()}
-        </div>
+        {needsAntd ? <AntdThemeProvider>{pageShell}</AntdThemeProvider> : pageShell}
       </Suspense>
     </div>
   );
