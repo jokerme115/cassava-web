@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight, Lock, Sparkles, User2 } from 'lucide-react';
-import logoImage from '/assets/logo.jpg';
 import { SystemSetting, User } from '../types';
 import { setAuthToken } from '../utils/authToken';
 import { saveGuestSession, clearGuestSession } from '../utils/guestSession';
@@ -115,7 +114,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate, systemSettin
               </div>
               <div className="mt-8 flex items-center gap-4">
                 <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-3xl border border-hairline bg-white shadow-lg">
-                  <img src={logoImage} alt={t('system.title')} className="h-full w-full object-cover" />
+                  <img src="/assets/logo-128.webp" alt={t('system.title')} className="h-full w-full object-cover" />
                 </div>
                 <div>
                   <h1 className="mt-2 text-3xl font-semibold leading-tight sm:text-4xl">

@@ -11,7 +11,6 @@ import {
   X
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import logoImage from '/assets/logo.jpg';
 
 interface TopNavigationProps {
   activeSection: string;
@@ -111,7 +110,7 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
             className="flex min-w-0 items-center gap-3 text-left"
           >
             <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl card shadow-sm">
-              <img src={logoImage} alt={t('system.title')} className="h-full w-full object-cover" />
+              <img src="/assets/logo-128.webp" alt={t('system.title')} className="h-full w-full object-cover" />
             </div>
             <div className="hidden min-w-0 sm:block">
               <p className="truncate text-sm font-semibold tracking-[0.18em] text-accent-text">
