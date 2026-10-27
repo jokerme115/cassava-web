@@ -6,7 +6,6 @@
 """
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.http import JsonResponse
 from django.middleware.csrf import get_token
@@ -41,9 +40,12 @@ def get_csrf_token(request):
     return JsonResponse({'csrftoken': token})
 
 urlpatterns = [
-    # 显式添加upload-batch路由，并豁免CSRF保护
-    path('images/upload-batch/', csrf_exempt(views.CassavaImageViewSet.as_view({'post': 'upload_batch'})), name='image-upload-batch'),
-    path('images/upload-files/', csrf_exempt(views.CassavaImageViewSet.as_view({'post': 'upload_files'})), name='image-upload-files'),
+    # 2026-10-27：DRF 的 APIView.as_view() 内部已统一包 csrf_exempt
+    # （rest_framework/views.py:144 `return csrf_exempt(view)`），此前的显式 csrf_exempt 是冗余包装，
+    # 反而让人误以为「这些端点靠豁免 CSRF 才通」。真实防护是 token 鉴权 + 权限类，
+    # 因此这里去掉冗余装饰器，行为不变、语义变清楚。
+    path('images/upload-batch/', views.CassavaImageViewSet.as_view({'post': 'upload_batch'}), name='image-upload-batch'),
+    path('images/upload-files/', views.CassavaImageViewSet.as_view({'post': 'upload_files'}), name='image-upload-files'),
 
     path('', include(router.urls)),  # 包含路由器生成的所有API端点
     path('permissions/', include(permission_router.urls)),  # 权限管理API端点
@@ -59,8 +61,8 @@ urlpatterns = [
     path('auth/password/change/', auth_views.change_password, name='change-password'),
     path('auth/csrf/', get_csrf_token, name='csrf-token'),
 
-    # OSS对象存储API
-    path('oss/', csrf_exempt(views.OssObjectView.as_view()), name='oss-object'),
+    # OSS对象存储API（权限与归属校验见 predict/views.py 的 OssObjectView / _oss_key_owned_by）
+    path('oss/', views.OssObjectView.as_view(), name='oss-object'),
 
     path('system/settings/', views.SystemSettingView.as_view(), name='system-settings'),
     path('system/settings/public/', views.public_settings, name='public-settings'),
