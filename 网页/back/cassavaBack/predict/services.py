@@ -36,6 +36,23 @@ def _weight_digest(path, size, modified):
     return digest.hexdigest()
 
 
+def describe_prediction_failure(exc):
+    """把后台异常翻译成用户能读懂的一句话。
+
+    任务失败原来统一写「请重试或联系管理员」，用户既不知道是自己选错了模型、
+    内存不够，还是文件坏了；真实原因只留在服务端日志里。
+    """
+    message = str(exc).strip() or exc.__class__.__name__
+    lowered = message.lower()
+    if isinstance(exc, MemoryError) or 'out of memory' in lowered or 'cannot allocate' in lowered:
+        return '任务执行失败：内存不足，请减少单次提交的图片数量后重试'
+    if isinstance(exc, ValueError):
+        return f'任务执行失败：{message}'
+    if isinstance(exc, FileNotFoundError) or 'no such file' in lowered:
+        return f'任务执行失败：找不到所需的文件（{message}），请检查图片或模型权重是否还在'
+    return f'任务执行失败（{exc.__class__.__name__}）：{message[:180]}'
+
+
 def prediction_provenance(model_name):
     if model_name == 'ensemble':
         files = [item for member in MEMBERS for item in prediction_provenance(member)]
@@ -449,6 +466,19 @@ class DeepLabV3PlusService:
             logger.error(f"加载YOLO模型失败: {e}")
             return None
     
+    @staticmethod
+    def _model_cache_key(model_path):
+        """模型缓存键 = 路径 + mtime + 文件大小。
+
+        只用路径做键时，替换权重文件必须重启进程才会生效；把 mtime 与大小
+        带上，下一次预测就会自动加载新权重。
+        """
+        try:
+            stat = os.stat(model_path)
+            return (model_path, stat.st_mtime_ns, stat.st_size)
+        except OSError:
+            return (model_path, None, None)
+
     def load_model(self, model_path, model_type='deeplabv3plus_resnet50'):
         """
         加载DeepLabV3+模型，支持多种骨干网络架构
@@ -485,10 +515,11 @@ class DeepLabV3PlusService:
             if not model_path or not os.path.exists(model_path):
                 raise FileNotFoundError(f"模型文件不存在: {model_path}")
 
-            # 检查模型是否已缓存
-            if model_path in self.models:
+            # 检查模型是否已缓存（键里带 mtime 与大小，替换权重后会自动重新加载）
+            cache_key = self._model_cache_key(model_path)
+            if cache_key in self.models:
                 logger.info(f"从缓存加载模型: {model_path}")
-                return self.models[model_path]
+                return self.models[cache_key]
 
             lower_path = model_path.lower()
             if 'resnet50' in lower_path:
@@ -613,7 +644,7 @@ class DeepLabV3PlusService:
                     m.track_running_stats = False
             
             # 缓存模型
-            self.models[model_path] = model
+            self.models[cache_key] = model
             
             logger.info(f"成功加载模型: {model_path}")
             return model
@@ -659,11 +690,12 @@ class DeepLabV3PlusService:
         if not resolved_choices:
             raise FileNotFoundError("没有可用的 DeepLab 集成模型")
 
-        # 清理已存在的模型
-        for path in list(self.models.keys()):
-            if path not in seen_paths:
+        # 清理已存在的模型（缓存键是 (路径, mtime, 大小) 三元组，按路径比对）
+        for cache_key in list(self.models.keys()):
+            cached_path = cache_key[0] if isinstance(cache_key, tuple) else cache_key
+            if cached_path not in seen_paths:
                 # 从缓存中移除不需要的模型
-                del self.models[path]
+                del self.models[cache_key]
         
         loaded_models = []
         # 加载所有模型
@@ -3515,14 +3547,22 @@ class TaskService(BaseService):
             }
             
         except Exception as e:
+            failure_text = describe_prediction_failure(e)
             try:
                 task.status = 'failed'
-                task.error = '任务执行失败，请重试或联系管理员'
-                task.save()
+                task.error = failure_text
+                execution_meta = dict((task.parameters or {}).get('_execution') or {})
+                execution_meta.update({
+                    'error_code': e.__class__.__name__,
+                    'error_detail': str(e)[:500],
+                    'failed_at': timezone.now().isoformat(),
+                })
+                task.parameters = {**(task.parameters or {}), '_execution': execution_meta}
+                task.save(update_fields=['status', 'error', 'parameters', 'updated_time'])
             except Exception:
                 pass
             logger.error(f"任务执行失败: {e}", exc_info=True)
-            return {"error": '任务执行失败，请重试或联系管理员'}
+            return {"error": failure_text}
 
 
 class FolderService(BaseService):

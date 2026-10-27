@@ -6,6 +6,7 @@ import { useImageStore } from '../hooks/useImageStore';
 import { useTaskStore } from '../hooks/useTaskStore';
 import { message, Tree } from 'antd';
 import { useTranslation } from 'react-i18next';
+import { getApiErrorMessage } from '../utils/apiError';
 
 const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
   const { t } = useTranslation();
@@ -273,7 +274,7 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
       }
       message.success(t('prediction.task_created'));
     } catch (error: any) {
-      const errorMsg = error.response?.data?.detail || error.response?.data?.error || t('prediction.create_task_failed');
+      const errorMsg = getApiErrorMessage(error, t('prediction.create_task_failed'));
       setError(errorMsg);
       message.error(errorMsg);
     } finally {

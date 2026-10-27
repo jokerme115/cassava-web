@@ -14,7 +14,7 @@ import { useResultsStore } from '../hooks/useResultsStore';
 import { useTaskStore } from '../hooks/useTaskStore';
 import { predictionsApi, resolveFileUrl } from '../services/api';
 import { useSearchParams } from 'react-router-dom';
-import { effectivePpd, formatPpd } from '../utils/measurement';
+import { effectivePpd, formatPpd, formatPpdValue } from '../utils/measurement';
 import PageHeader from './PageHeader';
 import { modelLabel } from '../utils/modelLabels';
 import { useTranslation } from 'react-i18next';
@@ -84,9 +84,9 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
     const healthy = ppds.filter((p) => p < 4).length;
     return {
       total: taskResults.length,
-      avg: ppds.length ? (ppds.reduce((a, b) => a + b, 0) / ppds.length).toFixed(2) : '-',
-      max: ppds.length ? Math.max(...ppds).toFixed(2) : '-',
-      min: ppds.length ? Math.min(...ppds).toFixed(2) : '-',
+      avg: ppds.length ? formatPpdValue(ppds.reduce((a, b) => a + b, 0) / ppds.length) : '-',
+      max: ppds.length ? formatPpdValue(Math.max(...ppds)) : '-',
+      min: ppds.length ? formatPpdValue(Math.min(...ppds)) : '-',
       healthy,
       mild,
       severe,

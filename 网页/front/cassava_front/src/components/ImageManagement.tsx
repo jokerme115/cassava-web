@@ -3,6 +3,7 @@ import React, { useState, useMemo, useEffect, useRef, useDeferredValue } from 'r
 import { Upload, Plus, Trash2, Move, Grid, List, Search, SortAsc, SortDesc, X, ChevronLeft, ChevronRight, Calendar, FolderOpen, FileText, Eye, Share2, Users, Edit, MoreVertical, FolderPlus, Menu } from 'lucide-react';
 import { useImageStore } from '../hooks/useImageStore';
 import { ppdToneClass } from '../utils/ppdTone';
+import { formatPpd } from '../utils/measurement';
 import { Modal, Switch, Input, message, Button, InputNumber, Dropdown, Tree, TreeSelect, Pagination, Drawer } from 'antd';
 import { foldersApi, sharesApi, guestResourcesApi } from '../services/api';
 import { useTranslation } from 'react-i18next';
@@ -1951,7 +1952,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                                       ppdToneClass(image.ppdValue, 'dot')
                                     }`}></div>
                                     <span className="text-xs font-medium text-ink-secondary">
-                                      {t('results.ppd_value')}: {image.ppdValue !== undefined ? image.ppdValue.toFixed(2) : '--'}
+                                      {t('results.ppd_value')}: {image.ppdValue !== undefined ? formatPpd(image.ppdValue) : '--'}
                                     </span>
                                   </div>
                                 )}
@@ -2043,7 +2044,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                                       <div className={`w-2.5 h-2.5 rounded-full mr-1.5 ${
                                         ppdToneClass(image.ppdValue, 'dot')
                                       }`}></div>
-                                      {t('results.ppd_value')}: {image.ppdValue !== undefined ? image.ppdValue.toFixed(2) : '--'}
+                                      {t('results.ppd_value')}: {image.ppdValue !== undefined ? formatPpd(image.ppdValue) : '--'}
                                     </span>
                                   )}
                                 </div>
@@ -2195,7 +2196,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                         (previewImage.ppdValue ?? 0) >= 7 ? 'text-green-400' : 
                         (previewImage.ppdValue ?? 0) >= 4 ? 'text-yellow-400' : 'text-red-400'
                       }`}>
-                        {previewImage.ppdValue !== undefined ? previewImage.ppdValue.toFixed(2) : '--'}
+                        {previewImage.ppdValue !== undefined ? formatPpd(previewImage.ppdValue) : '--'}
                       </span>
                     </div>
                   )}

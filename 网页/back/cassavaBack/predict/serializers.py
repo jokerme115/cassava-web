@@ -7,6 +7,7 @@ from .models import (
 from django.contrib.auth.models import User
 from django.utils import timezone
 import datetime
+import os
 
 
 class ResourceShareSerializer(serializers.ModelSerializer):
@@ -274,6 +275,42 @@ class PredictionCorrectionSerializer(serializers.ModelSerializer):
         return self._url(obj.rotten_mask_key)
 
 
+_PREDICTION_MODEL_LABELS = {
+    'resnet50': 'DeepLabV3+ ResNet-50',
+    'resnet101': 'DeepLabV3+ ResNet-101',
+    'mobilenet': 'DeepLabV3+ MobileNet',
+    'm6_best': '半监督模型（M6）',
+    'ensemble': '投票模型（ResNet-101 + M6）',
+}
+
+
+def _missing_model_weight(model_key):
+    """返回缺失的权重文件名；权重齐备时返回 None。
+
+    创建任务时先校验，避免出现「202 创建成功、几秒后异步失败」这种把错误
+    推到后台队列里的体验——那时的报错既看不到原因也不好重试。
+    """
+    from django.conf import settings as dj_settings
+
+    if model_key == 'ensemble':
+        from .ensemble import MEMBERS
+        for member in MEMBERS:
+            missing = _missing_model_weight(member)
+            if missing:
+                return missing
+        return None
+    if model_key == 'm6_best':
+        path = getattr(dj_settings, 'M6_BEST_MODEL_PATH', None)
+        if path and os.path.exists(path):
+            return None
+        return os.path.basename(path) if path else 'm6_best_fold1.pth'
+    config = (getattr(dj_settings, 'DEEPLAB_MODEL_CONFIGS', {}) or {}).get(model_key) or {}
+    path = config.get('path')
+    if path and os.path.exists(path):
+        return None
+    return os.path.basename(path) if path else f'{model_key}.pth'
+
+
 class ProcessingTaskSerializer(serializers.ModelSerializer):
     owner_username = serializers.CharField(source='owner.username', read_only=True)
     status_display = serializers.SerializerMethodField()
@@ -305,6 +342,33 @@ class ProcessingTaskSerializer(serializers.ModelSerializer):
             'cancelled': '已取消'
         }
         return status_mapping.get(obj.status, obj.status)
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        task_type = attrs.get('type', getattr(self.instance, 'type', 'prediction'))
+        if task_type != 'prediction':
+            return attrs
+        for field in ('algorithm', 'single_model_type'):
+            if field in attrs:
+                attrs[field] = self._validate_model_key(field, attrs[field])
+        return attrs
+
+    @staticmethod
+    def _validate_model_key(field, raw_value):
+        if raw_value in (None, ''):
+            return raw_value
+        key = str(raw_value).strip().lower()
+        if key not in _PREDICTION_MODEL_LABELS:
+            options = '、'.join(f'{code}（{label}）' for code, label in _PREDICTION_MODEL_LABELS.items())
+            raise serializers.ValidationError({
+                field: f'不支持的预测模型「{raw_value}」。可选：{options}'
+            })
+        missing = _missing_model_weight(key)
+        if missing:
+            raise serializers.ValidationError({
+                field: f'模型「{_PREDICTION_MODEL_LABELS[key]}」的权重文件缺失（{missing}），请先上传权重或改选其它模型'
+            })
+        return key
 
     def get_image_count(self, obj):
         # 文件夹任务提交时 image_ids 为空列表，此时应按 folder_ids 现算，

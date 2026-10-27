@@ -3,6 +3,7 @@ import { PredictionTask } from '../types';
 import { tasksApi } from '../services/api';
 import { message } from 'antd';
 import i18n from '../i18n';
+import { getApiErrorMessage } from '../utils/apiError';
 
 export const useTaskStore = (currentUser?: any) => {
   const [tasks, setTasks] = useState<PredictionTask[]>([]);
@@ -145,8 +146,10 @@ export const useTaskStore = (currentUser?: any) => {
       void loadTasks(true);
       message.success(i18n.t('tasks.retry_success'));
       return created;
-    } catch (error) {
-      message.error(i18n.t('tasks.retry_failed'));
+    } catch (error: any) {
+      // 后端现在会因为模型名写错、权重缺失等直接返回 400 并给出可读原因，
+      // 重试失败时把它透出来，否则用户只看到一句「重新提交失败」。
+      message.error(getApiErrorMessage(error, i18n.t('tasks.retry_failed')));
       console.error(error);
       throw error;
     }
