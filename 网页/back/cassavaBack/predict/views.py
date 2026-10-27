@@ -1341,6 +1341,37 @@ class ShareViewSet(viewsets.ModelViewSet, PermissionMixin, ResponseFormatMixin):
             return self.error_response(err or "操作失败", status_code=status.HTTP_400_BAD_REQUEST)
         return self.success_response({'revoked': True})
 
+def _oss_key_owned_by(user, key):
+    """判断 key 是否属于该用户名下的某条业务记录。
+
+    2026-10-27 加固：`/api/oss/` 原先只依赖全局 IsAuthenticated，
+    任何登录用户都能读取、列目录、删除**任意**对象（含他人图片与掩码）。
+    这里把「有没有登录」升级为「是不是你的对象」。
+    未知归属的对象（历史上直接上传、无业务记录引用的 key）仅管理员可达。
+    """
+    from django.db.models import Q
+    from .models import CassavaImage, SegmentationResult, PredictionResult
+
+    if not key:
+        return False
+    if getattr(user, 'is_staff', False) or getattr(user, 'is_superuser', False):
+        return True
+    if CassavaImage.objects.filter(owner=user).filter(
+        Q(oss_key=key) | Q(preview_oss_key=key)
+    ).exists():
+        return True
+    if SegmentationResult.objects.filter(owner=user, oss_key=key).exists():
+        return True
+    if PredictionResult.objects.filter(owner=user).filter(
+        Q(oss_key=key)
+        | Q(cassava_mask_key=key)
+        | Q(rotten_mask_key=key)
+        | Q(confidence_map_key=key)
+    ).exists():
+        return True
+    return False
+
+
 class OssObjectView(APIView):
     def post(self, request):
         from django.core.files.storage import default_storage
@@ -1354,6 +1385,15 @@ class OssObjectView(APIView):
 
         key = request.data.get('key')
         prefix = request.data.get('prefix') or ''
+
+        if key and not _oss_key_owned_by(request.user, key):
+            # 禁止用指定 key 覆盖他人对象
+            exists = default_storage.exists(key)
+            if check_oss_configured():
+                from .oss_service import get_file_from_oss
+                exists = get_file_from_oss(key) is not None
+            if exists:
+                return Response({'error': '无权覆盖该对象'}, status=status.HTTP_403_FORBIDDEN)
 
         if not key:
             ext = os.path.splitext(file.name)[1]
@@ -1377,6 +1417,8 @@ class OssObjectView(APIView):
 
         key = request.query_params.get('key')
         if key:
+            if not _oss_key_owned_by(request.user, key):
+                return Response({'error': '无权访问该对象'}, status=status.HTTP_403_FORBIDDEN)
             if check_oss_configured():
                 data = get_file_from_oss(key)
                 if data is None:
@@ -1389,6 +1431,11 @@ class OssObjectView(APIView):
             return FileResponse(fh)
 
         prefix = request.query_params.get('prefix') or ''
+        if not (request.user.is_staff or request.user.is_superuser):
+            return Response(
+                {'error': '仅管理员可枚举存储目录'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         files = list_files_in_oss(prefix) if check_oss_configured() else []
         return Response({'status': 'ok', 'files': files})
         
@@ -1399,7 +1446,11 @@ class OssObjectView(APIView):
         key = request.query_params.get('key') or request.data.get('key')
         if not key:
             return Response({'error': 'No key provided'}, status=status.HTTP_400_BAD_REQUEST)
-            
+
+        if not _oss_key_owned_by(request.user, key):
+            return Response({'error': '无权删除该对象'}, status=status.HTTP_403_FORBIDDEN)
+
+
         if check_oss_configured():
             result = delete_file_from_oss(key)
             if result.get('status_code') and result.get('status_code') >= 400:

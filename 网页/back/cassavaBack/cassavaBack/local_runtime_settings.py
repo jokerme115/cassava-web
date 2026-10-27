@@ -1,5 +1,6 @@
-from .test_settings_sqlite import *
+"""兼容别名（2026-10-27）：内容已迁到 `dev_runtime_settings.py`。
 
-# Local interactive server: execute submitted prediction tasks.
-PREDICTION_TASKS_DISABLED = False
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+新代码请用 `--settings=cassavaBack.dev_runtime_settings`。
+"""
+
+from .dev_runtime_settings import *  # noqa: F401,F403
