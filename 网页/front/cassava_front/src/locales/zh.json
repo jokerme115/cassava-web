@@ -20,8 +20,11 @@
     "prev_page": "上一页",
     "next_page": "下一页",
     "last_page": "最后一页",
-    "page_number": "第 {{page}} 页"
-  },  "shares": {
+    "page_number": "第 {{page}} 页",
+    "toggle_folders": "打开文件夹面板",
+    "jump_index": "分组跳转"
+  },
+  "shares": {
     "share": "分享",
     "shared_with_me": "与我共享",
     "my_shares": "我共享的",
@@ -1009,7 +1012,8 @@
     "update_failed": "更新图片失败",
     "move_success": "成功移动 {{count}} 张图片",
     "move_failed": "移动图片失败",
-    "page_items": "本页 {{count}} 项"
+    "page_items": "本页 {{count}} 项",
+    "search_folder": "搜索文件夹"
   },
   "smart_classification": {
     "title": "智能分类建议",
