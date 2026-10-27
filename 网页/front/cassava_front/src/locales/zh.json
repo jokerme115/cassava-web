@@ -497,10 +497,11 @@
       "visits": "总访问量",
       "accuracy": "识别一致性",
       "prediction_usage": "预测功能使用次数",
-      "images_predicted": "预测图片总数"
+      "images_predicted": "预测图片总数",
+      "accuracy_pending": "独立验证中"
     },
     "hero": {
-      "title": "木薯采后腐烂面积智能预测系统",
+      "title": "木薯采后腐烂面积​智能预测系统",
       "subtitle": "农业农村部木薯种质资源保护与利用重点实验室+海南师范大学龙海侠团队实验室联合出品",
       "description": "1秒预测20张 · PPD分割 mIoU 63.4%",
       "tagline": "中国热带农业科学院&海南师范大学",

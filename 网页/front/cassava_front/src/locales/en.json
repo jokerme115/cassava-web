@@ -433,7 +433,8 @@
       "visits": "Total Visits",
       "accuracy": "Recognition Consistency",
       "prediction_usage": "Prediction Usage Count",
-      "images_predicted": "Total Images Predicted"
+      "images_predicted": "Total Images Predicted",
+      "accuracy_pending": "Under validation"
     },
     "hero": {
       "title": "Intelligent Cassava Post-Harvest Rot Area Prediction System",
