@@ -36,6 +36,23 @@ def _weight_digest(path, size, modified):
     return digest.hexdigest()
 
 
+def describe_prediction_failure(exc):
+    """把后台异常翻译成用户能读懂的一句话。
+
+    任务失败原来统一写「请重试或联系管理员」，用户既不知道是自己选错了模型、
+    内存不够，还是文件坏了；真实原因只留在服务端日志里。
+    """
+    message = str(exc).strip() or exc.__class__.__name__
+    lowered = message.lower()
+    if isinstance(exc, MemoryError) or 'out of memory' in lowered or 'cannot allocate' in lowered:
+        return '任务执行失败：内存不足，请减少单次提交的图片数量后重试'
+    if isinstance(exc, ValueError):
+        return f'任务执行失败：{message}'
+    if isinstance(exc, FileNotFoundError) or 'no such file' in lowered:
+        return f'任务执行失败：找不到所需的文件（{message}），请检查图片或模型权重是否还在'
+    return f'任务执行失败（{exc.__class__.__name__}）：{message[:180]}'
+
+
 def prediction_provenance(model_name):
     if model_name == 'ensemble':
         files = [item for member in MEMBERS for item in prediction_provenance(member)]
@@ -3515,14 +3532,22 @@ class TaskService(BaseService):
             }
             
         except Exception as e:
+            failure_text = describe_prediction_failure(e)
             try:
                 task.status = 'failed'
-                task.error = '任务执行失败，请重试或联系管理员'
-                task.save()
+                task.error = failure_text
+                execution_meta = dict((task.parameters or {}).get('_execution') or {})
+                execution_meta.update({
+                    'error_code': e.__class__.__name__,
+                    'error_detail': str(e)[:500],
+                    'failed_at': timezone.now().isoformat(),
+                })
+                task.parameters = {**(task.parameters or {}), '_execution': execution_meta}
+                task.save(update_fields=['status', 'error', 'parameters', 'updated_time'])
             except Exception:
                 pass
             logger.error(f"任务执行失败: {e}", exc_info=True)
-            return {"error": '任务执行失败，请重试或联系管理员'}
+            return {"error": failure_text}
 
 
 class FolderService(BaseService):
