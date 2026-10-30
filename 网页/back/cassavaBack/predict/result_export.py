@@ -66,7 +66,7 @@ def xlsx_bytes(sheets):
 
 def export_response(queryset, file_type, style=None, version='latest'):
     from .contour_export import export_style, figure_png, panels, compose
-    from .measurement import selected_correction
+    from .measurement import selected_correction, saved_rotation
     from django.db import transaction
     style = export_style(style)
     # Corrections are append-only. Materialize every version before streaming any artifact.
@@ -79,7 +79,7 @@ def export_response(queryset, file_type, style=None, version='latest'):
     try:
         for prediction, correction in snapshots:
             info = measurement_info(prediction, correction)
-            item = {'result_id': prediction.id, **info, 'files': {}, 'errors': []}
+            item = {'result_id': prediction.id, **info, 'rotation_degrees': saved_rotation(correction), 'mask_coordinate_space': 'original', 'files': {}, 'errors': []}
             pixels, segments = (None, None), []
             try:
                 cassava, rotten, cp, rp, _ = measurement_masks(prediction, correction)

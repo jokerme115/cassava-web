@@ -1,7 +1,7 @@
 import { message } from '../utils/feedback';
 import { useEffect, useState } from 'react';
-import { Alert, Button, Drawer, Input, InputNumber, Select, Slider, Switch } from 'antd';
-import { Download, SlidersHorizontal } from 'lucide-react';
+import { Alert, Button, Modal, Input, InputNumber, Select, Slider, Switch } from 'antd';
+import { Download } from 'lucide-react';
 import api from '../services/rest/client';
 import { predictionsApi } from '../services/api';
 import { workspaceStorageKey } from '../utils/workspaceContext';
@@ -52,8 +52,8 @@ export default function ExportDesigner({ prediction, count, filters, onExport, e
   };
   const exportFilters = { ...filters, style: JSON.stringify(style), version,
     ...(scope === 'current' && prediction ? { result_ids: String(prediction.id) } : {}) };
-  return <><Button icon={<SlidersHorizontal size={15} />} disabled={!prediction} onClick={() => setOpen(true)}>自定义导出</Button>
-    <Drawer title="PPD 轮廓图与导出模板" open={open} onClose={() => setOpen(false)} width={Math.min(1060, window.innerWidth)}>
+  return <><Button icon={<Download size={15} />} disabled={!prediction} onClick={() => setOpen(true)}>导出</Button>
+    <Modal title="导出" centered footer={<div className="flex flex-wrap items-center justify-end gap-2"><Button disabled={exporting} onClick={() => void onExport('csv', exportFilters)}>CSV</Button><Button disabled={exporting} onClick={() => void onExport('xlsx', exportFilters)}>Excel</Button><Button type="primary" icon={<Download size={16} />} loading={exporting} onClick={() => void onExport('zip', exportFilters)}>图像与掩码 ZIP</Button></div>} styles={{ body: { maxHeight: 'min(68vh, calc(100dvh - 200px))', overflowY: 'auto' } }} open={open} onCancel={() => setOpen(false)} width={Math.min(1060, window.innerWidth)}>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0"><div className="sticky top-0 rounded-xl border border-hairline bg-surface-muted p-3">
           {error ? <Alert type="error" message={error} /> : preview ? <img src={preview} alt="按已选掩码生成的PPD轮廓导出预览" className="h-auto w-full" /> : <p>生成预览…</p>}
@@ -71,9 +71,7 @@ export default function ExportDesigner({ prediction, count, filters, onExport, e
           {(['show_ppd', 'show_filename', 'collage'] as const).map((key, index) => <label key={key} className="flex items-center justify-between text-sm">{['显示PPD', '显示文件名', '另生成跨照片拼图'][index]}<Switch checked={style[key]} onChange={value => change(key, value)} /></label>)}
           {(['font_size', 'columns', 'padding', 'panel_width'] as const).map((key, index) => <label key={key} className="flex items-center justify-between text-sm">{['PPD字号', '每行切面数量', '留白(px)', '每切面宽度(px)'][index]}<InputNumber min={[12,1,0,128][index]} max={[96,8,120,2048][index]} value={style[key]} onChange={value => change(key, Math.round(Number(value ?? defaults[key])))} /></label>)}
           <div className="space-y-2 border-t border-hairline pt-4"><Select placeholder="加载个人模板" className="w-full" onChange={name => { const template = templates.find(item => item.name === name); if (template) setStyle({ ...defaults, ...template.style }); }} options={templates.map(template => ({ value: template.name, label: template.name }))} /><Input aria-label="模板名称" value={templateName} onChange={event => setTemplateName(event.target.value)} /><Button onClick={save}>保存为个人模板</Button> <Button onClick={() => setStyle(defaults)}>恢复参考样式</Button></div>
-          <Button block type="primary" icon={<Download size={16} />} loading={exporting} onClick={() => void onExport('zip', exportFilters)}>下载图包＋数值表＋版本清单</Button>
-          <div className="flex gap-2"><Button onClick={() => void onExport('csv', exportFilters)}>CSV</Button><Button onClick={() => void onExport('xlsx', exportFilters)}>Excel</Button></div>
         </div>
       </div>
-    </Drawer></>;
+    </Modal></>;
 }

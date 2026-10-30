@@ -84,6 +84,12 @@ def segment_measurements(prediction, cassava, rotten):
     return output
 
 
+def saved_rotation(correction):
+    data = getattr(correction, 'edit_data', None) or {}
+    value = data.get('rotation_degrees', 0)
+    return value if type(value) is int and value in (0, 90, 180, 270) else 0
+
+
 def overlay_png(prediction, correction=None):
     if not prediction.original_image or not prediction.original_image.oss_key:
         raise ValueError('原图不可用，无法生成校正叠加图')
@@ -95,6 +101,7 @@ def overlay_png(prediction, correction=None):
     colors[cassava] = [20, 184, 166, 55]
     colors[rotten] = [244, 63, 94, 150]
     image = Image.alpha_composite(original.convert('RGBA'), Image.fromarray(colors)).convert('RGB')
+    image = image.rotate(-saved_rotation(correction), expand=True)
     buffer = BytesIO()
     image.save(buffer, format='PNG')
     return buffer.getvalue()

@@ -394,7 +394,7 @@ const CassavaApp: React.FC = () => {
   const needsAntd = !['home', 'contact', 'login', 'register'].includes(activeSection);
   const pageShell = (
     <div
-      className="flex h-[calc(100vh-95px)] min-h-0 flex-col overflow-x-hidden"
+      className="flex h-[calc(100vh-73px)] min-h-0 flex-col overflow-x-hidden"
       role="region"
       aria-label={t('a11y.main_region')}
       tabIndex={0}

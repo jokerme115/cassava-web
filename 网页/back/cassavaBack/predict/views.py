@@ -809,6 +809,10 @@ class PredictionResultViewSet(viewsets.ModelViewSet, PermissionMixin, ResponseFo
             except json.JSONDecodeError:
                 edit_data = {'raw': edit_data}
         edit_data = edit_data if isinstance(edit_data, dict) else {}
+        rotation = edit_data.get('rotation_degrees', 0)
+        if type(rotation) is not int or rotation not in (0, 90, 180, 270):
+            return self.error_response('旋转角度仅支持0、90、180、270度', status_code=400)
+        edit_data['rotation_degrees'] = rotation
         edit_data['segments'] = segment_measurements(prediction, cassava, rotten)
         stored_keys = []
         try:

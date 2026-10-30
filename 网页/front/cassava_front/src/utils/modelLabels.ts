@@ -18,3 +18,6 @@ const DISPLAY: Record<string, string> = {
 };
 
 export const modelLabel = (name?: string | null): string => DISPLAY[name || ''] || name || '--';
+
+const SHORT: Record<string, string> = { pbt_c512: 'PBT · 512 ×5', pbt_c384: 'PBT · 384 ×5', hrnet_w48: 'HRNet-W48', mask2former_swin_t: 'Mask2Former', m6_best: 'M6' };
+export const shortModelLabel = (name?: string | null): string => SHORT[name || ''] || SHORT[Object.keys(DISPLAY).find(key => DISPLAY[key] === name) || ''] || modelLabel(name);

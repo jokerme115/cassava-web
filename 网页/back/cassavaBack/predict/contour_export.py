@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 from PIL import Image, ImageOps, ImageDraw, ImageFont, ImageColor
 from .storage_utils import read_storage_bytes
-from .measurement import measurement_masks, segment_measurements
+from .measurement import measurement_masks, segment_measurements, saved_rotation
 
 DEFAULT_STYLE = {
     'cassava_color': '#34d9cf', 'rotten_color': '#ff5b7f',
@@ -95,6 +95,7 @@ def panels(prediction, correction, style):
                 elif points:
                     x, y = points[0]; radius = max(1, thickness / 2)
                     draw.ellipse((x-radius, y-radius, x+radius, y+radius), fill=style[layer + '_color'])
+        panel = panel.rotate(-saved_rotation(correction), expand=False)
         output.append((panel, segment['ppd_percent'], prediction.original_image.name))
     return output
 

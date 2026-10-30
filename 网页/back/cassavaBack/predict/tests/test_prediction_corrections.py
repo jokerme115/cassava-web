@@ -123,6 +123,53 @@ class PredictionCorrectionApiTest(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_rotation_is_versioned_preserves_pixels_and_rotates_preview_and_figure(self):
+        import json
+        from predict.contour_export import panels, export_style
+        image = Image.new('RGB', (5, 4), 'black')
+        image.putpixel((0, 0), (255, 255, 0))
+        image.putpixel((4, 3), (0, 0, 255))
+        original = BytesIO(); image.save(original, 'PNG')
+        self.image.oss_key = default_storage.save('images/rotation-source.png', ContentFile(original.getvalue()))
+        self.image.save(update_fields=['oss_key'])
+        cassava = np.ones((4, 5), dtype=np.uint8)
+        rotten = np.zeros((4, 5), dtype=np.uint8); rotten[0, 0] = 1
+        response = self.client.post(f'/api/predictions/{self.prediction.pk}/corrections/', {
+            'cassava_mask': self.upload('c.png', cassava), 'rotten_mask': self.upload('r.png', rotten),
+            'base_version': 0, 'edit_data': json.dumps({'rotation_degrees': 90}),
+        }, format='multipart')
+        self.assertEqual(response.status_code, 201)
+        correction = self.prediction.corrections.get()
+        self.assertEqual(correction.edit_data['rotation_degrees'], 90)
+        self.assertEqual((correction.width, correction.height, correction.cassava_pixels, correction.rotten_pixels), (5, 4, 20, 1))
+        self.assertEqual(correction.ppd_percent, 5)
+        preview = self.client.get(f'/api/predictions/{self.prediction.pk}/overlay/', {'version': 1})
+        self.assertEqual(preview.status_code, 200)
+        rotated = Image.open(BytesIO(preview.content))
+        self.assertEqual(rotated.size, (4, 5))
+        self.assertEqual(rotated.getpixel((0, 4)), (4, 40, 236))
+        style = export_style({'panel_width': 128})
+        turned = panels(self.prediction, correction, style)[0]
+        correction.edit_data['rotation_degrees'] = 0
+        unturned = panels(self.prediction, correction, style)[0]
+        self.assertTrue(np.array_equal(np.asarray(turned[0]), np.asarray(unturned[0].rotate(-90))))
+        self.assertEqual(turned[1], unturned[1])
+        correction.refresh_from_db()
+        self.assertEqual(correction.edit_data['rotation_degrees'], 90)
+        self.prediction.refresh_from_db()
+        self.assertEqual(self.prediction.ppd_value, 0)
+
+    def test_invalid_rotation_does_not_create_a_revision(self):
+        import json
+        for angle in (45, '90', True):
+            response = self.client.post(f'/api/predictions/{self.prediction.pk}/corrections/', {
+                'cassava_mask': self.upload('c.png', np.ones((4, 5), dtype=np.uint8)),
+                'rotten_mask': self.upload('r.png', np.zeros((4, 5), dtype=np.uint8)),
+                'edit_data': json.dumps({'rotation_degrees': angle}),
+            }, format='multipart')
+            self.assertEqual(response.status_code, 400)
+        self.assertFalse(self.prediction.corrections.exists())
+
 
 class GuestPredictionSecurityTest(APITestCase):
     def setUp(self):

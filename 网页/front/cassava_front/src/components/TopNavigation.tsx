@@ -31,9 +31,7 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [analysisMenuOpen, setAnalysisMenuOpen] = useState(false);
 
-  const analysisRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
   const languageRef = useRef<HTMLDivElement>(null);
 
@@ -41,9 +39,6 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
 
-      if (analysisRef.current && !analysisRef.current.contains(target)) {
-        setAnalysisMenuOpen(false);
-      }
 
       if (userRef.current && !userRef.current.contains(target)) {
         setUserMenuOpen(false);
@@ -82,7 +77,6 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
     [t]
   );
 
-  const isAnalysisActive = analysisItems.some((item) => item.id === activeSection);
   const displayName = currentUser?.first_name || currentUser?.username || t('navigation.login');
   const accountLabel = currentUser?.is_guest ? t('login.guest_user') : displayName;
 
@@ -96,14 +90,13 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
   const handleNavigate = (section: string) => {
     onSectionChange(section);
     setMobileMenuOpen(false);
-    setAnalysisMenuOpen(false);
     setUserMenuOpen(false);
   };
 
   return (
     <nav className="sticky top-0 z-40 border-b border-hairline bg-white">
-      <div className="mx-auto max-w-[1440px] px-4 py-3 sm:px-6 lg:px-8">
-        <div className="card flex items-center justify-between gap-4 rounded-full px-4 py-3">
+      <div className="w-full px-4 sm:px-6">
+        <div className="flex h-[72px] items-center justify-between gap-4">
           <button
             onClick={() => handleNavigate('home')}
             aria-label={t('navigation.home')}
@@ -133,47 +126,7 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
               </button>
             ))}
 
-            <div className="relative" ref={analysisRef}>
-              <button
-                onClick={() => {
-                  if (!isAnalysisActive) {
-                    onSectionChange('prediction');
-                  }
-                  setAnalysisMenuOpen((open) => !open);
-                }}
-                className={navButtonClass(isAnalysisActive || analysisMenuOpen)}
-              >
-                <Brain className="mr-2 h-4 w-4" />
-                {t('navigation.analysis')}
-                <ChevronDown
-                  className={`ml-2 h-4 w-4 transition-transform ${
-                    analysisMenuOpen ? 'rotate-180' : ''
-                  }`}
-                />
-              </button>
-
-              {analysisMenuOpen && (
-                <div className="absolute left-0 top-[calc(100%+12px)] w-64 rounded-3xl card p-2 shadow-[0_4px_16px_rgba(17,24,28,0.05)]">
-                  {analysisItems.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => handleNavigate(item.id)}
-                        className={`flex w-full items-center rounded-2xl px-4 py-3 text-left text-sm transition ${
-                          activeSection === item.id
-                            ? 'bg-brand-fill text-white'
-                            : 'text-ink-secondary hover:bg-white'
-                        }`}
-                      >
-                        <Icon className="mr-3 h-4 w-4" />
-                        {item.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            {analysisItems.map(item => <button key={item.id} onClick={() => handleNavigate(item.id)} className={navButtonClass(activeSection === item.id)}>{item.label}</button>)}
           </div>
 
           <div className="hidden items-center gap-2 lg:flex">

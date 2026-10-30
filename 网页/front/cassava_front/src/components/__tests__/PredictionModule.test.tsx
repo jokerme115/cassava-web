@@ -18,7 +18,7 @@ vi.mock('../../services/rest/client', () => ({ default: { get: vi.fn().mockResol
   { id: 'm6_best', label: 'M6 半监督 · fold1（历史部署版）', available: true },
 ] }) } }));
 vi.mock('antd', () => ({
-  Modal: {},
+  Modal: ({ open, children }: any) => open ? React.createElement('div', { role: 'dialog' }, children) : null,
   Pagination: () => null,
   message: { success: vi.fn(), error: vi.fn() },
   // 测试用树：点击按钮等价于在文件夹树中选中 f1

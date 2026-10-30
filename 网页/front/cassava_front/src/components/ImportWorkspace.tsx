@@ -111,10 +111,10 @@ export default function ImportWorkspace({ folders, onComplete }: { folders: Fold
     try { await api.post(`/imports/${job.id}/${action}/`); void refresh(); }
     catch (error) { message.error(getApiErrorMessage(error, '操作失败')); }
   };
-  return <div className="flex min-w-0 flex-wrap items-center gap-2" onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); choose(Array.from(event.dataTransfer.files)); }}>
-    <span className="max-w-64 truncate text-xs text-muted" title={folderPath(folders, target)}>上传至：{folderPath(folders, target)}</span>
-    <Button type="primary" icon={<Upload size={15} />} disabled={busy} onClick={() => { setResumeId(null); fileInput.current?.click(); }}>上传图片 / 压缩包</Button>
-    <Button icon={<FolderUp size={15} />} disabled={busy} onClick={() => { setResumeId(null); folderInput.current?.click(); }}>上传文件夹</Button>
+  return <div className="import-workspace-controls flex min-w-0 flex-wrap items-center gap-2" onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); choose(Array.from(event.dataTransfer.files)); }}>
+    <span className="import-target max-w-64 truncate text-xs text-muted" title={folderPath(folders, target)}>上传至：{folderPath(folders, target)}</span>
+    <Button aria-label="上传图片 / 压缩包" type="primary" icon={<Upload size={15} />} disabled={busy} onClick={() => { setResumeId(null); fileInput.current?.click(); }}><span className="sm:hidden">上传</span><span className="hidden sm:inline">上传图片 / 压缩包</span></Button>
+    <Button aria-label="上传文件夹" icon={<FolderUp size={15} />} disabled={busy} onClick={() => { setResumeId(null); folderInput.current?.click(); }}><span className="sm:hidden">文件夹</span><span className="hidden sm:inline">上传文件夹</span></Button>
     <Button aria-label="导入任务" icon={<History size={16} />} onClick={() => setOpen(true)} />
     <input ref={fileInput} hidden type="file" multiple accept=".jpg,.jpeg,.png,.bmp,.webp,.tif,.tiff,.mpo,.zip,.7z,.rar" onChange={event => { choose(Array.from(event.target.files || [])); event.target.value = ''; }} />
     <input ref={folderInput} hidden type="file" multiple {...({ webkitdirectory: '' } as React.InputHTMLAttributes<HTMLInputElement>)} onChange={event => { choose(Array.from(event.target.files || [])); event.target.value = ''; }} />

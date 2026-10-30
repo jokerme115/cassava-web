@@ -1,6 +1,9 @@
 import { message, modal } from '../utils/feedback';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  ChevronLeft,
+  ChevronRight,
+  RotateCw,
   Brush,
   Check,
   CircleDot,
@@ -32,12 +35,14 @@ import { PredictionResult } from '../types';
 import { predictionsApi, resolveFileUrl } from '../services/api';
 import { calculateMaskPixelMetrics, formatPpd } from '../utils/measurement';
 import { readDraft, writeDraft, removeDraft } from '../utils/correctionDrafts';
+import { imagePointFromRotatedRect, normalizeRotation } from '../utils/imageRotation';
 import { replaceEditedContours } from '../utils/maskContours';
 
 type LayerName = 'cassava' | 'rotten';
 type ToolName = 'brush-add' | 'brush-erase' | 'pen-add' | 'pen-erase' | 'smart-add' | 'smart-erase' | 'pan';
 
 interface Masks {
+  rotation?: number;
   width: number;
   height: number;
   cassava: Uint8Array;
@@ -51,6 +56,8 @@ interface PredictionResultEditorProps {
   onNavigate?: (direction: -1 | 1) => void;
   onReviewed?: () => void;
   positionLabel?: string;
+  canPrevious?: boolean;
+  canNext?: boolean;
 }
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
@@ -322,7 +329,7 @@ const toolShortcut: Record<ToolName, string> = {
   pan: 'H / V',
 };
 
-const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ prediction, onClose, onSaved, onNavigate, onReviewed, positionLabel }) => {
+const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ prediction, onClose, onSaved, onNavigate, onReviewed, positionLabel, canPrevious = true, canNext = true }) => {
   const originalMaskRingsRef = useRef<PolygonRing[]>([]);
   const { t } = useTranslation();
   const [editor, setEditor] = useState<any>(null);
@@ -374,7 +381,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
   const spacePressedRef = useRef(false);
   const confidenceMapRef = useRef<Uint8Array | null>(null);
   const smartRunRef = useRef(0);
-  const keyboardActionsRef = useRef({ undo: () => {}, redo: () => {}, save: () => {} });
+  const keyboardActionsRef = useRef({ undo: () => {}, redo: () => {}, save: () => {}, previous: () => {}, next: () => {} });
 
   useEffect(() => {
     let active = true;
@@ -397,7 +404,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
         fetchRaster(resolveFileUrl(source.rotten_mask_url), width, height),
       ]);
       if (!active) return;
-      let next = { width, height, cassava, rotten };
+      let next: Masks = { width, height, cassava, rotten, rotation: normalizeRotation(Number(source.edit_data?.rotation_degrees || 0)) };
       try {
         const draft = await readDraft(draftKey);
         if (!active) return;
@@ -410,7 +417,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
               t('editor.dialog.draft_restore'),
               t('editor.dialog.draft_discard'),
             )) {
-          next = { width, height, cassava: draft.cassava, rotten: draft.rotten };
+          next = { width, height, cassava: draft.cassava, rotten: draft.rotten, rotation: draft.rotation || 0 };
           setNote(draft.note);
           setDirty(true);
           setRevision((value) => value + 1);
@@ -438,8 +445,10 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
   const toolbarClass = isLight ? 'bg-white' : 'bg-[#141e2b]';
   const asideClass = isLight ? 'bg-surface-muted' : 'bg-[#111b28]';
 
-  const canvasWidth = masks?.width || 0;
-  const canvasHeight = masks?.height || 0;
+  const rotation = masks?.rotation || 0;
+  const rotated = rotation % 180 !== 0;
+  const canvasWidth = (rotated ? masks?.height : masks?.width) || 0;
+  const canvasHeight = (rotated ? masks?.width : masks?.height) || 0;
 
   const fitToView = useCallback(() => {
     if (!canvasWidth || !canvasHeight || !viewportRef.current) return;
@@ -514,7 +523,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
     context.drawImage(overlayCanvas, 0, 0);
     if (polygonPoints.length > 0 || maskRings.length > 0) {
       // 屏幕像素 → 掩码像素的换算，保证顶点在任何缩放下都是固定屏幕尺寸（小圆点，不遮挡细节）
-      const scale = masks.width / Math.max(1, canvas.getBoundingClientRect().width);
+      const scale = masks.width / Math.max(1, rotation % 180 ? canvas.getBoundingClientRect().height : canvas.getBoundingClientRect().width);
       const handleRadius = clamp(4 * scale, 1.5, masks.width);
       const lineWidth = clamp(1.6 * scale, 1, masks.width);
       context.save();
@@ -626,6 +635,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
   const snapshot = (value: Masks): Masks => ({
     width: value.width,
     height: value.height,
+    rotation: value.rotation || 0,
     cassava: value.cassava.slice(),
     rotten: value.rotten.slice(),
   });
@@ -678,10 +688,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
     const canvas = canvasRef.current;
     if (!canvas || !masks) return null;
     const rect = canvas.getBoundingClientRect();
-    return {
-      x: clamp((event.clientX - rect.left) * masks.width / rect.width, 0, masks.width - 1),
-      y: clamp((event.clientY - rect.top) * masks.height / rect.height, 0, masks.height - 1),
-    };
+    return imagePointFromRotatedRect(event.clientX, event.clientY, rect, masks.width, masks.height, rotation);
   };
 
   const ensureConfidenceMap = async () => {
@@ -882,7 +889,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
     }
     if (tool.startsWith('pen')) {
       const canvas = canvasRef.current;
-      const scale = canvas ? masksRef.current.width / Math.max(1, canvas.getBoundingClientRect().width) : 1;
+      const scale = canvas ? masksRef.current.width / Math.max(1, rotation % 180 ? canvas.getBoundingClientRect().height : canvas.getBoundingClientRect().width) : 1;
       const hitRadius = Math.max(6 * scale, masksRef.current.width / 220);
       // 掩码多环轮廓优先响应拖动：命中任一环的顶点即进入拖动
       if (maskRings.length) {
@@ -1048,6 +1055,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
       ]);
       next.cassava = cassava;
       next.rotten = rotten;
+      next.rotation = normalizeRotation(Number(source.edit_data?.rotation_degrees || 0));
       commitSnapshot(current);
       updateMasks(next);
     };
@@ -1080,7 +1088,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
       setHistory([]);
       setFuture([]);
       setDirty(false);
-      updateMasks({ ...current, cassava, rotten });
+      updateMasks({ ...current, cassava, rotten, rotation: normalizeRotation(Number(source.edit_data?.rotation_degrees || 0)) });
     } catch (versionError: any) { message.error(versionError?.message || t('editor.message.version_failed')); }
     finally { setVersionLoading(false); }
   };
@@ -1103,7 +1111,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
       const form = new FormData();
       form.append('cassava_mask', await maskToBlob(saveSnapshot.cassava, saveSnapshot.width, saveSnapshot.height), 'cassava-mask.png');
       form.append('rotten_mask', await maskToBlob(saveSnapshot.rotten, saveSnapshot.width, saveSnapshot.height), 'rotten-mask.png');
-      form.append('edit_data', JSON.stringify({ layer, tool, brushSize, width: saveSnapshot.width, height: saveSnapshot.height, source_version: activeSource?.version || 0 }));
+      form.append('edit_data', JSON.stringify({ layer, tool, brushSize, width: saveSnapshot.width, height: saveSnapshot.height, rotation_degrees: saveSnapshot.rotation || 0, source_version: activeSource?.version || 0 }));
       form.append('base_version', String(editor.current_correction?.version || 0));
       form.append('note', note);
       const correction = await predictionsApi.saveCorrection(prediction.id, form);
@@ -1141,7 +1149,16 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
       message.success('已完成复检'); onReviewed?.(); onNavigate?.(1);
     } catch (error: any) { message.error(error?.response?.data?.error || '完成复检失败，请重新载入'); }
   };
+  const rotateImage = (direction: -1 | 1) => {
+    if (!masksRef.current || savingRef.current || versionLoading) return;
+    if (polygonPoints.length || maskRings.length || smartSelection || smartLoading) { message.warning('请先应用或取消当前选区'); return; }
+    const current = masksRef.current;
+    commitSnapshot(current);
+    updateMasks({ ...snapshot(current), rotation: normalizeRotation((current.rotation || 0) + direction * 90) });
+    setCursor(null);
+  };
   const navigateResult = async (direction: -1 | 1) => {
+    if (savingRef.current || versionLoading || (direction < 0 ? !canPrevious : !canNext)) return;
     if ((dirty || polygonPoints.length || maskRings.length || smartSelection) && !(await confirmAction('切换图片？', '已修改掩码的本机草稿会保留；尚未应用的选区不会保存。', '切换', '继续编辑'))) return;
     if (dirty && masksRef.current) {
       try { await writeDraft({ id: draftKey, baseVersion: editor.current_correction?.version || 0, ...snapshot(masksRef.current), note, savedAt: new Date().toISOString() }); }
@@ -1154,12 +1171,15 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
     undo: handleUndo,
     redo: handleRedo,
     save: () => { void handleSave(); },
+    previous: () => { void navigateResult(-1); },
+    next: () => { void navigateResult(1); },
   };
 
   useEffect(() => {
     const handleKeyboard = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
-      if (target?.tagName === 'INPUT' || target?.tagName === 'SELECT' || target?.tagName === 'TEXTAREA') return;
+      if (target?.isContentEditable || document.querySelector('.ant-modal-confirm') || target?.tagName === 'INPUT' || target?.tagName === 'SELECT' || target?.tagName === 'TEXTAREA') return;
+      if (event.altKey) return;
       const key = event.key.toLowerCase();
 
       if (event.code === 'Space') {
@@ -1185,7 +1205,8 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
         return;
       }
 
-      if (key === 'b') setTool('brush-add');
+      if (key === 'arrowleft' || key === 'arrowright') { event.preventDefault(); if (!event.repeat) (key === 'arrowleft' ? keyboardActionsRef.current.previous : keyboardActionsRef.current.next)(); }
+      else if (key === 'b') setTool('brush-add');
       else if (key === 'e') setTool('brush-erase');
       else if (key === 'p') setTool(event.shiftKey ? 'pen-erase' : 'pen-add');
       else if (key === 'w') setTool(event.shiftKey ? 'smart-erase' : 'smart-add');
@@ -1303,6 +1324,9 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
                 <button onClick={handleRedo} disabled={!future.length} className={cx('rounded-lg p-1.5 disabled:opacity-30', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title={t('editor.tool.redo')}><Redo2 className="h-3.5 w-3.5" /></button>
                 <button onClick={handleReset} className={cx('rounded-lg p-1.5', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title={t('editor.tool.reset')}><RotateCcw className="h-3.5 w-3.5" /></button>
               </div>
+              <button aria-label="向左旋转90度" title="向左旋转90°" disabled={saving || versionLoading} onClick={() => rotateImage(-1)} className="rounded-lg p-1.5 disabled:opacity-30"><RotateCcw className="h-4 w-4" /></button>
+              <button aria-label="向右旋转90度" title="向右旋转90°" disabled={saving || versionLoading} onClick={() => rotateImage(1)} className="rounded-lg p-1.5 disabled:opacity-30"><RotateCw className="h-4 w-4" /></button>
+              <span className="text-xs tabular-nums">{rotation}°</span>
               <div className={cx('flex items-center gap-1 rounded-lg p-0.5', isLight ? 'bg-surface-muted' : 'bg-white/5')}>
                 <button onClick={() => setZoom((value) => clamp(value - 0.1, 0.02, 4))} className={cx('rounded-md p-1.5', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title={t('editor.tool.zoom_out')}><ZoomOut className="h-3.5 w-3.5" /></button>
                 <span className={cx('w-10 text-center text-xs', mutedClass)}>{Math.round(zoom * 100)}%</span>
@@ -1319,7 +1343,8 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
             <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
               <main ref={viewportRef} className={cx('relative min-h-0 flex-1 overflow-auto p-3 md:p-4', isLight ? 'bg-surface-muted' : 'bg-[#080d14]')} style={{ cursor: tool === 'pan' || spacePressed ? 'grab' : (tool.startsWith('brush') || tool.startsWith('pen')) ? 'none' : 'default' }}>
                 <div className="flex min-h-full min-w-full p-2">
-                  <div className="relative m-auto shrink-0" style={{ width: masks.width * zoom, height: masks.height * zoom }}>
+                  <div className="relative m-auto shrink-0" style={{ width: canvasWidth * zoom, height: canvasHeight * zoom }}>
+                    <div className="absolute left-1/2 top-1/2" style={{ width: masks.width * zoom, height: masks.height * zoom, transform: `translate(-50%, -50%) rotate(${rotation}deg)` }}>
                     <canvas aria-label={t('editor.canvas.aria')} ref={canvasRef} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} onPointerLeave={() => setCursor(null)} onDoubleClick={handleCanvasDoubleClick} onWheel={handleCanvasWheel} className="block max-w-none rounded-xl shadow-2xl" style={{ width: `${masks.width * zoom}px`, height: `${masks.height * zoom}px`, imageRendering: zoom > 1.5 ? 'pixelated' : 'auto' }} />
                     {cursor && tool.startsWith('brush') && !spacePressed && (
                       <span
@@ -1335,15 +1360,19 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
                         style={{ left: cursor.x * zoom, top: cursor.y * zoom, transform: 'translate(-50%, -50%)' }}
                       />
                     )}
+                    </div>
                   </div>
                 </div>
                 <div className={cx('absolute bottom-4 left-4 flex flex-wrap gap-2 rounded-lg border px-2.5 py-1.5 text-xs backdrop-blur', isLight ? 'border-hairline bg-white text-ink-secondary' : 'border-hairline bg-slate-950/75 text-slate-200')}>
                   <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-[#30b0c7]" />{t('editor.layer.cassava')}</span><span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-rose-400" />{t('editor.layer.rotten')}</span>
                 </div>
+                {onNavigate && <div className="sticky bottom-3 ml-auto flex w-fit items-center gap-2 rounded-lg border border-hairline bg-white px-2 py-1.5 text-ink shadow-sm">
+                  <button aria-label="上一张" title="上一张（←）" disabled={!canPrevious || saving || versionLoading} onClick={() => void navigateResult(-1)} className="rounded p-2 disabled:opacity-30"><ChevronLeft size={18} /></button><span className="text-xs tabular-nums">{positionLabel}</span><button aria-label="下一张" title="下一张（→）" disabled={!canNext || saving || versionLoading} onClick={() => void navigateResult(1)} className="rounded p-2 disabled:opacity-30"><ChevronRight size={18} /></button>
+                </div>}
               </main>
 
-              <aside className={cx('w-full shrink-0 overflow-y-auto border-t p-3 lg:w-[270px] lg:border-l lg:border-t-0', borderClass, asideClass)}>
-                <div className="flex items-center justify-between"><h3 className="text-lg font-semibold">{t('editor.inspector.title')}</h3><span className="rounded-full bg-[rgba(10,132,255,0.10)] px-2 py-1 text-xs font-medium text-brand-fill-hover">{t('editor.inspector.live')}</span></div>
+              <aside className={cx('flex min-h-0 w-full shrink-0 flex-col overflow-hidden border-t p-3 lg:w-[270px] lg:border-l lg:border-t-0', borderClass, asideClass)}>
+                <div className="min-h-0 flex-1 overflow-y-auto pr-1">
                 <div className={cx('mt-3 rounded-xl border p-3', borderClass, isLight ? 'bg-white' : 'bg-white/[0.04]')}><p className={cx('text-xs', mutedClass)}>{t('editor.inspector.corrected_ppd')}</p><p className={cx('mt-1 text-3xl font-semibold tracking-normal', isLight ? 'text-ink' : 'text-white')}>{formatPpd(metrics.ppd)}</p><p className={cx('mt-1 text-xs', delta >= 0 ? 'text-danger-text' : 'text-muted')}>{t('editor.inspector.delta', { sign: delta >= 0 ? '+' : '', value: delta.toFixed(2) })}</p></div>
                 {editor?.corrections?.length > 0 && <div className="mt-3"><label htmlFor="correction-version" className={cx('mb-1.5 block text-xs font-semibold', mutedClass)}>{t('editor.inspector.version')}</label><select id="correction-version" value={activeSource?.version ? String(activeSource.version) : 'model'} onChange={(event) => { void handleVersionChange(event.target.value); }} className={cx('w-full rounded-lg border px-2.5 py-1.5 text-xs outline-none focus:border-slate-400', borderClass, isLight ? 'bg-white text-ink-secondary' : 'bg-slate-950/50 text-slate-200')}><option value="model">{t('editor.inspector.version_model')}</option>{editor.corrections.map((item: any) => <option key={item.version} value={String(item.version)}>{t('editor.inspector.version_option', { version: item.version, ppd: formatPpd(Number(item.ppd_percent)) })}</option>)}</select></div>}
                 <div className="mt-3 space-y-2 text-xs">
@@ -1373,14 +1402,17 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
                   <p className="mt-1.5">{t('editor.inspector.smart_hint')}</p>
                   <p className="mt-1">{smartLoading ? t('editor.inspector.smart_loading') : confidenceReady ? t('editor.inspector.smart_ready', { px: smartSelectionCount.toLocaleString() }) : editor?.confidence_map_url ? t('editor.inspector.smart_lazy') : t('editor.inspector.smart_missing')}</p>
                 </div>}
-                <div className="mt-3 flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs" title={t('editor.inspector.shortcuts')}><span className={cx('flex items-center gap-1.5', isLight ? 'text-ink' : 'text-slate-200')}><MousePointer2 className="h-3.5 w-3.5 text-muted" />{t(toolLabelKey[tool])}</span><Keyboard className="h-3.5 w-3.5 text-muted" /></div>
+                <div className="mt-3 flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs" title={`${t('editor.inspector.shortcuts')} · ← 上一张 · → 下一张 · Ctrl+S 保存`}><span className={cx('flex items-center gap-1.5', isLight ? 'text-ink' : 'text-slate-200')}><MousePointer2 className="h-3.5 w-3.5 text-muted" />{t(toolLabelKey[tool])}</span><Keyboard className="h-3.5 w-3.5 text-muted" /></div>
                 <label className="mt-3 block text-xs" htmlFor="correction-note">{t('editor.note.label')}</label>
                 <textarea id="correction-note" value={note} disabled={saving} maxLength={2000} onChange={(event) => { setNote(event.target.value); setDirty(true); }} className="mt-1 w-full rounded-lg border border-slate-500 bg-transparent p-2 text-xs" placeholder={t('editor.note.placeholder')} />
+                </div>
+                <div className={cx('shrink-0 border-t pt-2', borderClass)}>
                 <p className="mt-1 text-xs text-muted">{saving ? t('editor.note.saving') : dirty ? t('editor.note.dirty') : t('editor.note.clean')}</p>
                 <button onClick={handleSave} disabled={saving || versionLoading || smartLoading || !dirty} className="mt-3 flex w-full items-center justify-center gap-2 rounded-[12px] bg-brand-fill px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-brand-fill-hover disabled:cursor-not-allowed disabled:bg-hairline disabled:text-muted"><Save className="h-3.5 w-3.5" />{saving ? t('editor.save.busy') : t('editor.save.button')}</button>
                 <button onClick={() => void completeReview()} disabled={saving || versionLoading || smartLoading} className="mt-2 w-full rounded-lg bg-emerald-700 px-3 py-2.5 text-xs font-semibold text-white disabled:opacity-50">{dirty ? '保存并完成复检，下一张' : '确认无需修改，下一张'}</button>
-                {onNavigate && <div className="mt-2 flex items-center justify-between gap-2 text-xs"><button onClick={() => void navigateResult(-1)}>← 上一张</button><span>{positionLabel}</span><button onClick={() => void navigateResult(1)}>下一张 →</button></div>}
+                {onNavigate && <div className="mt-2 flex items-center justify-between gap-2 text-xs"><button disabled={!canPrevious || saving || versionLoading} title="←" onClick={() => void navigateResult(-1)}>← 上一张</button><span>{positionLabel}</span><button disabled={!canNext || saving || versionLoading} title="→" onClick={() => void navigateResult(1)}>下一张 →</button></div>}
 
+                </div>
               </aside>
             </div>
           </>

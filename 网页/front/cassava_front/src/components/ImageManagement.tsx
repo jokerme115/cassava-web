@@ -1336,10 +1336,6 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
   const folderSidebar = (
     <div className="flex h-full w-full flex-col bg-white">
         <div className="p-4 border-b border-hairline bg-white">
-          <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-ink">
-            <FolderOpen className="w-5 h-5 text-accent-text" />
-            {t('images.folders')}
-          </h2>
           {!isGuest && (
           <button 
             onClick={() => {
@@ -1360,7 +1356,6 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
         </div>
         
         <div className="flex-1 min-w-0 p-2 overflow-y-auto overflow-x-hidden">
-          <button onClick={() => setSelectedFolder('root')} className={`mb-2 flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm ${selectedFolder === 'root' ? 'bg-brand-fill text-white' : 'text-ink-secondary hover:bg-surface-sunken'}`}><FolderOpen className="h-4 w-4" />我的文件</button>
           <button
             onClick={() => setSelectedFolder(null)}
             className={`w-full text-left px-3 py-2 rounded-lg mb-1 transition-all duration-200 ${
@@ -1539,23 +1534,10 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col w-full">
         {/* Header */}
-        <div className="bg-white border-b border-hairline p-4 shadow-sm">
-          <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="image-workspace-toolbar shrink-0 border-b border-hairline bg-white px-4 py-3">
+          <div className="flex items-center justify-between gap-2 empty:hidden">
             <div className="flex min-w-0 items-center gap-2">
-              <button
-                onClick={() => setFolderDrawerOpen(true)}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-hairline-strong text-ink-secondary transition-colors hover:bg-surface-sunken sm:hidden"
-                aria-label={t('a11y.toggle_folders')}
-                aria-expanded={folderDrawerOpen}
-              >
-                <Menu className="h-4 w-4" />
-              </button>
-              <h2 
-                className="page-title cursor-pointer truncate hover:underline"
-                onClick={() => setSelectedFolder(null)}
-              >
-                {t('navigation.images')}
-              </h2>
+
               {getBreadcrumbs().map((folder, index) => (
                 <React.Fragment key={folder.id}>
                   <ChevronRight className="w-5 h-5 text-muted" />
@@ -1573,9 +1555,17 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
           </div>
 
           {/* Search and Actions */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center space-x-3 flex-1 w-full sm:w-auto">
-              <div className="relative flex-1 max-w-md w-full">
+          <div className="image-main-toolbar flex flex-wrap items-center justify-end gap-3">
+            <div className="image-search-tools flex min-w-0 flex-1 items-center gap-3">
+              <button
+                onClick={() => setFolderDrawerOpen(true)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-hairline-strong text-ink-secondary transition-colors hover:bg-surface-sunken sm:hidden"
+                aria-label={t('a11y.toggle_folders')}
+                aria-expanded={folderDrawerOpen}
+              >
+                <Menu className="h-4 w-4" />
+              </button>
+              <div className="relative min-w-[140px] max-w-sm flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted w-5 h-5" />
                 <input
                   type="text"
@@ -1587,7 +1577,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
               </div>
               
               {/* Toolbar: sort / group / view */}
-              <div className="image-view-tools flex shrink-0 items-center gap-1">
+              <div className="image-view-tools ml-auto flex shrink-0 items-center gap-1">
                 <div className="hidden items-center gap-1 sm:flex">
                 <select
                   value={sortBy}
@@ -1643,7 +1633,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
               </div>
             </div>
             
-            <div className="flex items-center space-x-2 flex-wrap">
+            <div className="image-primary-actions ml-auto flex flex-wrap items-center justify-end gap-2">
               {selectedFolder && !['root', 'uncategorized', 'shared_with_me', 'my_shares'].includes(selectedFolder) && !isGuest && (
                 <button
                   onClick={() => {
@@ -1708,6 +1698,27 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
 
             </div>
           </div>
+        </div>
+
+        <div className="image-pagination-bar shrink-0 border-b border-hairline bg-white px-4 py-2">
+                {!isSharedWithMeView && !isMySharesView && totalImages > 0 && (
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    <Pagination
+                      current={imagesPage}
+                      pageSize={imagesPageSize}
+                      total={totalImages}
+                      responsive
+                      showLessItems
+                      showSizeChanger
+                      pageSizeOptions={['24', '48', '96', '120']}
+                      showTotal={(total, range) => t('images.pagination_total', { start: range[0], end: range[1], total })}
+                      onChange={(page, pageSize) => {
+                        void goToImagesPage(page, pageSize);
+                      }}
+                      size="small"
+                    />
+                  </div>
+                )}
         </div>
 
         {/* Content with Alphabet Index */}
@@ -2065,22 +2076,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                     })}
                   </React.Fragment>
                 ))}
-                {!isSharedWithMeView && !isMySharesView && totalImages > 0 && (
-                  <div className={viewMode === 'grid' ? 'col-span-full flex flex-col items-center gap-3 mt-6' : 'flex flex-col items-center gap-3 mt-6'}>
-                    <Pagination
-                      current={imagesPage}
-                      pageSize={imagesPageSize}
-                      total={totalImages}
-                      showSizeChanger
-                      pageSizeOptions={['24', '48', '96', '120']}
-                      showTotal={(total, range) => t('images.pagination_total', { start: range[0], end: range[1], total })}
-                      onChange={(page, pageSize) => {
-                        void goToImagesPage(page, pageSize);
-                      }}
-                      size="small"
-                    />
-                  </div>
-                )}
+
               </div>
             )}
             </>

@@ -476,3 +476,19 @@ body {
   .research-contact .contact-hero { border-radius: 18px 48px 18px 18px; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
+
+/* Compact workspace controls share the same action alignment. */
+.image-pagination-bar .ant-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 4px; }
+.image-pagination-bar .ant-pagination-item, .image-pagination-bar .ant-pagination-prev, .image-pagination-bar .ant-pagination-next { margin-inline-end: 0; }
+.image-pagination-bar .ant-pagination-total-text { margin-inline-end: 12px; }
+@media (max-width: 639px) {
+  .image-search-tools { flex-basis: 100%; flex-wrap: wrap; }
+  .image-main-toolbar .image-primary-actions { width: 100%; }
+  .image-view-tools { flex-shrink: 1; }
+  .image-pagination-bar .ant-pagination-options { margin-inline-start: 0; }
+}
+
+.image-primary-actions > .import-workspace-controls { display: contents; }
+@media (max-width: 639px) {
+  .image-primary-actions .import-target { order: 1; flex-basis: 100%; max-width: 100%; text-align: right; }
+}

@@ -7,7 +7,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Play, Image as ImageIcon, FolderOpen, Search, SortAsc, SortDesc, SlidersHorizontal } from 'lucide-react';
 import { useImageStore } from '../hooks/useImageStore';
 import { useTaskStore } from '../hooks/useTaskStore';
-import { Tree, Pagination } from 'antd';
+import { Tree, Pagination, Modal } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { getApiErrorMessage } from '../utils/apiError';
 
@@ -302,10 +302,11 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
             <div><label htmlFor="prediction-model-type" className="mb-2 block text-xs font-medium text-ink-secondary">{t('prediction.model')}</label><select id="prediction-model-type" name="prediction-model-type" disabled={predictionMode === 'ensemble'} value={predictionMode === 'ensemble' ? 'ensemble' : modelType} onChange={e => setModelType(e.target.value)} className="h-10 w-full rounded-lg border border-hairline bg-white px-2 text-xs disabled:bg-surface-muted">{predictionMode === 'ensemble' && <option value="ensemble">DeepLab-R101 + M6 投票</option>}{modelOptions.filter(option => option.value !== 'ensemble').map(option => <option key={option.value} value={option.value} disabled={!option.available}>{option.label}{!option.available ? ` · ${option.reason}` : ''}</option>)}</select>
               {predictionMode === 'single' && <details className="mt-2 text-xs text-muted"><summary className="cursor-pointer">版本与权重</summary><p className="mt-2">{modelOptions.find(item => item.value === modelType)?.weightSource}</p>{modelOptions.find(item => item.value === modelType)?.members?.map(member => <p key={member.file} className="mt-1 break-all" title={member.sha256}>{member.file} · {member.sha256.slice(0,12)}</p>)}</details>}
             </div>
-            <div><div className="mb-2 flex justify-between text-xs"><label htmlFor="prediction-confidence-threshold">{t('prediction.confidence_threshold')}</label><span className="tabular-nums text-muted">{advancedParams.confidenceThreshold.toFixed(2)}</span></div><input id="prediction-confidence-threshold" type="range" disabled={frozenProtocol} min="0.1" max="1" step="0.1" value={advancedParams.confidenceThreshold} onChange={e => setAdvancedParams(previous => ({...previous, confidenceThreshold:Number(e.target.value)}))} className="w-full accent-[#245b45]" /></div>
-            <button onClick={() => setShowAdvanced(!showAdvanced)} aria-expanded={showAdvanced} className="flex items-center gap-2 text-xs text-accent-text"><SlidersHorizontal className="h-3.5 w-3.5" />{showAdvanced ? '收起高级参数' : '高级参数'}</button>
-              {showAdvanced && (
-                <fieldset disabled={frozenProtocol} className="space-y-4 p-4 card-soft rounded-lg border disabled:opacity-60">
+            {!frozenProtocol && <div><div className="mb-2 flex justify-between text-xs"><label htmlFor="prediction-confidence-threshold">{t('prediction.confidence_threshold')}</label><span className="tabular-nums text-muted">{advancedParams.confidenceThreshold.toFixed(2)}</span></div><input id="prediction-confidence-threshold" type="range" disabled={frozenProtocol} min="0.1" max="1" step="0.1" value={advancedParams.confidenceThreshold} onChange={e => setAdvancedParams(previous => ({...previous, confidenceThreshold:Number(e.target.value)}))} className="w-full accent-[#245b45]" /></div>}
+            <button onClick={() => setShowAdvanced(true)} className="flex items-center gap-2 text-sm text-accent-text"><SlidersHorizontal className="h-4 w-4" />更多参数</button>
+              <Modal title="更多参数" open={showAdvanced} onCancel={() => setShowAdvanced(false)} footer={null} width={640} styles={{ body: { maxHeight: '70vh', overflowY: 'auto' } }}>
+                {frozenProtocol && <div className="flex items-center justify-between border-b border-hairline pb-3 text-sm"><span>推理协议</span><span className="font-medium">冻结版本</span></div>}
+                <fieldset hidden={frozenProtocol} className="space-y-4">
                   {/* Model parameters */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -558,7 +559,7 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
                     )}
                   </div>
                 </fieldset>
-              )}
+              </Modal>
           </div>
           <footer className="shrink-0 border-t border-hairline bg-surface-muted p-4">
             <div className="mb-3 flex items-center justify-between gap-2 text-xs"><span className="min-w-0 truncate text-muted">{folderOnlySelection ? `整夹 · ${selectedRealFolder?.name}` : '已选择'}</span><strong className="shrink-0 tabular-nums">{summaryImageCount} 张</strong></div>
