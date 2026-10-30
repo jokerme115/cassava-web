@@ -1,0 +1,6 @@
+﻿numpy
+opencv-python
+torch
+segmentation-models-pytorch
+timm
+torchvision

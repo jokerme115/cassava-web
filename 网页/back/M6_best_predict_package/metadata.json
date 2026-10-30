@@ -1,0 +1,25 @@
+﻿{
+  "experiment": "M6_Ours_Final",
+  "selected_fold": "fold1",
+  "architecture": "DeepLabV3Plus",
+  "encoder_name": "resnet101",
+  "num_classes": 2,
+  "normalization": {
+    "mean": [0.485, 0.456, 0.406],
+    "std": [0.229, 0.224, 0.225]
+  },
+  "sliding_window": {
+    "patch_size": [512, 512],
+    "stride": [256, 256]
+  },
+  "selection_metrics": {
+    "mIoU": 0.826454420582073,
+    "Dice": 0.8982941657992689,
+    "Precision": 0.9717226016447066,
+    "Recall": 0.9707414106889205,
+    "F1_Score": 0.97116426073914,
+    "Accuracy": 0.9707414106889205,
+    "IoU_class1_disease": 0.6841471595993341
+  },
+  "source_checkpoint": "已有实验/消融实验/M6_Ours_Final_fold1/models/best_model.pth"
+}
