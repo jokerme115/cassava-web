@@ -122,6 +122,9 @@ export interface PredictionResult {
   latest_correction_ppd?: number | null;
   latest_correction?: PredictionCorrection | null;
   measurement?: {
+    protocol?: string;
+    legacy_raw_value?: number | null;
+    legacy_unit?: string;
     final_ppd: number | null;
     measurement_source: 'manual' | 'model';
     measurement_status: string;

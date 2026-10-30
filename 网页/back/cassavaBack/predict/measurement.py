@@ -24,7 +24,11 @@ def measurement_info(prediction, correction=_LATEST):
     if not correction and prediction.ppd_unit == 'ratio':
         value *= 100
     valid = bool(correction) or (prediction.ppd_unit in ('percent', 'ratio') and not prediction.error_code)
+    legacy = (prediction.ensemble_details or {}).get('legacy_measurement', {})
     return {
+        'protocol': 'area_weighted' if correction or not legacy else legacy.get('protocol'),
+        'legacy_raw_value': legacy.get('raw_value'),
+        'legacy_unit': legacy.get('unit'),
         'final_ppd': value if valid else None,
         'measurement_status': 'manual-corrected' if correction else ('model-only' if valid else 'needs-review'),
         'measurement_source': 'manual' if correction else 'model',

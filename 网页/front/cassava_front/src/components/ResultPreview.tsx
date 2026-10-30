@@ -61,6 +61,7 @@ export default function ResultPreview({ prediction, overlay, error, position, ca
         </div>
         <aside className="max-h-[28dvh] shrink-0 overflow-y-auto border-t border-hairline px-4 py-3 md:max-h-none md:w-64 md:border-l md:border-t-0">
           <p className="text-xs text-muted">PPD</p><p className="mb-3 text-2xl font-semibold tabular-nums">{formatPpd(effectivePpd(prediction))}</p>
+          {prediction.measurement?.protocol?.startsWith('legacy_') && <p className="mb-3 text-xs text-muted">{prediction.measurement.protocol === 'legacy_slice_mean' ? '历史切面均值' : `历史原值 ${prediction.measurement.legacy_raw_value ?? '—'} · 单位待确认`}</p>}
           <dl className="space-y-2 text-sm"><div className="flex justify-between gap-2"><dt className="text-muted">数值来源</dt><dd>{prediction.latest_correction ? `人工修订 v${prediction.latest_correction.version}` : '模型预测'}</dd></div>
             {prediction.confidence != null && <div className="flex justify-between"><dt className="text-muted">置信度</dt><dd>{(prediction.confidence * 100).toFixed(1)}%</dd></div>}
             {prediction.processingTime != null && prediction.processingTime > 0 && <div className="flex justify-between"><dt className="text-muted">处理耗时</dt><dd>{prediction.processingTime}s</dd></div>}

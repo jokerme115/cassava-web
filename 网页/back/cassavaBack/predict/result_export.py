@@ -17,7 +17,7 @@ from .storage_utils import read_storage_bytes
 
 HEADERS = ['结果ID', '任务ID', '图片ID', '图片名称', '文件夹', '模型', '模型PPD(%)', '最终PPD(%)',
            '单位', '结果来源', '校正版本', '复核状态', '木薯面积(px)', '病变面积(px)', '预测时间',
-           '校正者', '校正时间', '校正备注', '预测参数', '数据状态', '有监督模型 PPD(%)', '半监督模型 PPD(%)', '模型一致率(非准确率%)', '投票明细']
+           '校正者', '校正时间', '校正备注', '预测参数', '数据状态', '有监督模型 PPD(%)', '半监督模型 PPD(%)', '模型一致率(非准确率%)', '投票明细', '计量协议', '历史原始数值', '历史单位']
 SEGMENT_HEADERS = ['结果ID', '切面', '校正版本', '木薯面积(px)', '病变面积(px)', 'PPD(%)', '原图坐标']
 
 
@@ -99,7 +99,8 @@ def export_response(queryset, file_type, style=None, version='latest'):
                          json.dumps(params, ensure_ascii=False), info['measurement_status'],
                          *[next((m.get('ppd_percent') for m in (prediction.ensemble_details or {}).get('members', []) if m.get('model') == name), None) for name in ('resnet101', 'm6_best')],
                          (prediction.ensemble_details or {}).get('agreement_percent'),
-                         json.dumps(prediction.ensemble_details or {}, ensure_ascii=False)])
+                         json.dumps(prediction.ensemble_details or {}, ensure_ascii=False),
+                         info['protocol'], info['legacy_raw_value'], info['legacy_unit']])
             for segment in segments:
                 segment_rows.append([prediction.id, segment['segment'], info['correction_version'],
                                      segment['cassava_pixels'], segment['rotten_pixels'], segment['ppd_percent'],

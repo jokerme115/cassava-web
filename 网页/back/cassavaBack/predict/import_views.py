@@ -65,7 +65,9 @@ class ImportJobViewSet(viewsets.GenericViewSet):
         if total > MAX_SOURCE_BYTES:
             raise ValidationError('每批源文件总量不能超过5GB')
         # Streaming archive extraction needs source + extracted data; never reserve RAM.
-        if shutil.disk_usage(staging_root()).free < total + 512 * 1024**2:
+        from django.conf import settings
+        reserve = getattr(settings, 'IMPORT_MIN_FREE_BYTES', 512 * 1024**2)
+        if shutil.disk_usage(staging_root()).free < total * 2 + reserve:
             raise ValidationError('本地磁盘剩余空间不足')
         target = None
         if request.data.get('target_folder'):

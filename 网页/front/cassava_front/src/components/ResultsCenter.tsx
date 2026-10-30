@@ -300,6 +300,7 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
                         </div>
                       </button>
                       <div className="mt-2 min-w-0 px-1">
+                        {result.measurement?.protocol?.startsWith('legacy_') && <p className="text-xs text-muted">{result.measurement.protocol === 'legacy_slice_mean' ? '历史切面均值' : `历史原值 ${result.measurement.legacy_raw_value ?? '—'} · 单位待确认`}</p>}
                         <p className="truncate text-sm font-semibold" title={result.imageName}>{result.imageName}</p>
                         <p className="mt-0.5 truncate text-xs text-muted" title={result.folderName || ''}>{result.folderName || t('results.uncategorized')}</p>
                         <div className="mt-1 flex min-w-0 items-center gap-2"><span className="min-w-0 flex-1 truncate text-xs text-muted" title={modelNameOf(result, true)}>{modelNameOf(result)}</span>
