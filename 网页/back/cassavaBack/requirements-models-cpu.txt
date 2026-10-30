@@ -1,0 +1,5 @@
+# Additional packages only; preserve the existing CPU torch/torchvision installation.
+transformers==4.38.2
+tokenizers==0.15.2
+huggingface-hub==0.36.2
+regex==2026.9.29

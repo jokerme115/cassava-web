@@ -1,0 +1,137 @@
+/* pages/mine/mine.wxss */
+.mine-page {
+  min-height: 100vh;
+  padding-bottom: calc(60rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+/* 用户卡片 */
+.user-card {
+  margin: 32rpx 24rpx 0;
+  background: linear-gradient(135deg, #43A047, #2E7D32);
+  border-radius: 24rpx;
+  padding: 40rpx 36rpx;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 10rpx 28rpx rgba(46, 125, 50, 0.28);
+}
+.avatar {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  font-size: 52rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.user-info {
+  margin-left: 28rpx;
+  flex: 1;
+}
+.user-name {
+  color: #fff;
+  font-size: 36rpx;
+  font-weight: 700;
+}
+.user-email {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 24rpx;
+  margin-top: 8rpx;
+}
+
+/* 未登录操作 */
+.auth-actions {
+  display: flex;
+  gap: 24rpx;
+  margin: 32rpx 24rpx 0;
+}
+.auth-btn {
+  flex: 1;
+  height: 88rpx;
+  line-height: 88rpx;
+}
+
+/* 统计 */
+.stats-card {
+  margin: 32rpx 24rpx 0;
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 32rpx 20rpx;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 4rpx 16rpx rgba(38, 50, 56, 0.04);
+}
+.stats-item {
+  flex: 1;
+  text-align: center;
+}
+.stats-num {
+  font-size: 44rpx;
+  font-weight: 800;
+  color: #2E7D32;
+}
+.stats-label {
+  font-size: 22rpx;
+  color: #90A4AE;
+  margin-top: 6rpx;
+}
+.stats-divider {
+  width: 2rpx;
+  height: 60rpx;
+  background: #E8ECEA;
+}
+
+/* 菜单 */
+.menu-card {
+  margin: 32rpx 24rpx 0;
+  background: #fff;
+  border-radius: 20rpx;
+  overflow: hidden;
+  box-shadow: 0 4rpx 16rpx rgba(38, 50, 56, 0.04);
+}
+.menu-item {
+  display: flex;
+  align-items: center;
+  padding: 32rpx 32rpx;
+  border-bottom: 2rpx solid #F0F2F0;
+}
+.menu-item:last-child {
+  border-bottom: none;
+}
+.menu-icon {
+  font-size: 36rpx;
+  margin-right: 20rpx;
+}
+.menu-text {
+  flex: 1;
+  font-size: 30rpx;
+  color: #263238;
+}
+.menu-text.danger {
+  color: #C62828;
+}
+.menu-arrow {
+  font-size: 40rpx;
+  color: #CFD8DC;
+}
+
+/* 页脚 */
+.footer {
+  margin-top: 60rpx;
+  text-align: center;
+  padding: 0 40rpx;
+}
+.footer-title {
+  font-size: 28rpx;
+  color: #607D8B;
+  font-weight: 600;
+}
+.footer-line {
+  font-size: 22rpx;
+  color: #B0BEC5;
+  margin-top: 10rpx;
+  line-height: 1.6;
+}

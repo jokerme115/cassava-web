@@ -1,0 +1,102 @@
+<!--pages/result/result.wxml-->
+<!-- 错误态 -->
+<view class="empty-state" wx:if="{{loadError}}">
+  <view class="empty-icon">⚠️</view>
+  <view class="empty-text">加载失败，请重试</view>
+  <button class="retry-btn" bindtap="retry">重新加载</button>
+</view>
+
+<!-- 空态 -->
+<view class="empty-state" wx:elif="{{loaded && !result}}">
+  <view class="empty-icon">📋</view>
+  <view class="empty-text">暂无检测结果</view>
+  <button class="retry-btn" bindtap="reDetect">去检测</button>
+</view>
+
+<view class="result-page" wx:elif="{{loaded}}">
+
+  <!-- 批量结果切换 -->
+  <scroll-view wx:if="{{batchItems.length > 1}}" scroll-x class="batch-bar">
+    <view class="batch-item {{index === selectedIndex ? 'active' : ''}}"
+      wx:for="{{batchItems}}" wx:key="_key"
+      bindtap="selectBatch" data-index="{{index}}">
+      <image class="batch-thumb" src="{{item.thumb}}" mode="aspectFill" />
+    </view>
+  </scroll-view>
+
+  <!-- PPD 主卡片 -->
+  <view class="hero anim-scale">
+    <view class="hero-label">腐烂面积占比 PPD</view>
+    <view class="hero-value">
+      <text class="hero-num">{{ppdDisplay}}</text>
+      <text class="hero-unit">%</text>
+    </view>
+    <view class="tag {{levelTag}}">{{levelText}}</view>
+  </view>
+
+  <!-- 图像查看 -->
+  <view class="card anim-up" style="animation-delay: 0.08s;">
+    <view class="tab-row">
+      <view class="tab {{viewTab === item.key ? 'active' : ''}}"
+        wx:for="{{viewTabs}}" wx:key="key"
+        bindtap="switchTab" data-key="{{item.key}}">{{item.label}}</view>
+    </view>
+    <image wx:if="{{currentViewUrl}}" class="viewer-img" src="{{currentViewUrl}}"
+      mode="widthFix" bindtap="previewCurrent" />
+    <view wx:else class="viewer-empty">暂无图像</view>
+    <view class="image-name" wx:if="{{imageName && imageName !== '—'}}">{{imageName}}</view>
+  </view>
+
+  <!-- 预测结果子图 -->
+  <view class="card anim-up" style="animation-delay: 0.1s;" wx:if="{{predImages.length}}">
+    <view class="card-title">预测结果</view>
+    <scroll-view scroll-x class="subimg-row" enhanced show-scrollbar="{{false}}">
+      <image wx:for="{{predImages}}" wx:key="*this" class="subimg" src="{{item}}"
+        mode="aspectFill" data-group="pred" data-index="{{index}}" bindtap="previewGroup" />
+    </scroll-view>
+  </view>
+
+  <!-- 二次分割子图 -->
+  <view class="card anim-up" style="animation-delay: 0.12s;" wx:if="{{cut2Images.length}}">
+    <view class="card-title">第二次分割子图</view>
+    <scroll-view scroll-x class="subimg-row" enhanced show-scrollbar="{{false}}">
+      <image wx:for="{{cut2Images}}" wx:key="*this" class="subimg" src="{{item}}"
+        mode="aspectFill" data-group="cut2" data-index="{{index}}" bindtap="previewGroup" />
+    </scroll-view>
+  </view>
+
+  <!-- 处置建议 -->
+  <view class="card anim-up" style="animation-delay: 0.16s;" wx:if="{{suggestions.length}}">
+    <view class="card-title">处置建议</view>
+    <view class="suggest-item" wx:for="{{suggestions}}" wx:key="*this">
+      <text class="suggest-dot">·</text>
+      <text>{{item}}</text>
+    </view>
+  </view>
+
+  <!-- 分区域 PPD -->
+  <view class="card anim-up" style="animation-delay: 0.24s;" wx:if="{{subPpdList.length}}">
+    <view class="card-title">分区域 PPD</view>
+    <view class="sub-list">
+      <view class="sub-item" wx:for="{{subPpdList}}" wx:key="*this">
+        <text class="sub-label">区域 {{index + 1}}</text>
+        <view class="sub-bar"><view class="sub-fill" style="width: {{item}}%"></view></view>
+        <text class="sub-value">{{item}}%</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部操作 -->
+  <view class="bottom-actions anim-up" style="animation-delay: 0.32s;">
+    <button class="btn-outline action-half" hover-class="press-scale" bindtap="saveResult">保存</button>
+    <button class="btn-primary action-half" hover-class="press-scale" bindtap="reDetect">再测一张</button>
+  </view>
+</view>
+
+<!-- 加载中 -->
+<view class="loading-mask" wx:if="{{loading}}">
+  <view class="loading-card">
+    <view class="spinner"></view>
+    <view class="loading-text">加载结果…</view>
+  </view>
+</view>

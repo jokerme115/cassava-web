@@ -1,0 +1,47 @@
+{
+  "pages": [
+    "pages/intro/intro",
+    "pages/predict/predict",
+    "pages/history/history",
+    "pages/mine/mine",
+    "pages/result/result",
+    "pages/login/login",
+    "pages/register/register"
+  ],
+  "window": {
+    "backgroundTextStyle": "dark",
+    "navigationBarBackgroundColor": "#2E7D32",
+    "navigationBarTitleText": "木薯腐烂量化",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#F5F7F5"
+  },
+  "tabBar": {
+    "color": "#9AA0A6",
+    "selectedColor": "#2E7D32",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/predict/predict",
+        "text": "预测",
+        "iconPath": "static/images/tabbar/predict.png",
+        "selectedIconPath": "static/images/tabbar/predict-active.png"
+      },
+      {
+        "pagePath": "pages/history/history",
+        "text": "历史",
+        "iconPath": "static/images/tabbar/history.png",
+        "selectedIconPath": "static/images/tabbar/history-active.png"
+      },
+      {
+        "pagePath": "pages/mine/mine",
+        "text": "我的",
+        "iconPath": "static/images/tabbar/mine.png",
+        "selectedIconPath": "static/images/tabbar/mine-active.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

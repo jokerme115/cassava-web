@@ -1,0 +1,46 @@
+<!--pages/login/login.wxml-->
+<view class="login-page">
+  <view class="brand anim-up">
+    <view class="brand-logo">🌱</view>
+    <view class="brand-title">木薯腐烂面积精准量化</view>
+    <view class="brand-sub">Cassava PPD 智能检测平台</view>
+  </view>
+
+  <view class="form-card anim-up" style="animation-delay: 0.08s;">
+    <view class="field">
+      <view class="field-label">用户名 / 邮箱</view>
+      <input
+        class="field-input"
+        placeholder="请输入用户名或邮箱"
+        placeholder-class="ph"
+        value="{{username}}"
+        bindinput="onUsername"
+        confirm-type="next"
+      />
+    </view>
+    <view class="field">
+      <view class="field-label">密码</view>
+      <input
+        class="field-input"
+        placeholder="请输入密码"
+        placeholder-class="ph"
+        password="{{!showPwd}}"
+        value="{{password}}"
+        bindinput="onPassword"
+        confirm-type="done"
+        bindconfirm="doLogin"
+      />
+      <view class="pwd-toggle" bindtap="togglePwd">{{showPwd ? '隐藏' : '显示'}}</view>
+    </view>
+
+    <button class="btn-primary login-btn" hover-class="press-scale" bindtap="doLogin" disabled="{{loading}}">
+      {{loading ? '登录中…' : '登 录'}}
+    </button>
+
+    <view class="to-register">
+      还没有账号？<text class="link" bindtap="goRegister">立即注册</text>
+    </view>
+  </view>
+
+  <view class="footer-note">登录后即可拍照检测</view>
+</view>

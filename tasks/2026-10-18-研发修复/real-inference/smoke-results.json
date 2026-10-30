@@ -1,0 +1,24 @@
+[
+  {
+    "model": "resnet101",
+    "image_id": 55,
+    "seconds": 13.610395900032017,
+    "ppd_percent": 0.0,
+    "segments": 3,
+    "prediction_count": 3,
+    "device": "cpu",
+    "cassava_pixels": 13433,
+    "rotten_pixels": 0
+  },
+  {
+    "model": "m6_best",
+    "image_id": 55,
+    "seconds": 2.797908299951814,
+    "ppd_percent": 0.0,
+    "segments": 3,
+    "prediction_count": 3,
+    "device": "cpu",
+    "cassava_pixels": 13433,
+    "rotten_pixels": 0
+  }
+]

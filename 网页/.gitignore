@@ -1,0 +1,55 @@
+# Large files
+*.pth
+*.sh
+back/model/
+back/Miniconda3-latest-Linux-x86_64.sh
+
+# Large Files / Models
+*.pth
+*.sh
+back/model/
+back/Miniconda3-latest-Linux-x86_64.sh
+
+# Python / Django
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+*.log
+db.sqlite3
+/Ultralytics/
+/back/cassavaBack/Ultralytics/
+/back/cassavaBack/.ultralytics/
+/back/cassavaBack/media/
+/back/cassavaBack/staticfiles/
+
+# Large Files & Models (Do not upload to GitHub)
+*.pth
+*.onnx
+*.pt
+*.sh
+/back/model/
+/back/Miniconda3-latest-Linux-x86_64.sh
+
+# Node / React
+node_modules/
+dist/
+build/
+.bolt/
+.trae/
+.swc/
+logs/
+*.tsbuildinfo
+.DS_Store
+coverage/
+.npm/
+
+# Mini Program (Excluded)
+cassava/
+cassava_backup/
+
+# IDE
+.idea/
+.vscode/
+*.swp

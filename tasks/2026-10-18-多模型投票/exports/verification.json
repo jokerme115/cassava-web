@@ -1,0 +1,212 @@
+{
+  "task_id": 37,
+  "results": [
+    {
+      "id": 43,
+      "ppd": 2.399244073784972,
+      "details": {
+        "method": "pixel_vote_probability_tiebreak",
+        "tie_rule": "mean_probability_strict_threshold",
+        "score_label": "模型一致率（非准确率）",
+        "cassava_pixels": 24341,
+        "disagreement_pixels": 6492,
+        "agreement_percent": 73.32895115237665,
+        "members": [
+          {
+            "model": "resnet101",
+            "label": "V1.0",
+            "ppd_percent": 0.0
+          },
+          {
+            "model": "m6_best",
+            "label": "V1.1",
+            "ppd_percent": 25.97674705229859
+          }
+        ],
+        "segments": [
+          {
+            "method": "pixel_vote_probability_tiebreak",
+            "tie_rule": "mean_probability_strict_threshold",
+            "score_label": "模型一致率（非准确率）",
+            "cassava_pixels": 8438,
+            "disagreement_pixels": 858,
+            "agreement_percent": 89.8317136762266,
+            "members": [
+              {
+                "model": "resnet101",
+                "label": "V1.0",
+                "ppd_percent": 0.0
+              },
+              {
+                "model": "m6_best",
+                "label": "V1.1",
+                "ppd_percent": 5.984830528561271
+              }
+            ]
+          },
+          {
+            "method": "pixel_vote_probability_tiebreak",
+            "tie_rule": "mean_probability_strict_threshold",
+            "score_label": "模型一致率（非准确率）",
+            "cassava_pixels": 8649,
+            "disagreement_pixels": 5634,
+            "agreement_percent": 34.859521331945885,
+            "members": [
+              {
+                "model": "resnet101",
+                "label": "V1.0",
+                "ppd_percent": 0.0
+              },
+              {
+                "model": "m6_best",
+                "label": "V1.1",
+                "ppd_percent": 67.26789224187768
+              }
+            ]
+          },
+          {
+            "method": "pixel_vote_probability_tiebreak",
+            "tie_rule": "mean_probability_strict_threshold",
+            "score_label": "模型一致率（非准确率）",
+            "cassava_pixels": 7254,
+            "disagreement_pixels": 0,
+            "agreement_percent": 100.0,
+            "members": [
+              {
+                "model": "resnet101",
+                "label": "V1.0",
+                "ppd_percent": 0.0
+              },
+              {
+                "model": "m6_best",
+                "label": "V1.1",
+                "ppd_percent": 0.0
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 42,
+      "ppd": 0.0,
+      "details": {
+        "method": "pixel_vote_probability_tiebreak",
+        "tie_rule": "mean_probability_strict_threshold",
+        "score_label": "模型一致率（非准确率）",
+        "cassava_pixels": 13433,
+        "disagreement_pixels": 0,
+        "agreement_percent": 100.0,
+        "members": [
+          {
+            "model": "resnet101",
+            "label": "V1.0",
+            "ppd_percent": 0.0
+          },
+          {
+            "model": "m6_best",
+            "label": "V1.1",
+            "ppd_percent": 0.0
+          }
+        ],
+        "segments": [
+          {
+            "method": "pixel_vote_probability_tiebreak",
+            "tie_rule": "mean_probability_strict_threshold",
+            "score_label": "模型一致率（非准确率）",
+            "cassava_pixels": 4120,
+            "disagreement_pixels": 0,
+            "agreement_percent": 100.0,
+            "members": [
+              {
+                "model": "resnet101",
+                "label": "V1.0",
+                "ppd_percent": 0.0
+              },
+              {
+                "model": "m6_best",
+                "label": "V1.1",
+                "ppd_percent": 0.0
+              }
+            ]
+          },
+          {
+            "method": "pixel_vote_probability_tiebreak",
+            "tie_rule": "mean_probability_strict_threshold",
+            "score_label": "模型一致率（非准确率）",
+            "cassava_pixels": 5267,
+            "disagreement_pixels": 0,
+            "agreement_percent": 100.0,
+            "members": [
+              {
+                "model": "resnet101",
+                "label": "V1.0",
+                "ppd_percent": 0.0
+              },
+              {
+                "model": "m6_best",
+                "label": "V1.1",
+                "ppd_percent": 0.0
+              }
+            ]
+          },
+          {
+            "method": "pixel_vote_probability_tiebreak",
+            "tie_rule": "mean_probability_strict_threshold",
+            "score_label": "模型一致率（非准确率）",
+            "cassava_pixels": 4046,
+            "disagreement_pixels": 0,
+            "agreement_percent": 100.0,
+            "members": [
+              {
+                "model": "resnet101",
+                "label": "V1.0",
+                "ppd_percent": 0.0
+              },
+              {
+                "model": "m6_best",
+                "label": "V1.1",
+                "ppd_percent": 0.0
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "exports": {
+    "csv": {
+      "count": 2,
+      "bytes": 7374,
+      "warnings": 0
+    },
+    "xlsx": {
+      "count": 2,
+      "bytes": 3691,
+      "warnings": 0
+    },
+    "zip": {
+      "count": 2,
+      "bytes": 821257,
+      "warnings": 0
+    }
+  },
+  "preservation": {
+    "predict_predictionresult": {
+      "old_rows_unchanged": 31,
+      "new_rows": 2
+    },
+    "predict_predictioncorrection": {
+      "old_rows_unchanged": 7,
+      "new_rows": 0
+    },
+    "predict_processingtask": {
+      "old_rows_unchanged": 15,
+      "new_rows": 1
+    },
+    "predict_cassavaimage": {
+      "old_rows_unchanged": 15,
+      "new_rows": 0
+    }
+  }
+}

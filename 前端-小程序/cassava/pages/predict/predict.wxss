@@ -1,0 +1,149 @@
+/* pages/predict/predict.wxss */
+.predict-page {
+  min-height: 100vh;
+  padding: 24rpx 32rpx calc(60rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+/* 未登录提示条 */
+.login-bar {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 28rpx 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(38, 50, 56, 0.04);
+}
+.login-bar-icon {
+  font-size: 32rpx;
+  margin-right: 16rpx;
+}
+.login-bar-text {
+  flex: 1;
+  font-size: 28rpx;
+  color: #37474F;
+}
+.login-bar-arrow {
+  font-size: 40rpx;
+  color: #CFD8DC;
+}
+
+/* 空状态大引导区 */
+.empty-picker {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 120rpx 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 4rpx 16rpx rgba(38, 50, 56, 0.04);
+  margin-bottom: 24rpx;
+}
+.empty-circle {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 50%;
+  background: #E8F5E9;
+  color: #2E7D32;
+  font-size: 72rpx;
+  font-weight: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 28rpx;
+}
+.empty-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #263238;
+}
+.empty-sub {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #90A4AE;
+}
+
+/* 有图网格 */
+.picker {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 28rpx;
+  box-shadow: 0 4rpx 16rpx rgba(38, 50, 56, 0.04);
+  margin-bottom: 24rpx;
+}
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+.grid-item {
+  position: relative;
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 16rpx;
+  overflow: hidden;
+  background: #F5F7F5;
+}
+.grid-img {
+  width: 100%;
+  height: 100%;
+}
+.grid-del {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 48rpx;
+  height: 48rpx;
+  line-height: 44rpx;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 34rpx;
+  border-bottom-left-radius: 16rpx;
+}
+.grid-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2rpx dashed #C8E6C9;
+}
+.grid-plus {
+  font-size: 60rpx;
+  color: #2E7D32;
+  font-weight: 300;
+}
+.picker-count {
+  margin-top: 20rpx;
+  text-align: right;
+  font-size: 24rpx;
+  color: #90A4AE;
+}
+
+/* 操作按钮 */
+.actions {
+  display: flex;
+  gap: 20rpx;
+  margin-bottom: 24rpx;
+}
+.btn-outline {
+  flex: 1;
+  height: 88rpx;
+  line-height: 88rpx;
+  background: #fff;
+  color: #2E7D32;
+  border-radius: 20rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  box-shadow: 0 4rpx 16rpx rgba(38, 50, 56, 0.05);
+}
+.btn-outline::after {
+  border: none;
+}
+
+/* 检测按钮 */
+.detect-btn {
+  height: 96rpx;
+  line-height: 96rpx;
+  font-size: 32rpx;
+}

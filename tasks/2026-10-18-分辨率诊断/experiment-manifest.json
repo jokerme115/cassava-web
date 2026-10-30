@@ -1,0 +1,74 @@
+{
+  "purpose": "resolution sensitivity, not accuracy or validation-set model selection",
+  "high_resolution_images": [
+    43,
+    44,
+    46
+  ],
+  "high_resolution_crops": 9,
+  "information_levels_long_edge": [
+    96,
+    128,
+    192,
+    256,
+    384,
+    512,
+    "native"
+  ],
+  "high_arm": "downsample INTER_AREA, restore to native crop size INTER_LINEAR; hold geometry and support fixed",
+  "low_resolution_images": [
+    48,
+    52,
+    54
+  ],
+  "low_crops": "middle detected section of each image",
+  "input_scale_levels_long_edge": [
+    "native",
+    256,
+    512,
+    768
+  ],
+  "low_arm": "interpolate existing low resolution crop; does not acquire new image detail",
+  "models": [
+    "resnet101",
+    "m6_best"
+  ],
+  "threshold": 0.5,
+  "postprocessing": {
+    "min_area": 100,
+    "morph_kernel_size": 5,
+    "morph_iterations": 1
+  },
+  "tta": false,
+  "m6_patch": [
+    512,
+    512
+  ],
+  "m6_stride": [
+    256,
+    256
+  ],
+  "hardware": {
+    "device": "cpu",
+    "torch_threads": 4
+  },
+  "accuracy_ground_truth": null,
+  "weights": [
+    {
+      "file": "best_deeplabv3plus_resnet101_cassava_rot_os16.pth",
+      "sha256": "c0670adb2192091e9f6a71db0058f635c3ed2dac6b00772cb10da0e25b2ea12a"
+    },
+    {
+      "file": "yolov11(1).pt",
+      "sha256": "8a3adecc24e5e351b2c62d30f65068b61e639f794b744a0a03c9a6a9e0762473"
+    },
+    {
+      "file": "yolov11(2).pt",
+      "sha256": "40cc8ff3b85e6c3a7e6e30706cb0f7fdd99000fff8a15eef81e625565a435bc3"
+    },
+    {
+      "file": "m6_best_fold1.pth",
+      "sha256": "a9da6403423cbc7bb8ec885bedd6fd1eab68f646e646e6d64168a25c266b6fb5"
+    }
+  ]
+}

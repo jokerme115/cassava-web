@@ -1,0 +1,22 @@
+{
+  "csv": {
+    "count": 31,
+    "warnings": 0,
+    "bytes": 14062
+  },
+  "xlsx": {
+    "count": 31,
+    "warnings": 0,
+    "bytes": 5899
+  },
+  "zip": {
+    "count": 31,
+    "warnings": 0,
+    "bytes": 54542392
+  },
+  "package": {
+    "results": 31,
+    "segments": 93,
+    "resource_errors": []
+  }
+}

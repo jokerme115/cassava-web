@@ -1,0 +1,34 @@
+[
+  {
+    "image": 1,
+    "prediction_id": 24,
+    "correction_version": null,
+    "cassava_mask": "prediction_masks/cassava/cfaa6124-71de-48e7-8da5-3391eba0cb0a.png",
+    "rotten_mask": "prediction_masks/rotten/8ac61d96-f095-401f-81c5-a0e52f1ee741.png",
+    "ppd_percent": 0.0
+  },
+  {
+    "image": 2,
+    "prediction_id": 19,
+    "correction_version": 1,
+    "cassava_mask": "prediction_corrections/19/v1/cassava.png",
+    "rotten_mask": "prediction_corrections/19/v1/rotten.png",
+    "ppd_percent": 49.35602575896964
+  },
+  {
+    "image": 3,
+    "prediction_id": 22,
+    "correction_version": null,
+    "cassava_mask": "prediction_masks/cassava/341fcb81-99bd-4338-b0e0-8fd32d543575.png",
+    "rotten_mask": "prediction_masks/rotten/980e3813-b1ea-45d8-b6ab-0a6aaa9b2b4f.png",
+    "ppd_percent": 0.0
+  },
+  {
+    "image": 4,
+    "prediction_id": 17,
+    "correction_version": 1,
+    "cassava_mask": "prediction_corrections/17/v1/cassava.png",
+    "rotten_mask": "prediction_corrections/17/v1/rotten.png",
+    "ppd_percent": 58.96809100094521
+  }
+]

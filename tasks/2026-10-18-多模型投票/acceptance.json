@@ -1,0 +1,12 @@
+{
+  "backend_tests": 32,
+  "frontend_tests": 14,
+  "typescript": "passed",
+  "migration_check": "no_changes",
+  "build": "网页/front/cassava_front/dist-voting-20261018-final",
+  "frontend_http": 200,
+  "backend_health_http": 200,
+  "browser_score_panel": "verified",
+  "real_task_id": 37,
+  "accuracy_evaluation": "not_performed"
+}

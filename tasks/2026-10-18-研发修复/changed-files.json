@@ -1,0 +1,132 @@
+[
+  {
+    "file": "网页\\front\\cassava_front\\src\\App.tsx",
+    "change": "modified",
+    "sha256": "d061fbce0c37a08f5380f203de43cda1b07da5728f02270effc86ee9bf92e070"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\HomePage.tsx",
+    "change": "modified",
+    "sha256": "5b1d5cba6dbe7eef9a8d5c0a2a5da18be9c3c12321545fbe7fddc08a16873366"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\ResultsCenter.tsx",
+    "change": "modified",
+    "sha256": "5e14c6c857e502fc3c4858fe9d1d6cfb8791b29a7c9065fd39bde9fb0b381f2b"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\components\\HomePage.tsx",
+    "change": "modified",
+    "sha256": "ccc3ed77559284cb0b8a950cd54a23e4d73f2dae0593ac353781dc01e6dbf991"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\components\\ImageManagement.tsx",
+    "change": "modified",
+    "sha256": "3e77e014d64288dfa72fde31b3624977f4c052737eaf30694add822cd710f638"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\components\\PredictionModule.tsx",
+    "change": "modified",
+    "sha256": "1f969d85762ad4cbfafa5cb0d2e5ad72440f8d1fe38079b22b84478d6eac98a1"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\components\\PredictionResultEditor.tsx",
+    "change": "modified",
+    "sha256": "13b52913fd845bfa3cdcc50101556d0079d2399e0d3c43babd2cb7a76c24f2aa"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\components\\ResultsCenter.tsx",
+    "change": "modified",
+    "sha256": "62cf9ae62c7fe61d2b239fe6932bc3aea7eb6a9f288d57f315cb7c29b8239a1f"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\components\\TaskCenter.tsx",
+    "change": "modified",
+    "sha256": "7e805d8b3238165bcef3dc3bb7a2183677a5e3e094beecbc9fcdd5e9f1eb1e43"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\components\\__tests__\\LoginPage.test.tsx",
+    "change": "modified",
+    "sha256": "afbaebd8d4400412d2a757c898032e8b118a5247663dc738d22291821dfb095d"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\components\\__tests__\\PredictionResultEditor.test.tsx",
+    "change": "new",
+    "sha256": "6869ddcd6898bdc9d50aa3078618a757eefd6e30ce8d01f31e8e62fce093bbbb"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\components\\__tests__\\ResultsCenter.test.tsx",
+    "change": "new",
+    "sha256": "f682ce9618ce0b01b04fc48da0aaac5b25ea84e1fb8986c01caefca513545f1c"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\hooks\\useImageStore.ts",
+    "change": "modified",
+    "sha256": "4c06149dcd13c3d883215e28b647b8f130d6bd826cf3bf376fa7e980be688196"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\hooks\\useResultsStore.ts",
+    "change": "modified",
+    "sha256": "b01136c1964169f06e6c7a4c8fc33229fc2d8bdff8da45d541b2ec97cbdef632"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\services\\api.ts",
+    "change": "modified",
+    "sha256": "12b849f6d2d36c70b2395571f2822691bf73bb68b765f6c264ddd39cc78e9768"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\types\\index.ts",
+    "change": "modified",
+    "sha256": "ee7f1eec04551f6859bc0ddd2a5bff2a72920b78ed6933b28e18bca7b3010af8"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\utils\\correctionDrafts.ts",
+    "change": "new",
+    "sha256": "67f4d3c7ec86ba54304dbc5e1e8fcd85d405be4db131e2ac0c60832ee5f23217"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\utils\\measurement.test.ts",
+    "change": "modified",
+    "sha256": "d0f36a8079083ea73bfe96b13d90e2450ebbd8f1a866b48aa8b8ee7fd37698d2"
+  },
+  {
+    "file": "网页\\front\\cassava_front\\src\\utils\\measurement.ts",
+    "change": "modified",
+    "sha256": "f1b37dbce084253f0a4f5b573856704bbc192d2f161d7addf69c5ee4cc42ae8e"
+  },
+  {
+    "file": "网页\\back\\cassavaBack\\predict\\m6_predictor.py",
+    "change": "modified",
+    "sha256": "8e1c1c9f3af37abea40c6d1712c817a92abb2daaecb23d8c560f430244e51d79"
+  },
+  {
+    "file": "网页\\back\\cassavaBack\\predict\\measurement.py",
+    "change": "new",
+    "sha256": "b34a0ac439efb1a660d38cbf04b347c82f5cd9d8af77cc20f46e9c31d380aa53"
+  },
+  {
+    "file": "网页\\back\\cassavaBack\\predict\\result_export.py",
+    "change": "new",
+    "sha256": "c994f4c8a1aaa6b72aa65060c758998502817f02d764e26b9d0318f2b245e89f"
+  },
+  {
+    "file": "网页\\back\\cassavaBack\\predict\\serializers.py",
+    "change": "modified",
+    "sha256": "848b59f5603e1ea691ae69d90538a046653ff182e08af2b6b65a8a13b967a9e2"
+  },
+  {
+    "file": "网页\\back\\cassavaBack\\predict\\services.py",
+    "change": "modified",
+    "sha256": "4ed52784a16a702d71de96d927b6044e417da9a8cf2be502e9106bde39783836"
+  },
+  {
+    "file": "网页\\back\\cassavaBack\\predict\\views.py",
+    "change": "modified",
+    "sha256": "c7fe45c5b91d6c75ea43f6f8c222217d5681958878bc25baa18531758f7c925e"
+  },
+  {
+    "file": "网页\\back\\cassavaBack\\predict\\tests\\test_measurement_workflow.py",
+    "change": "new",
+    "sha256": "af6f8eb494292daae6d4bece241ffd747f32c47a251ccb78b3c55eab4b980c1d"
+  }
+]

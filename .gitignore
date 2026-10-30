@@ -1,0 +1,65 @@
+# ============================================================
+# 木薯网页源代码 · 根级 .gitignore
+# 目标：代码与文档入库；密钥、权重、媒体、构建产物、运行日志不入库。
+# 建立日期：2026-10-27（批次 0.2）
+# ============================================================
+
+# ---------- 依赖与环境 ----------
+node_modules/
+.venv-backend/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---------- 构建产物 ----------
+dist/
+build/
+cassava-desktop/src-tauri/target/
+*.tsbuildinfo
+
+# ---------- 秘密与本地配置 ----------
+.env
+.env.*
+**/.env
+**/.env.*
+# 但模板可以入库
+!**/.env.example
+!*/.env.example
+
+# ---------- 数据库 ----------
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
+
+# ---------- 模型权重与大体积数据 ----------
+*.pth
+*.pt
+*.onnx
+*.engine
+*.npz
+*.npy
+*.zip
+网页/back/model/
+网页/back/M6_best_predict_package/
+
+# ---------- 媒体与运行产物 ----------
+网页/back/cassavaBack/media/
+网页/run_logs/
+logs/
+*.log
+output/
+网页/back/cassavaBack/import_staging/
+网页/back/cassavaBack/model_assets/
+网页/back/cassavaBack/runtime/
+
+# ---------- 编辑器 / 系统 ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo

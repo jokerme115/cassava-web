@@ -1,0 +1,54 @@
+<!--pages/predict/predict.wxml-->
+<view class="predict-page">
+
+  <!-- 未登录提示（简洁） -->
+  <view class="login-bar anim-up" wx:if="{{!loggedIn}}" bindtap="goLogin">
+    <text class="login-bar-icon">🔒</text>
+    <text class="login-bar-text">登录后即可拍照检测</text>
+    <text class="login-bar-arrow">›</text>
+  </view>
+
+  <!-- 图片区 -->
+  <block wx:if="{{loggedIn}}">
+    <!-- 空状态：大引导区 -->
+    <view class="empty-picker anim-up" wx:if="{{!images.length}}" bindtap="showSourceSheet">
+      <view class="empty-circle">＋</view>
+      <view class="empty-title">拍照 / 相册选择</view>
+      <view class="empty-sub">木薯切面 · 光线均匀更准</view>
+    </view>
+
+    <!-- 有图：网格 -->
+    <view class="picker anim-up" wx:else>
+      <view class="grid">
+        <view class="grid-item" wx:for="{{images}}" wx:key="*this">
+          <image class="grid-img" src="{{item}}" mode="aspectFill" bindtap="previewImage" data-index="{{index}}" />
+          <view class="grid-del" catchtap="removeImage" data-index="{{index}}">×</view>
+        </view>
+        <view class="grid-item grid-add" wx:if="{{images.length < 9}}" bindtap="showSourceSheet">
+          <text class="grid-plus">＋</text>
+        </view>
+      </view>
+      <view class="picker-count">{{images.length}}/9</view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="actions anim-up" style="animation-delay: 0.05s;">
+      <button class="btn-outline" hover-class="press-scale" bindtap="takePhoto">📷 拍照</button>
+      <button class="btn-outline" hover-class="press-scale" bindtap="chooseAlbum">🖼 相册</button>
+    </view>
+
+    <!-- 检测按钮 -->
+    <button class="btn-primary detect-btn anim-up" style="animation-delay: 0.1s;" hover-class="press-scale" bindtap="startDetect" disabled="{{detecting || !images.length}}">
+      {{detecting ? '检测中…' : '开始检测'}}
+    </button>
+  </block>
+
+  <!-- 检测进度遮罩 -->
+  <view class="loading-mask" wx:if="{{detecting}}">
+    <view class="loading-card">
+      <view class="spinner"></view>
+      <view class="loading-text">{{stageText}}</view>
+      <view class="loading-progress" wx:if="{{progress > 0}}">{{progress}}%</view>
+    </view>
+  </view>
+</view>

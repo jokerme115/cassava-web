@@ -1,0 +1,170 @@
+/**app.wxss — 全局样式与农业绿色主题**/
+
+page {
+  /* 主题色变量（小程序 wxss 支持 CSS 变量） */
+  --primary: #2E7D32;          /* 主绿 */
+  --primary-dark: #1B5E20;     /* 深绿 */
+  --primary-light: #E8F5E9;    /* 浅绿背景 */
+  --primary-mid: #66BB6A;      /* 中绿 */
+  --accent: #FFA726;           /* 橙色点缀（警示/数值） */
+  --danger: #E53935;           /* 重度腐烂红 */
+  --warning: #FB8C00;          /* 中度橙 */
+  --info: #1976D2;             /* 轻度蓝 */
+  --success: #43A047;          /* 健康绿 */
+
+  --text-main: #263238;        /* 主文字 */
+  --text-sub: #607D8B;         /* 次文字 */
+  --text-light: #90A4AE;       /* 弱文字 */
+
+  --bg-page: #F5F7F5;          /* 页面背景 */
+  --bg-card: #FFFFFF;          /* 卡片背景 */
+  --border: #E8ECEA;           /* 分割线 */
+
+  background-color: var(--bg-page);
+  color: var(--text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: 28rpx;
+  line-height: 1.6;
+}
+
+/* 通用卡片 */
+.card {
+  background: var(--bg-card);
+  border-radius: 20rpx;
+  padding: 28rpx;
+  margin: 20rpx 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(38, 50, 56, 0.04);
+}
+
+/* 主按钮 */
+.btn-primary {
+  background: linear-gradient(135deg, #43A047, #2E7D32);
+  color: #fff;
+  border-radius: 44rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  border: none;
+  box-shadow: 0 8rpx 20rpx rgba(46, 125, 50, 0.25);
+}
+.btn-primary::after {
+  border: none;
+}
+.btn-primary[disabled] {
+  background: #C8E6C9;
+  color: #fff;
+  box-shadow: none;
+}
+
+/* 次按钮 */
+.btn-plain {
+  background: #fff;
+  color: var(--primary);
+  border: 2rpx solid var(--primary);
+  border-radius: 44rpx;
+  font-size: 30rpx;
+  font-weight: 500;
+}
+.btn-plain::after {
+  border: none;
+}
+
+/* 空状态 */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120rpx 40rpx;
+  color: var(--text-light);
+}
+.empty-icon {
+  font-size: 100rpx;
+  margin-bottom: 24rpx;
+  opacity: 0.6;
+}
+.empty-text {
+  font-size: 28rpx;
+}
+
+/* 等级标签 */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 6rpx 20rpx;
+  border-radius: 24rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+.tag-success { background: #E8F5E9; color: #2E7D32; }
+.tag-info    { background: #E3F2FD; color: #1565C0; }
+.tag-warning { background: #FFF3E0; color: #EF6C00; }
+.tag-danger  { background: #FFEBEE; color: #C62828; }
+
+/* 加载中遮罩 */
+.loading-mask {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+.loading-card {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 48rpx 56rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.spinner {
+  width: 64rpx;
+  height: 64rpx;
+  border: 6rpx solid #E0E0E0;
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.loading-text {
+  margin-top: 24rpx;
+  font-size: 28rpx;
+  color: var(--text-sub);
+}
+.loading-progress {
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  color: var(--text-light);
+}
+
+/* ===== 全局动效 ===== */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(36rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* 入场动画（配合 animation-delay 做 stagger） */
+.anim-fade { animation: fadeIn 0.4s ease both; }
+.anim-up { animation: slideUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-scale { animation: scaleIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* 按钮按压反馈（配合 hover-class 使用） */
+.btn-primary, .btn-outline, .btn-plain {
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.press-scale {
+  transform: scale(0.96);
+  opacity: 0.9;
+}
