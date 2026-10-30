@@ -20,6 +20,8 @@ def run(args, *, env=None, data=None):
 
 
 files = run(['git', 'ls-files', '--cached', '--others', '--exclude-standard', '-z']).split('\0')
+# Include the upstream M6 implementation, while the rest of its package stays ignored.
+files += ['网页/back/M6_best_predict_package/' + name for name in ('metadata.json', 'model.py', 'predict.py', 'requirements.txt', 'run_predict.bat')]
 keep = []
 excluded = collections.Counter()
 for name in sorted(set(files)):
@@ -79,6 +81,20 @@ if 'github' not in remotes:
     run(['git', 'remote', 'add', 'github', URL])
 assert run(['git', 'remote', 'get-url', 'github']) == URL
 run(['git', 'config', 'remote.github.push', 'refs/heads/github-main:refs/heads/main'])
+# Integrate concurrent remote commits using an isolated merge tree; never overwrite the checkout.
+if run(['git', 'ls-remote', 'github', 'refs/heads/main']):
+    run(['git', 'fetch', 'github', 'main'])
+    upstream = run(['git', 'rev-parse', 'refs/remotes/github/main'])
+    ancestor = subprocess.run(['git', 'merge-base', '--is-ancestor', upstream, commit], capture_output=True)
+    if ancestor.returncode:
+        merged_tree = run(['git', 'merge-tree', '--write-tree', commit, upstream]).splitlines()[0]
+        merged = run(['git', 'commit-tree', merged_tree, '-p', commit, '-p', upstream], data=b'Merge upstream source changes with workspace UI upgrade\n')
+        run(['git', 'update-ref', 'refs/heads/github-main', merged, commit])
+        commit = merged
+        tree_paths = run(['git', 'ls-tree', '-r', '--name-only', '-z', commit]).split('\0')
+        if set(filter(None, tree_paths)) != set(keep):
+            print('Upstream-only source files preserved by the merge.')
+
 run(['git', 'push', 'github', 'refs/heads/github-main:refs/heads/main'])
 remote_sha = run(['git', 'ls-remote', 'github', 'refs/heads/main']).split()[0]
 assert remote_sha == commit
