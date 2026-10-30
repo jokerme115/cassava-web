@@ -1,3 +1,4 @@
+import WorkspacePagination from './WorkspacePagination';
 import api from '../services/rest/client';
 import BulkCaptureTime from './BulkCaptureTime';
 import { message, modal } from '../utils/feedback';
@@ -12,7 +13,7 @@ import { Upload, Plus, Trash2, Move, Grid, List, Search, SortAsc, SortDesc, X, C
 import { useImageStore } from '../hooks/useImageStore';
 import { ppdToneClass } from '../utils/ppdTone';
 import { formatPpd } from '../utils/measurement';
-import { Modal, Switch, Input, Button, InputNumber, Dropdown, Tree, TreeSelect, Pagination, Drawer } from 'antd';
+import { Modal, Switch, Input, Button, InputNumber, Dropdown, Tree, TreeSelect, Drawer } from 'antd';
 import { foldersApi, sharesApi, guestResourcesApi } from '../services/api';
 import { useTranslation } from 'react-i18next';
 import { Folder, User, Image, ResourceShare } from '../types';
@@ -1532,7 +1533,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
       <div className="hidden w-64 shrink-0 border-r border-hairline bg-white sm:flex">{folderSidebar}</div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col w-full">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {/* Header */}
         <div className="image-workspace-toolbar shrink-0 border-b border-hairline bg-white px-4 py-3">
           <div className="flex items-center justify-between gap-2 empty:hidden">
@@ -1700,29 +1701,8 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
           </div>
         </div>
 
-        <div className="image-pagination-bar shrink-0 border-b border-hairline bg-white px-4 py-2">
-                {!isSharedWithMeView && !isMySharesView && totalImages > 0 && (
-                  <div className="flex flex-wrap items-center justify-end gap-2">
-                    <Pagination
-                      current={imagesPage}
-                      pageSize={imagesPageSize}
-                      total={totalImages}
-                      responsive
-                      showLessItems
-                      showSizeChanger
-                      pageSizeOptions={['24', '48', '96', '120']}
-                      showTotal={(total, range) => t('images.pagination_total', { start: range[0], end: range[1], total })}
-                      onChange={(page, pageSize) => {
-                        void goToImagesPage(page, pageSize);
-                      }}
-                      size="small"
-                    />
-                  </div>
-                )}
-        </div>
-
         {/* Content with Alphabet Index */}
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex min-h-0 flex-1 overflow-hidden">
           {/* Main Content Area */}
           <div className="flex-1 min-w-0 p-4 overflow-y-auto overflow-x-hidden" ref={imageScrollRef}>
             
@@ -2102,6 +2082,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
             </nav>
           )}
         </div>
+        {!isSharedWithMeView && !isMySharesView && <WorkspacePagination page={imagesPage} pageSize={imagesPageSize} total={totalImages} onChange={(page, size) => void goToImagesPage(page, size)} />}
       </div>
 
       <Drawer

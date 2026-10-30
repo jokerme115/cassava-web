@@ -310,7 +310,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ currentUser, onLogout, onUpda
 
       {/* Main Content */}
       <div className="min-w-0 flex-1 px-5 py-5 sm:px-6 lg:px-8">
-         <div className="mx-auto max-w-4xl">
+         <div className={activeTab === 'system' ? 'w-full' : 'mx-auto max-w-4xl'}>
            {/* Header */}
            <div className="mb-8">
              <h1 className="text-xl font-semibold tracking-normal text-ink">
@@ -467,7 +467,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ currentUser, onLogout, onUpda
           )}
 
            {activeTab === 'system' && (
-             <div className="card rounded-xl shadow-sm border min-h-[600px]">
+             <div className="min-h-[600px] w-full">
                {/* Embed PermissionManagement directly */}
                <PermissionManagement />
              </div>

@@ -1,3 +1,4 @@
+import WorkspacePagination from './WorkspacePagination';
 import { message } from '../utils/feedback';
 import api from '../services/rest/client';
 import { getWorkspace, updateWorkspace } from '../utils/workspaceContext';
@@ -7,7 +8,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Play, Image as ImageIcon, FolderOpen, Search, SortAsc, SortDesc, SlidersHorizontal } from 'lucide-react';
 import { useImageStore } from '../hooks/useImageStore';
 import { useTaskStore } from '../hooks/useTaskStore';
-import { Tree, Pagination, Modal } from 'antd';
+import { Tree, Modal } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { getApiErrorMessage } from '../utils/apiError';
 
@@ -289,7 +290,7 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
                   </label>)}
                 </div>}
               </div>
-              <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-hairline px-3 py-2"><span className="text-xs text-muted">共 {totalImages} 张</span><Pagination current={imagesPage} pageSize={imagesPageSize} total={totalImages} showSizeChanger={false} size="small" onChange={page => void goToImagesPage(page)} /></div>
+              <WorkspacePagination page={imagesPage} pageSize={imagesPageSize} total={totalImages} onChange={(page, size) => void goToImagesPage(page, size)} />
             </div>
           </div>
         </section>

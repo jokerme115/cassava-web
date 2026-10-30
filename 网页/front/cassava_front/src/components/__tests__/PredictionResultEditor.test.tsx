@@ -10,6 +10,7 @@ vi.mock('../../services/api', () => ({
 vi.mock('../../utils/correctionDrafts', () => ({ readDraft: vi.fn(async () => undefined), writeDraft: vi.fn(async () => {}), removeDraft: vi.fn(async () => {}) }));
 const confirmSpy = vi.hoisted(() => vi.fn());
 vi.mock('antd', () => ({
+  Popover: ({ children }: any) => children,
   message: { warning: vi.fn(), info: vi.fn(), error: vi.fn(), success: vi.fn() },
   Modal: { confirm: (options: any) => { confirmSpy(options); options?.onCancel?.(); } },
 }));

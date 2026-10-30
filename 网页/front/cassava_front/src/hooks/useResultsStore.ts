@@ -2,52 +2,34 @@ import { message } from '../utils/feedback';
 import api from '../services/rest/client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { PredictionResult, TaskStatistics } from '../types';
-import { predictionsApi, systemSettingsApi } from '../services/api';
+import { predictionsApi } from '../services/api';
 
 import i18n from '../i18n';
 import { effectivePpd } from '../utils/measurement';
 
-export const useResultsStore = (currentUser?: any, taskId?: string | null, search = '', status = 'all', reviewStatus = 'all') => {
+export const useResultsStore = (currentUser?: any, taskId?: string | null, search = '', status = 'all', reviewStatus = 'all', page = 1, pageSize = 48, onInvalidPage?: () => void) => {
   const [results, setResults] = useState<PredictionResult[]>([]);
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [allResultsCount, setAllResultsCount] = useState(0);
-  const [nextPage, setNextPage] = useState<string | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
   const requestSequence = useRef(0);
+  const invalidPage = useRef(onInvalidPage);
+  invalidPage.current = onInvalidPage;
 
   const loadResults = useCallback(async () => {
     const sequence = ++requestSequence.current;
     setLoading(true);
-    setLoadingMore(false);
     try {
-      // Get system settings for pagination limit
-      // 访客没有认证态，只能读公开设置，否则会打出 401
-      let limit = 100;
-      try {
-        const settings = currentUser?.is_guest
-          ? await systemSettingsApi.getPublic()
-          : await systemSettingsApi.get();
-        limit = Number(settings.maxDisplayResults) || 100;
-      } catch (e) {
-        console.warn('Failed to load system settings for results limit', e);
-      }
-
-      const baseParams = {
-        ...(currentUser?.is_guest ? { user_id: currentUser.id } : {}),
-        page_size: limit
-      };
-
+      const baseParams = { ...(currentUser?.is_guest ? { user_id: currentUser.id } : {}), page, page_size: pageSize };
       const query = { ...baseParams, ...(taskId ? { task_id: taskId } : {}), search, status, review_status: reviewStatus };
-      const [data, aggregate] = await Promise.all([predictionsApi.getAll(query), api.get('/predictions/summary/', { params: query })]);
+      const [data, aggregate, overall] = await Promise.all([predictionsApi.getAll(query), api.get('/predictions/summary/', { params: query }), api.get('/predictions/summary/', { params: currentUser?.is_guest ? { user_id: currentUser.id } : {} })]);
       if (sequence !== requestSequence.current) return;
       setSummary(aggregate.data);
       const mergedRaw = data.results;
-      setAllResultsCount(data.count ?? mergedRaw.length);
+      setAllResultsCount(overall.data.total ?? data.count ?? mergedRaw.length);
       setTotalCount(data.count ?? mergedRaw.length);
-      setNextPage(data.next ?? null);
       const normalizedResults = mergedRaw.map((r: any) => ({
         ...r,
         imageUrl: r.original_image_url || r.image_url || r.imageUrl || '',
@@ -64,14 +46,15 @@ export const useResultsStore = (currentUser?: any, taskId?: string | null, searc
         split_count: r.split_count ?? r.splitCount ?? (Array.isArray(r.sub_ppd_values) ? r.sub_ppd_values.length : 0),
       }));
       setResults(normalizedResults);
-    } catch (error) {
+    } catch (error: any) {
       if (sequence !== requestSequence.current) return;
+      if (page > 1 && error?.response?.status === 404 && invalidPage.current) { invalidPage.current(); return; }
       message.error(i18n.t('results.load_failed'));
       console.error(error);
     } finally {
       if (sequence === requestSequence.current) setLoading(false);
     }
-  }, [currentUser, taskId, search, status, reviewStatus]);
+  }, [currentUser, taskId, search, status, reviewStatus, page, pageSize]);
 
   useEffect(() => {
     void loadResults();
@@ -112,25 +95,6 @@ export const useResultsStore = (currentUser?: any, taskId?: string | null, searc
     };
   };
 
-  const loadMore = async () => {
-    if (!nextPage || loadingMore) return;
-    const sequence = requestSequence.current;
-    setLoadingMore(true);
-    try {
-      const query = new URL(nextPage, window.location.origin).searchParams;
-      const data = await predictionsApi.getAll({
-        page: query.get('page') || 1,
-        page_size: query.get('page_size') || 100,
-        ...(taskId ? { task_id: taskId } : {}), search, status, review_status: reviewStatus,
-      });
-      if (sequence !== requestSequence.current) return;
-      setResults((current) => [...current, ...data.results.filter((item) => !current.some((old) => old.id === item.id))]);
-      setNextPage(data.next ?? null);
-      return data.results;
-    } catch { if (sequence === requestSequence.current) message.error('加载下一页失败，请重试'); }
-    finally { if (sequence === requestSequence.current) setLoadingMore(false); }
-  };
-
   const exportResults = async (fileType: 'csv' | 'xlsx' | 'zip', filters: { task_id?: string; search?: string; status?: string; review_status?: string; style?: string; version?: string; result_ids?: string } = {}) => {
     if (exporting) return;
     setExporting(true);
@@ -166,9 +130,7 @@ export const useResultsStore = (currentUser?: any, taskId?: string | null, searc
     exporting,
     totalCount,
     allResultsCount,
-    hasMore: Boolean(nextPage),
-    loadingMore,
-    loadMore,
+    hasMore: page * pageSize < totalCount,
     loadResults,
     getResultsByTask,
     getStatistics,

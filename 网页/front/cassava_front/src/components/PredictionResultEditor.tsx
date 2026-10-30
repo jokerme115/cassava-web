@@ -1,3 +1,5 @@
+import { Popover } from 'antd';
+import { editorScreenMetrics, nearestVertex } from '../utils/editorGeometry';
 import { message, modal } from '../utils/feedback';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -13,7 +15,6 @@ import {
   Hand,
   Layers3,
   Maximize2,
-  MousePointer2,
   PenTool,
   Redo2,
   RotateCcw,
@@ -22,7 +23,6 @@ import {
   Sparkles,
   Spline,
   Moon,
-  Keyboard,
   Undo2,
   X,
   ZoomIn,
@@ -350,11 +350,12 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
   const [layer, setLayer] = useState<LayerName>('rotten');
   const [tool, setTool] = useState<ToolName>('brush-add');
   const [brushSize, setBrushSize] = useState(24);
+  const [vertexSize, setVertexSize] = useState(2);
   const [zoom, setZoom] = useState(1);
   const [spacePressed, setSpacePressed] = useState(false);
   const [smartThreshold, setSmartThreshold] = useState(0.08);
   const [smartLoading, setSmartLoading] = useState(false);
-  const [confidenceReady, setConfidenceReady] = useState(false);
+  const [, setConfidenceReady] = useState(false);
   const [smartSelection, setSmartSelection] = useState<Uint8Array | null>(null);
   const [smartSelectionCount, setSmartSelectionCount] = useState(0);
   const [showCassava, setShowCassava] = useState(true);
@@ -523,9 +524,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
     context.drawImage(overlayCanvas, 0, 0);
     if (polygonPoints.length > 0 || maskRings.length > 0) {
       // 屏幕像素 → 掩码像素的换算，保证顶点在任何缩放下都是固定屏幕尺寸（小圆点，不遮挡细节）
-      const scale = masks.width / Math.max(1, rotation % 180 ? canvas.getBoundingClientRect().height : canvas.getBoundingClientRect().width);
-      const handleRadius = clamp(4 * scale, 1.5, masks.width);
-      const lineWidth = clamp(1.6 * scale, 1, masks.width);
+      const { scale, radius: handleRadius, lineWidth } = editorScreenMetrics(zoom, vertexSize);
       context.save();
       // 掩码转换出的多环轮廓：青色虚线 + 淡青填充，表示「待确认的病害边界」
       if (maskRings.length > 0) {
@@ -548,10 +547,10 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
             const active = maskRingDrag?.ring === ringIndex && maskRingDrag.index === index;
             context.beginPath();
             context.fillStyle = active ? '#ffffff' : '#38bdf8';
-            context.arc(point.x, point.y, active ? handleRadius * 1.8 : handleRadius * 0.9, 0, Math.PI * 2);
+            context.arc(point.x, point.y, active ? handleRadius * 1.5 : handleRadius, 0, Math.PI * 2);
             context.fill();
             context.strokeStyle = '#0f172a';
-            context.lineWidth = clamp(1.1 * scale, 0.7, masks.width);
+            context.lineWidth = scale;
             context.stroke();
           });
         });
@@ -571,16 +570,16 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
           const active = polygonDragIndex === index;
           context.beginPath();
           context.fillStyle = index === 0 ? '#f8fafc' : active ? '#ffffff' : '#fbbf24';
-          context.arc(point.x, point.y, active ? handleRadius * 1.6 : handleRadius, 0, Math.PI * 2);
+          context.arc(point.x, point.y, active ? handleRadius * 1.5 : handleRadius, 0, Math.PI * 2);
           context.fill();
           context.strokeStyle = '#0f172a';
-          context.lineWidth = clamp(1.2 * scale, 0.8, masks.width);
+          context.lineWidth = scale;
           context.stroke();
         });
       }
       context.restore();
     }
-  }, [baseImage, cassavaOpacity, dimOutside, maskRingDrag, maskRings, masks, polygonDragIndex, polygonPoints, rottenOpacity, showCassava, showOriginal, showRotten, smartSelection]);
+  }, [baseImage, cassavaOpacity, dimOutside, maskRingDrag, maskRings, masks, polygonDragIndex, polygonPoints, rottenOpacity, showCassava, showOriginal, showRotten, smartSelection, zoom, rotation, vertexSize]);
 
   useEffect(() => { renderCanvas(); }, [renderCanvas]);
 
@@ -888,31 +887,19 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
       return;
     }
     if (tool.startsWith('pen')) {
-      const canvas = canvasRef.current;
-      const scale = canvas ? masksRef.current.width / Math.max(1, rotation % 180 ? canvas.getBoundingClientRect().height : canvas.getBoundingClientRect().width) : 1;
-      const hitRadius = Math.max(6 * scale, masksRef.current.width / 220);
-      // 掩码多环轮廓优先响应拖动：命中任一环的顶点即进入拖动
-      if (maskRings.length) {
-        for (let ringIndex = 0; ringIndex < maskRings.length; ringIndex += 1) {
-          const ring = maskRings[ringIndex];
-          for (let index = 0; index < ring.length; index += 1) {
-            const item = ring[index];
-            if (Math.hypot(item.x - point.x, item.y - point.y) > hitRadius) continue;
-            event.preventDefault();
-            setMaskRingDrag({ ring: ringIndex, index });
-            event.currentTarget.setPointerCapture(event.pointerId);
-            return;
-          }
-        }
+      const { hitRadius, scale } = editorScreenMetrics(zoom, vertexSize);
+      const nearest = nearestVertex(maskRings, point, hitRadius);
+      if (nearest) {
+        event.preventDefault(); setMaskRingDrag(nearest); event.currentTarget.setPointerCapture(event.pointerId); return;
       }
       const firstPoint = polygonPoints[0];
-      const closeDistance = Math.max(12, masksRef.current.width / 180);
+      const closeDistance = 8 * scale;
       if (firstPoint && polygonPoints.length >= 3 && Math.hypot(point.x - firstPoint.x, point.y - firstPoint.y) <= closeDistance) {
         applyPolygon();
         return;
       }
       // 命中已有点 → 进入拖动，而不是新增一个点
-      const hitIndex = polygonPoints.findIndex((item) => Math.hypot(item.x - point.x, item.y - point.y) <= hitRadius);
+      const hitIndex = nearestVertex([polygonPoints], point, hitRadius)?.index ?? -1;
       if (hitIndex >= 0) {
         event.preventDefault();
         setPolygonDragIndex(hitIndex);
@@ -1219,8 +1206,8 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
       }
       else if (key === 'x') {
         setTool((current) => current.endsWith('erase') ? current.replace('-erase', '-add') as ToolName : current.replace('-add', '-erase') as ToolName);
-      } else if (key === '[') setBrushSize((value) => clamp(value - 4, 4, 120));
-      else if (key === ']') setBrushSize((value) => clamp(value + 4, 4, 120));
+      } else if (key === '[') setBrushSize((value) => clamp(value - 1, 1, 120));
+      else if (key === ']') setBrushSize((value) => clamp(value + 1, 1, 120));
       else if (key === '+' || key === '=') setZoom((value) => clamp(value + 0.1, 0.02, 4));
       else if (key === '-') setZoom((value) => clamp(value - 0.1, 0.02, 4));
       else if (key === '0') fitToView();
@@ -1289,6 +1276,16 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
     return <Hand className="h-4 w-4" />;
   };
 
+  const layerSettings = (name: LayerName) => <div className="w-56 space-y-3 text-ink">
+    <button onClick={() => name === 'cassava' ? setShowCassava(value => !value) : setShowRotten(value => !value)} className="flex w-full items-center justify-between text-sm">显示范围{(name === 'cassava' ? showCassava : showRotten) ? <Eye size={16} /> : <EyeOff size={16} />}</button>
+    <label className="block text-sm">不透明度 <span className="float-right tabular-nums">{Math.round((name === 'cassava' ? cassavaOpacity : rottenOpacity) * 100)}%</span><input aria-label={t(name === 'cassava' ? 'editor.inspector.cassava_opacity' : 'editor.inspector.rotten_opacity')} type="range" min="0" max="100" value={Math.round((name === 'cassava' ? cassavaOpacity : rottenOpacity) * 100)} onChange={event => (name === 'cassava' ? setCassavaOpacity : setRottenOpacity)(Number(event.target.value) / 100)} className="mt-2 w-full accent-emerald-700" /></label>
+  </div>;
+  const toolSettings = (name: ToolName) => <div className="w-56 space-y-3 text-ink">
+    {name.startsWith('brush') && <label className="block text-sm">画笔大小 <span className="float-right tabular-nums">{brushSize}px</span><input aria-label={t('editor.inspector.brush_size')} type="range" min="1" max="120" value={brushSize} onChange={event => setBrushSize(Number(event.target.value))} className="mt-2 w-full accent-emerald-700" /><input aria-label="画笔像素数" type="number" min="1" max="120" value={brushSize} onChange={event => setBrushSize(clamp(Number(event.target.value) || 1, 1, 120))} className="mt-2 w-full rounded border border-hairline px-2 py-1" /></label>}
+    {name.startsWith('pen') && <label className="block text-sm">顶点大小 <span className="float-right tabular-nums">{vertexSize}px</span><input aria-label="顶点大小" type="range" min="1" max="4" step="0.5" value={vertexSize} onChange={event => setVertexSize(Number(event.target.value))} className="mt-2 w-full accent-emerald-700" /></label>}
+    {name.startsWith('smart') && <label className="block text-sm">{t('editor.inspector.smart_threshold')}<input aria-label={t('editor.inspector.smart_threshold')} type="range" min="2" max="30" value={Math.round(smartThreshold * 100)} onChange={event => setSmartThreshold(Number(event.target.value) / 100)} className="mt-2 w-full accent-emerald-700" /></label>}
+  </div>;
+
   return (
     <div className={cx('fixed inset-0 z-[70]', isLight ? 'bg-hairline' : 'bg-[#070b12]')}>
       <div className={cx('flex h-screen w-screen flex-col overflow-hidden', shellClass)}>
@@ -1313,12 +1310,13 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
             <div className={cx('flex flex-wrap items-center gap-1.5 border-b px-3 py-1.5', borderClass, toolbarClass)}>
               <span className={cx('mr-1 hidden items-center xl:flex', mutedClass)} title={t('editor.canvas.fullscreen_hint')}><Maximize2 className="h-3.5 w-3.5 text-muted" /></span>
               <div className={cx('mr-1 flex items-center gap-1 rounded-lg p-0.5', isLight ? 'bg-surface-muted' : 'bg-white/5')}>
-                <button onClick={() => setLayer('cassava')} className={cx('rounded-md px-2.5 py-1 text-xs', layer === 'cassava' ? 'bg-white text-ink shadow-sm' : mutedClass, layer === 'cassava' ? '' : (isLight ? 'hover:bg-white' : 'hover:bg-white/10'))} title={t('editor.layer.cassava_title')}><i className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-[#30b0c7] align-middle" />{t('editor.layer.cassava')}</button>
-                <button onClick={() => setLayer('rotten')} className={cx('rounded-md px-2.5 py-1 text-xs', layer === 'rotten' ? 'bg-white text-ink shadow-sm' : mutedClass, layer === 'rotten' ? '' : (isLight ? 'hover:bg-white' : 'hover:bg-white/10'))} title={t('editor.layer.rotten_title')}><i className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-rose-400 align-middle" />{t('editor.layer.rotten')}</button>
+                <Popover trigger="click" placement="bottomLeft" content={layerSettings('cassava')}><button onClick={() => setLayer('cassava')} className={cx('rounded-md px-2.5 py-1 text-xs', layer === 'cassava' ? 'bg-white text-ink shadow-sm' : mutedClass, layer === 'cassava' ? '' : (isLight ? 'hover:bg-white' : 'hover:bg-white/10'))} title={t('editor.layer.cassava_title')}><i className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-[#30b0c7] align-middle" />{t('editor.layer.cassava')}</button></Popover>
+                <Popover trigger="click" placement="bottomLeft" content={layerSettings('rotten')}><button onClick={() => setLayer('rotten')} className={cx('rounded-md px-2.5 py-1 text-xs', layer === 'rotten' ? 'bg-white text-ink shadow-sm' : mutedClass, layer === 'rotten' ? '' : (isLight ? 'hover:bg-white' : 'hover:bg-white/10'))} title={t('editor.layer.rotten_title')}><i className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-rose-400 align-middle" />{t('editor.layer.rotten')}</button></Popover>
               </div>
               {(['brush-add', 'brush-erase', 'pen-add', 'pen-erase', 'smart-add', 'smart-erase', 'pan'] as ToolName[]).map((name) => (
-                <button key={name} onClick={() => { setTool(name); setSmartSelection(null); setSmartSelectionCount(0); if (!name.startsWith('pen')) { setPolygonPoints([]); setMaskRings([]); setMaskRingDrag(null); } }} className={cx('inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs transition', tool === name ? (isLight ? 'bg-brand-fill text-white' : 'bg-white text-slate-950') : mutedClass, tool === name ? '' : (isLight ? 'hover:bg-white' : 'hover:bg-white/10'))} title={`${t(toolLabelKey[name])}（${toolShortcut[name]}）${name.startsWith('smart') && !editor?.confidence_map_url ? t('editor.tool.needs_confidence') : ''}`}>{activeToolIcon(name)}<span className="hidden md:inline">{t(toolLabelKey[name])}</span></button>
+                <Popover key={name} trigger="click" placement="bottomLeft" content={toolSettings(name)} open={name === 'pan' ? false : undefined}><button onClick={() => { setTool(name); setSmartSelection(null); setSmartSelectionCount(0); if (!name.startsWith('pen')) { setPolygonPoints([]); setMaskRings([]); setMaskRingDrag(null); } }} className={cx('inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs transition', tool === name ? (isLight ? 'bg-brand-fill text-white' : 'bg-white text-slate-950') : mutedClass, tool === name ? '' : (isLight ? 'hover:bg-white' : 'hover:bg-white/10'))} title={`${t(toolLabelKey[name])}（${toolShortcut[name]}）${name.startsWith('smart') && !editor?.confidence_map_url ? t('editor.tool.needs_confidence') : ''}`}>{activeToolIcon(name)}<span className="hidden md:inline">{t(toolLabelKey[name])}</span></button></Popover>
               ))}
+              <Popover trigger="click" placement="bottomLeft" content={<div className="w-44 space-y-3 text-ink"><label className="flex justify-between text-sm">原图<input type="checkbox" checked={showOriginal} onChange={event => setShowOriginal(event.target.checked)} /></label><label className="flex justify-between text-sm">暗化背景<input type="checkbox" checked={dimOutside} onChange={event => setDimOutside(event.target.checked)} /></label></div>}><button aria-label="显示设置" className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm"><Eye size={15} />显示</button></Popover>
               <div className={cx('ml-auto flex items-center gap-1 border-l pl-2', borderClass)}>
                 <button onClick={handleUndo} disabled={!history.length} className={cx('rounded-lg p-1.5 disabled:opacity-30', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title={t('editor.tool.undo')}><Undo2 className="h-3.5 w-3.5" /></button>
                 <button onClick={handleRedo} disabled={!future.length} className={cx('rounded-lg p-1.5 disabled:opacity-30', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title={t('editor.tool.redo')}><Redo2 className="h-3.5 w-3.5" /></button>
@@ -1349,14 +1347,14 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
                     {cursor && tool.startsWith('brush') && !spacePressed && (
                       <span
                         aria-hidden
-                        className="pointer-events-none absolute rounded-full border border-hairline shadow-[0_0_0_1px_rgba(15,23,42,0.45)]"
-                        style={{ left: cursor.x * zoom, top: cursor.y * zoom, width: Math.max(8, brushSize * zoom), height: Math.max(8, brushSize * zoom), transform: 'translate(-50%, -50%)' }}
+                        className="pointer-events-none absolute rounded-full"
+                        style={{ left: cursor.x * zoom, top: cursor.y * zoom, width: Math.max(1, brushSize * zoom), height: Math.max(1, brushSize * zoom), background: brushSize * zoom < 3 ? '#fff' : 'transparent', boxShadow: brushSize * zoom < 3 ? 'none' : 'inset 0 0 0 1px #fff, 0 0 0 1px #17212b', transform: 'translate(-50%, -50%)' }}
                       />
                     )}
                     {cursor && tool.startsWith('pen') && !spacePressed && (
                       <span
                         aria-hidden
-                        className="pointer-events-none absolute h-3 w-3 rounded-full border border-hairline bg-surface-muted shadow-[0_0_0_1px_rgba(15,23,42,0.45)]"
+                        className="pointer-events-none absolute h-1.5 w-1.5 rounded-full border border-hairline bg-transparent shadow-[0_0_0_1px_rgba(15,23,42,0.45)]"
                         style={{ left: cursor.x * zoom, top: cursor.y * zoom, transform: 'translate(-50%, -50%)' }}
                       />
                     )}
@@ -1383,26 +1381,6 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
                 </div>
                 {prediction.ppd_unit === 'unknown' && <div className={cx('mt-3 rounded-lg border p-2 text-xs', isLight ? 'border-[rgba(245,165,36,0.30)] bg-[rgba(245,165,36,0.12)] text-warn-text' : 'border-amber-300/20 bg-amber-300/10 text-amber-100')}>{t('editor.inspector.unit_unknown')}</div>}
 
-                <div className={cx('mt-3 border-t pt-3', borderClass)}><p className={cx('mb-2 text-xs font-semibold', mutedClass)}>{t('editor.inspector.layers')}</p><div className="grid grid-cols-2 gap-1">
-                  <button onClick={() => setShowOriginal((value) => !value)} title={t('editor.layer.original_title')} className={cx('flex items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/5')}><span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-surface-muted" />{t('editor.layer.original')}</span>{showOriginal ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5 text-muted" />}</button>
-                  <button onClick={() => setShowCassava((value) => !value)} title={t('editor.layer.cassava')} className={cx('flex items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/5')}><span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-slate-300" />{t('editor.layer.cassava_short')}</span>{showCassava ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5 text-muted" />}</button>
-                  <button onClick={() => setShowRotten((value) => !value)} title={t('editor.layer.rotten')} className={cx('flex items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/5')}><span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-rose-400" />{t('editor.layer.rotten_short')}</span>{showRotten ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5 text-muted" />}</button>
-                  <button onClick={() => setDimOutside((value) => !value)} title={t('editor.layer.dim_title')} className={cx('flex items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/5')}><span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-surface-muted0" />{t('editor.layer.dim')}</span>{dimOutside ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5 text-muted" />}</button>
-                </div>
-                <div className={cx('mt-3 space-y-2 rounded-lg p-2.5', isLight ? 'bg-surface-muted' : 'bg-white/[0.03]')}>
-                  <div><div className="mb-1 flex justify-between text-xs text-muted"><span>{t('editor.inspector.cassava_opacity')}</span><span>{Math.round(cassavaOpacity * 100)}%</span></div><input aria-label={t('editor.inspector.cassava_opacity')} type="range" min="0" max="100" value={Math.round(cassavaOpacity * 100)} onChange={(event) => setCassavaOpacity(Number(event.target.value) / 100)} className="w-full accent-[var(--accent)]" /></div>
-                  <div><div className="mb-1 flex justify-between text-xs text-muted"><span>{t('editor.inspector.rotten_opacity')}</span><span>{Math.round(rottenOpacity * 100)}%</span></div><input aria-label={t('editor.inspector.rotten_opacity')} type="range" min="0" max="100" value={Math.round(rottenOpacity * 100)} onChange={(event) => setRottenOpacity(Number(event.target.value) / 100)} className="w-full accent-rose-400" /></div>
-                </div></div>
-
-                {(tool === 'brush-add' || tool === 'brush-erase') && <div className={cx('mt-3 border-t pt-3', borderClass)}><div className={cx('mb-1.5 flex items-center justify-between text-xs', mutedClass)}><span>{t('editor.inspector.brush_size')}</span><span>{brushSize}px</span></div><input aria-label={t('editor.inspector.brush_size')} type="range" min="4" max="120" value={brushSize} onChange={(event) => setBrushSize(Number(event.target.value))} className="w-full accent-[var(--accent)]" /></div>}
-                {tool.startsWith('pen') && <div className={cx('mt-3 rounded-lg border p-2.5 text-xs leading-4', isLight ? 'border-[rgba(245,165,36,0.30)] bg-[rgba(245,165,36,0.12)] text-warn-text' : 'border-amber-300/20 bg-amber-300/10 text-amber-100')}>{t('editor.inspector.pen_hint')}</div>}
-                {tool.startsWith('smart') && <div className={cx('mt-3 rounded-lg border p-2.5 text-xs leading-4', isLight ? 'border-[rgba(245,165,36,0.30)] bg-[rgba(245,165,36,0.12)] text-warn-text' : 'border-amber-300/20 bg-amber-300/10 text-amber-100')}>
-                  <div className="mb-1.5 flex items-center justify-between font-semibold"><span className="flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" />{t('editor.inspector.smart_title')}</span><span>{Math.round(smartThreshold * 100)}%</span></div>
-                  <input aria-label={t('editor.inspector.smart_threshold')} type="range" min="2" max="30" value={Math.round(smartThreshold * 100)} onChange={(event) => setSmartThreshold(Number(event.target.value) / 100)} className="w-full accent-[var(--accent)]" />
-                  <p className="mt-1.5">{t('editor.inspector.smart_hint')}</p>
-                  <p className="mt-1">{smartLoading ? t('editor.inspector.smart_loading') : confidenceReady ? t('editor.inspector.smart_ready', { px: smartSelectionCount.toLocaleString() }) : editor?.confidence_map_url ? t('editor.inspector.smart_lazy') : t('editor.inspector.smart_missing')}</p>
-                </div>}
-                <div className="mt-3 flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs" title={`${t('editor.inspector.shortcuts')} · ← 上一张 · → 下一张 · Ctrl+S 保存`}><span className={cx('flex items-center gap-1.5', isLight ? 'text-ink' : 'text-slate-200')}><MousePointer2 className="h-3.5 w-3.5 text-muted" />{t(toolLabelKey[tool])}</span><Keyboard className="h-3.5 w-3.5 text-muted" /></div>
                 <label className="mt-3 block text-xs" htmlFor="correction-note">{t('editor.note.label')}</label>
                 <textarea id="correction-note" value={note} disabled={saving} maxLength={2000} onChange={(event) => { setNote(event.target.value); setDirty(true); }} className="mt-1 w-full rounded-lg border border-slate-500 bg-transparent p-2 text-xs" placeholder={t('editor.note.placeholder')} />
                 </div>

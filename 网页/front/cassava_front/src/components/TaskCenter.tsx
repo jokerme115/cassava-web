@@ -1,5 +1,5 @@
 import { useViewState } from '../utils/useViewState';
-import { Pagination } from 'antd';
+import WorkspacePagination from './WorkspacePagination';
 import { tasksApi } from '../services/api';
 import { message } from '../utils/feedback';
 import React, { useMemo, useState, useEffect, useRef } from 'react';
@@ -35,7 +35,8 @@ const TaskCenter: React.FC<TaskCenterProps> = ({ currentUser }) => {
   const [searchQuery, setSearchQuery] = useViewState('task-search', '');
   const [statusFilter, setStatusFilter] = useViewState<string>('task-status', '');
   const [page, setPage] = useViewState('task-page', 1);
-  const { tasks, totalCount, loading, cancelTask, deleteTask, retryTask, getTaskStatistics, loadTasks } = useTaskStore(currentUser, { search: searchQuery, status: statusFilter, page, pageSize: 30, onInvalidPage: () => setPage(1) });
+  const [pageSize, setPageSize] = useViewState('task-page-size', 48);
+  const { tasks, totalCount, loading, cancelTask, deleteTask, retryTask, getTaskStatistics, loadTasks } = useTaskStore(currentUser, { search: searchQuery, status: statusFilter, page, pageSize, onInvalidPage: () => setPage(1) });
   const [selectedTask, setSelectedTask] = useState<PredictionTask | null>(null);
   const [showTaskDetail, setShowTaskDetail] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -206,7 +207,7 @@ const TaskCenter: React.FC<TaskCenterProps> = ({ currentUser }) => {
           </div>
         </section>
 
-        <section className="flex min-h-0 max-h-full flex-col overflow-hidden rounded-[16px] border border-hairline/80 bg-white shadow-[0_4px_16px_rgba(17,24,28,0.05)]">
+        <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[16px] border border-hairline/80 bg-white shadow-[0_4px_16px_rgba(17,24,28,0.05)]">
           {loading ? (
             <div className="flex flex-1 items-center justify-center">
               <div className="flex items-center gap-3 text-sm text-muted">
@@ -293,10 +294,11 @@ const TaskCenter: React.FC<TaskCenterProps> = ({ currentUser }) => {
                   </article>
                 );
               })}
-              <div className="flex justify-center p-4"><Pagination current={page} pageSize={30} total={totalCount} showSizeChanger={false} onChange={setPage} size="small" /></div>
+
             </div>
           )}
         </section>
+        <WorkspacePagination page={page} pageSize={pageSize} total={totalCount} onChange={(next, size) => { setPage(size === pageSize ? next : 1); setPageSize(size); }} />
       </div>
 
       {showTaskDetail && selectedTask && selectedTaskMeta && (

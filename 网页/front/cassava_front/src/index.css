@@ -492,3 +492,8 @@ body {
 @media (max-width: 639px) {
   .image-primary-actions .import-target { order: 1; flex-basis: 100%; max-width: 100%; text-align: right; }
 }
+
+.workspace-pagination { display: flex; flex: none; min-height: 52px; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid var(--hairline); background: white; padding: 8px 12px; }
+.workspace-pagination .ant-pagination { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 4px; margin: 0; }
+.workspace-pagination .ant-pagination-item, .workspace-pagination .ant-pagination-prev, .workspace-pagination .ant-pagination-next { margin-inline-end: 0; }
+@media (max-width: 639px) { .workspace-pagination { flex-wrap: wrap; } .workspace-pagination .ant-pagination { margin-left: auto; } }

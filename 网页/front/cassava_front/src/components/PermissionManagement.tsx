@@ -50,14 +50,14 @@ const StatCard = ({ icon: Icon, title, value, color }: {
   value: number; 
   color: string; 
 }) => (
-  <div className="rounded-[16px] border border-hairline bg-white p-4 transition-colors hover:bg-surface-muted" data-tone={color}>
+  <div className="min-w-0 px-3 py-2" data-tone={color}>
     <div className="flex items-center gap-3">
-      <div className="rounded-[12px] bg-[rgba(10,132,255,0.08)] p-2.5 text-accent-text">
+      <div className="text-accent-text">
         <Icon className="h-5 w-5" />
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-xs font-medium text-muted">{title}</p>
-        <p className="mt-0.5 text-2xl font-semibold tracking-normal text-ink">{value}</p>
+        <p className="mt-0.5 text-lg font-semibold tabular-nums text-ink">{value}</p>
       </div>
     </div>
   </div>
@@ -84,9 +84,6 @@ const TabButton = ({ active, onClick, children }: {
 const PermissionManagement = () => {
   const { t, i18n } = useTranslation();
   const editorTabLabel = i18n.language.startsWith('zh') ? '权限工作台' : 'Permission Studio';
-  const managementDescription = t('permissions.management_description') === 'permissions.management_description'
-    ? '集中管理系统用户、角色与权限，保持授权链路清晰、可追踪、可快速操作。'
-    : t('permissions.management_description');
   const primaryActionClass = 'inline-flex items-center justify-center rounded-full bg-brand-fill px-5 py-2.5 text-sm font-medium text-white transition hover:bg-brand-fill-hover';
   const secondaryActionClass = 'inline-flex items-center justify-center rounded-full card px-5 py-2.5 text-sm font-medium text-ink-secondary transition hover:border-hairline-strong hover:bg-white';
   const fieldClass = 'w-full rounded-2xl card px-4 py-3 text-sm text-ink outline-none transition focus:border-accent-line focus:ring-4 focus:ring-accent-line/15';
@@ -110,6 +107,7 @@ const PermissionManagement = () => {
   
   // Modal state
   const [showCreatePermissionModal, setShowCreatePermissionModal] = useState(false);
+  const [editingPermission, setEditingPermission] = useState<Permission | null>(null);
   const [showCreateRoleModal, setShowCreateRoleModal] = useState(false);
   const [showCreateUserModal, setShowCreateUserModal] = useState(false);
   const [showEditRoleModal, setShowEditRoleModal] = useState(false);
@@ -281,8 +279,10 @@ const PermissionManagement = () => {
     e.preventDefault();
     setFormError(null);
     try {
-      const newPerm = await permissionsApi.createPermission(newPermission);
-      setPermissions([...permissions, newPerm]);
+      if (editingPermission) await permissionsApi.updatePermission(String(editingPermission.id), newPermission);
+      else await permissionsApi.createPermission(newPermission);
+      await fetchPermissions(permissionPage, permissionPageSize, searchTerm);
+      setEditingPermission(null);
       setNewPermission({ name: '', codename: '', description: '' });
       setShowCreatePermissionModal(false);
     } catch (error: any) {
@@ -457,7 +457,7 @@ const PermissionManagement = () => {
         <h2 className="text-xl font-semibold tracking-normal text-ink">{t('permissions.title')}</h2>
         <PermissionGuard permission={PERMISSIONS.PERMISSIONS.ADD_PERMISSION}>
           <button
-            onClick={() => { setShowCreatePermissionModal(true); setFormError(null); }}
+            onClick={() => { setEditingPermission(null); setNewPermission({name: '', codename: '', description: ''}); setShowCreatePermissionModal(true); setFormError(null); }}
             className={primaryActionClass}
           >
             <Plus className="h-5 w-5" />
@@ -479,22 +479,14 @@ const PermissionManagement = () => {
                   <p className="text-sm text-ink-secondary">{permission.codename}</p>
                 </div>
               </div>
-              <div className="dropdown dropdown-end">
-                <button className="p-2 hover:bg-white rounded-lg transition-colors">
-                  <MoreVertical className="h-4 w-4 text-muted" />
-                </button>
-                <ul className="dropdown-content menu card shadow-lg rounded-xl p-2 w-32">
-                  <PermissionGuard permission={PERMISSIONS.PERMISSIONS.CHANGE_PERMISSION}>
-                    <li><button className="text-ink-secondary hover:bg-white rounded-lg p-2">{t('permissions.edit')}</button></li>
-                  </PermissionGuard>
-                  <PermissionGuard permission={PERMISSIONS.PERMISSIONS.DELETE_PERMISSION}>
-                    <li><button 
-                      onClick={() => handleDeletePermission(permission.id)}
-                      className="text-danger-text hover:bg-red-50 rounded-lg p-2"
-                    >{t('images.delete')}</button></li>
-                  </PermissionGuard>
-                </ul>
-              </div>
+              <Menu as="div" className="relative inline-block text-left">
+                <MenuButton aria-label={`权限操作：${permission.name}`} className="rounded-lg p-2 hover:bg-surface-muted"><MoreVertical className="h-4 w-4 text-muted" /></MenuButton>
+                <MenuItems className="absolute right-0 z-30 mt-1 w-32 rounded-lg border border-hairline bg-white p-1 shadow-lg focus:outline-none">
+                  <PermissionGuard permission={PERMISSIONS.PERMISSIONS.CHANGE_PERMISSION}><MenuItem><button onClick={() => { setEditingPermission(permission); setNewPermission({ name: permission.name, codename: permission.codename, description: permission.description || '' }); setFormError(null); setShowCreatePermissionModal(true); }} className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-surface-muted">{t('permissions.edit')}</button></MenuItem></PermissionGuard>
+                  <PermissionGuard permission={PERMISSIONS.PERMISSIONS.DELETE_PERMISSION}><MenuItem><button onClick={() => handleDeletePermission(permission.id)} className="block w-full rounded px-3 py-2 text-left text-sm text-danger-text hover:bg-red-50">{t('images.delete')}</button></MenuItem></PermissionGuard>
+                </MenuItems>
+              </Menu>
+
             </div>
             <p className="text-ink-secondary text-sm mb-4">{t(getPermissionDescription(permission.codename))}</p>
             <div className="flex items-center justify-between text-xs text-muted">
@@ -808,37 +800,10 @@ const PermissionManagement = () => {
   }
 
   return (
-    <div className="page-shell page-shell--flush">
-      <div className="mx-auto max-w-[1440px] space-y-6">
-        <section className="overflow-hidden rounded-[24px] border border-hairline bg-white shadow-[0_10px_30px_rgba(17,17,26,0.045)]">
-          <div className="grid gap-6 px-6 py-6 sm:px-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center lg:px-10">
-            <div>
-              <h1 className="mt-4 text-3xl font-semibold tracking-normal text-ink ">
-                {t('permissions.title')}
-              </h1>
-              <p className="mt-2 max-w-3xl text-sm leading-7 text-muted">{managementDescription}</p>
-            </div>
-            <div className="grid gap-4 rounded-[16px] border border-hairline bg-surface-muted p-5 text-sm sm:grid-cols-2">
-              <div>
-                <p className="text-xs uppercase tracking-[0.18em] text-muted">当前焦点</p>
-                <p className="mt-1.5 text-base font-medium text-ink">{activeTab === 'editor' ? editorTabLabel : t(`permissions.${activeTab}`)}</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.18em] text-muted">工作区状态</p>
-                <p className="mt-1.5 text-base font-medium text-ink">{totalUserCount || users.length} 位用户 / {totalRoleCount || roles.length} 个角色</p>
-              </div>
-              <div className="hidden sm:col-span-2 sm:block">
-                <p className="text-xs uppercase tracking-[0.18em] text-muted">使用建议</p>
-                <p className="mt-1.5 text-xs leading-6 text-muted">
-                  先在用户列表完成账户操作，再进入权限工作台处理细粒度授权，效率最高。
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
+    <div className="w-full">
+      <div className="w-full space-y-4">
         {/* Header stats cards */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-5">
+        <div className="grid grid-cols-2 gap-2 border-b border-hairline pb-3 md:grid-cols-3 xl:grid-cols-5">
           <StatCard 
             icon={Key} 
             title={t('permissions.total_permissions')} 
@@ -872,7 +837,7 @@ const PermissionManagement = () => {
         </div>
 
         {/* Main content area */}
-        <div className="overflow-hidden rounded-[24px] border border-hairline/80 bg-white shadow-[0_32px_110px_rgba(15,23,42,0.08)]">
+        <div className="min-w-0 bg-white">
           {/* Tab navigation */}
           <div className="border-b border-hairline bg-white px-4 py-4 sm:px-6">
             <div className="flex flex-wrap gap-2">
@@ -976,7 +941,7 @@ const PermissionManagement = () => {
               <div className="rounded-t-[16px] border-b border-hairline bg-brand-fill px-6 py-5">
                 <div className="flex items-center space-x-3">
                   <Plus className="h-6 w-6 text-white" />
-                  <h3 className="text-xl font-semibold text-white">{t('permissions.create_permission')}</h3>
+                  <h3 className="text-xl font-semibold text-white">{editingPermission ? t('permissions.edit') : t('permissions.create_permission')}</h3>
                 </div>
               </div>
               <form onSubmit={handleCreatePermission}>
@@ -1033,7 +998,7 @@ const PermissionManagement = () => {
                     type="submit"
                     className={primaryActionClass}
                   >
-                    {t('permissions.create')}
+                    {editingPermission ? t('common.save') : t('permissions.create')}
                   </button>
                 </div>
               </form>
