@@ -1,6 +1,8 @@
 # GitHub 同步说明
 
-私有仓库：https://github.com/jokerme115/cassava-web
+公开仓库：https://github.com/jokerme115/cassava-web
+
+2026-10-30 按用户明确要求，由私有改为公开，并已核验 GitHub 可见性为 PUBLIC。
 
 远端默认分支 main。本地原开发分支 main 含有早期数据库备份，因此采用单独的 github-main 发布分支，保存当前源码快照，不携带原始历史中的数据库。原分支、文件和暂存区保留，旧仓库 jokerme115/cassava 不受影响。
 

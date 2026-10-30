@@ -71,9 +71,9 @@ gh_env = {**os.environ, 'GH_TOKEN': values['password']}
 assert run(['gh', 'api', 'user', '--jq', '.login'], env=gh_env) == 'jokerme115'
 check = subprocess.run(['gh', 'repo', 'view', REPO, '--json', 'isPrivate'], env=gh_env, capture_output=True)
 if check.returncode:
-    run(['gh', 'repo', 'create', REPO, '--private', '--description', 'Cassava PPD web workspace: image management, inference, review and export'], env=gh_env)
+    run(['gh', 'repo', 'create', REPO, '--public', '--description', 'Cassava PPD web workspace: image management, inference, review and export'], env=gh_env)
 metadata = json.loads(run(['gh', 'repo', 'view', REPO, '--json', 'isPrivate,url'], env=gh_env))
-assert metadata['isPrivate'] is True
+assert metadata['isPrivate'] is False
 remotes = run(['git', 'remote']).splitlines()
 if 'github' not in remotes:
     run(['git', 'remote', 'add', 'github', URL])
@@ -82,6 +82,6 @@ run(['git', 'config', 'remote.github.push', 'refs/heads/github-main:refs/heads/m
 run(['git', 'push', 'github', 'refs/heads/github-main:refs/heads/main'])
 remote_sha = run(['git', 'ls-remote', 'github', 'refs/heads/main']).split()[0]
 assert remote_sha == commit
-proof = {'url': metadata['url'], 'private': True, 'commit': commit, 'files': len(keep), 'bytes': manifest['bytes'], 'excluded': dict(excluded), 'local_branch': run(['git', 'branch', '--show-current'])}
+proof = {'url': metadata['url'], 'private': False, 'commit': commit, 'files': len(keep), 'bytes': manifest['bytes'], 'excluded': dict(excluded), 'local_branch': run(['git', 'branch', '--show-current'])}
 (ROOT / 'output/github-publish-proof.json').write_text(json.dumps(proof, ensure_ascii=False, indent=2), encoding='utf-8')
 print(json.dumps(proof, ensure_ascii=False))
