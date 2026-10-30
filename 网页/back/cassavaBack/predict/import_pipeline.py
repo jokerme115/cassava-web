@@ -145,6 +145,9 @@ def process_job(job_id, lease):
                     common = PurePosixPath(entries[0][0]).parts[0]
                     strip_outer = all(len(PurePosixPath(n).parts) > 1 and PurePosixPath(n).parts[0] == common for n, _ in entries)
                     for original, size in entries:
+                        reserve = getattr(settings, 'IMPORT_MIN_FREE_BYTES', 512 * 1024**2)
+                        if shutil.disk_usage(staging_root()).free < size * 2 + reserve:
+                            raise ValueError('磁盘可用空间不足，请释放空间后重试失败项')
                         job.refresh_from_db()
                         if job.state == 'cancelled' or job.lease != lease: return
                         ImportJob.objects.filter(pk=job.pk, lease=lease).update(heartbeat=timezone.now())
