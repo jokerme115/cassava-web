@@ -17,10 +17,10 @@ class MultiSessionLoginTests(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='sess_user', password='sess-pass-123')
 
-    def login(self):
+    def login(self, remember_me=False):
         response = self.client.post(
             LOGIN_URL,
-            {'username': 'sess_user', 'password': 'sess-pass-123'},
+            {'username': 'sess_user', 'password': 'sess-pass-123', 'remember_me': remember_me},
             format='json',
         )
         self.assertEqual(response.status_code, 200, response.data)
@@ -90,3 +90,48 @@ class MultiSessionLoginTests(APITestCase):
 
         still_ok = self.client.get('/api/images/', **self.auth(active))
         self.assertIn(still_ok.status_code, (200, 403))
+
+    def test_remembered_session_survives_days_of_inactivity(self):
+        token = self.login(remember_me=True)
+        session = LoginSession.objects.get(key=token)
+        self.assertAlmostEqual((session.expires_at - session.created).total_seconds(), 30 * 86400, delta=2)
+        LoginSession.objects.filter(key=token).update(last_seen=timezone.now()-timedelta(days=2))
+        response = self.client.get('/api/auth/user/', **self.auth(token))
+        self.assertEqual(response.status_code, 200, response.data)
+        session.refresh_from_db()
+        self.assertAlmostEqual((session.expires_at - session.created).total_seconds(), 30 * 86400, delta=2)
+
+    def test_remembered_session_expires_even_if_recently_used(self):
+        token = self.login(remember_me=True)
+        LoginSession.objects.filter(key=token).update(
+            expires_at=timezone.now()-timedelta(seconds=1), last_seen=timezone.now())
+        response = self.client.get('/api/auth/user/', **self.auth(token))
+        self.assertEqual(response.status_code, 401)
+        self.assertFalse(LoginSession.objects.filter(key=token).exists())
+
+    def test_temporary_session_has_no_persistent_expiry(self):
+        token = self.login()
+        self.assertIsNone(LoginSession.objects.get(key=token).expires_at)
+        self.assertTrue(self.client.session.get_expire_at_browser_close())
+
+    def test_string_false_is_rejected_instead_of_enabling_remember(self):
+        response = self.client.post(LOGIN_URL, {'username': 'sess_user', 'password': 'sess-pass-123',
+            'remember_me': 'false'}, format='json')
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(LoginSession.objects.filter(user=self.user).exists())
+
+    def test_password_change_revokes_other_remembered_devices(self):
+        current = self.login(remember_me=True)
+        other = self.login(remember_me=True)
+        response = self.client.post('/api/auth/password/change/', {'old_password': 'sess-pass-123',
+            'new_password': 'new-unique-password-567!'}, format='json', **self.auth(current))
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertTrue(LoginSession.objects.filter(key=current).exists())
+        self.assertFalse(LoginSession.objects.filter(key=other).exists())
+
+    def test_remember_does_not_bypass_disabled_account(self):
+        token = self.login(remember_me=True)
+        self.user.is_active = False
+        self.user.save(update_fields=['is_active'])
+        response = self.client.get('/api/auth/user/', **self.auth(token))
+        self.assertEqual(response.status_code, 401)

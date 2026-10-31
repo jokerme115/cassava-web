@@ -36,7 +36,9 @@ class ExpiringTokenAuthentication(TokenAuthentication):
 
         # 检查是否过期
         now = timezone.now()
-        if (now - last_activity).total_seconds() > expire_seconds:
+        expired = (now >= token.expires_at if token.expires_at is not None
+                   else (now - last_activity).total_seconds() > expire_seconds)
+        if expired:
             token.delete()
             raise exceptions.AuthenticationFailed('会话已超时，请重新登录')
             

@@ -54,7 +54,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate, systemSettin
           'X-CSRFToken': getCookie('csrftoken') || ''
         },
         credentials: 'include',
-        body: JSON.stringify({ username: loginId, password })
+        body: JSON.stringify({ username: loginId, password, remember_me: rememberMe })
       });
 
       const data = await response.json();

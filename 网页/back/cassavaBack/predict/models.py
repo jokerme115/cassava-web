@@ -857,6 +857,7 @@ class LoginSession(models.Model):
     )
     created = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
     last_seen = models.DateTimeField(null=True, blank=True, verbose_name='最近活跃')
+    expires_at = models.DateTimeField(null=True, blank=True, verbose_name='记住登录到期时间')
 
     class Meta:
         db_table = 'predict_login_session'

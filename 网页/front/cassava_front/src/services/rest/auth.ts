@@ -17,8 +17,8 @@ export const statusApi = {
 
 // Login API
 export const authApi = {
-  login: (username: string, password: string): Promise<{ token: string }> =>
-    axios.post(`${API_BASE_URL}/auth/login/`, { username, password }).then(res => res.data),
+  login: (username: string, password: string, rememberMe = false): Promise<{ token: string }> =>
+    axios.post(`${API_BASE_URL}/auth/login/`, { username, password, remember_me: rememberMe }).then(res => res.data),
   logout: (): Promise<void> =>
     api.post('/auth/logout/').then(res => res.data),
   guestSession: (): Promise<{ guest_token: string; user: any }> =>

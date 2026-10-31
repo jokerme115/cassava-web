@@ -15,6 +15,8 @@ describe('LoginPage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
+    sessionStorage.clear();
     global.fetch = vi.fn().mockImplementation((url) => {
         if (url.toString().includes('csrf')) {
             return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
@@ -71,5 +73,20 @@ describe('LoginPage', () => {
       expect(global.fetch).toHaveBeenCalledWith('/api/auth/login/', expect.anything());
       expect(mockOnLogin).toHaveBeenCalledWith(mockUser);
     });
+  });
+
+  it.each([false, true])('sends remember state %s to server and keeps the matching storage', async (remember) => {
+    vi.mocked(global.fetch).mockResolvedValue({ json: async () => ({ success: true, user: { id: 1 }, token: 'remember-token' }) } as Response);
+    render(<LoginPage onLogin={mockOnLogin} onNavigate={mockOnNavigate} />);
+    fireEvent.change(screen.getByLabelText('login.username_or_email'), { target: { value: 'test' } });
+    fireEvent.change(screen.getByLabelText('login.password_label'), { target: { value: 'pass' } });
+    if (remember) fireEvent.click(screen.getByLabelText('login.remember_me'));
+    fireEvent.click(screen.getByRole('button', { name: 'login.sign_in' }));
+    await waitFor(() => expect(mockOnLogin).toHaveBeenCalled());
+    expect(global.fetch).toHaveBeenCalledWith('/api/auth/login/', expect.objectContaining({
+      body: JSON.stringify({ username: 'test', password: 'pass', remember_me: remember }),
+    }));
+    expect(localStorage.getItem('authToken')).toBe(remember ? 'remember-token' : null);
+    expect(sessionStorage.getItem('authToken')).toBe(remember ? null : 'remember-token');
   });
 });

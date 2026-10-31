@@ -45,6 +45,9 @@ def user_login(request):
     """
     username = request.data.get('username') or request.data.get('email')
     password = request.data.get('password')
+    remember_me = request.data.get('remember_me', False)
+    if not isinstance(remember_me, bool):
+        return Response({'error': '记住我必须为布尔值'}, status=status.HTTP_400_BAD_REQUEST)
     
     if not username or not password:
         return Response({
@@ -82,6 +85,8 @@ def user_login(request):
             
             # 登录用户
             login(request, user)
+            remember_seconds = int(getattr(settings, 'REMEMBER_ME_SECONDS', 30 * 24 * 3600))
+            request.session.set_expiry(remember_seconds if remember_me else 0)
             
             # 多端登录：每次登录签发新会话，保留最近 MAX_SESSIONS_PER_USER 个。
             # 历史上这里是「登录即删除该用户全部 Token」（单会话），导致 A 端刚登录
@@ -89,7 +94,8 @@ def user_login(request):
             # 仅裁剪超出上限的最旧会话，避免会话表无限增长。
             max_sessions = max(int(getattr(settings, 'MAX_SESSIONS_PER_USER', 5) or 5), 1)
             with transaction.atomic():
-                token = LoginSession.objects.create(user=user)
+                token = LoginSession.objects.create(user=user, expires_at=(
+                    timezone.now() + timedelta(seconds=remember_seconds) if remember_me else None))
                 stale_keys = list(
                     LoginSession.objects.filter(user=user)
                     .order_by('-created')
@@ -249,6 +255,10 @@ def change_password(request):
 
     user.set_password(new_password)
     user.save()
+    sessions = LoginSession.objects.filter(user=user)
+    if isinstance(request.auth, LoginSession):
+        sessions = sessions.exclude(key=request.auth.key)
+    sessions.delete()
     
     # Update session auth hash to keep user logged in
     from django.contrib.auth import update_session_auth_hash
