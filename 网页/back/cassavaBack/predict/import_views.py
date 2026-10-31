@@ -13,19 +13,27 @@ from rest_framework.response import Response
 from .models import ImportJob, ImportItem, Folder, ProcessingTask
 from .permissions import HasPermission
 from .import_pipeline import (safe_relative, item_path, staging_root, CHUNK_SIZE, MAX_SOURCE_BYTES,
-                              MAX_ENTRIES, ARCHIVES, IMAGES)
+                              MAX_ENTRIES, ARCHIVES, IMAGES, report_progress)
 from .recycling import unique_name
 
 
 def job_data(job, detailed=True):
+    from django.db.models import Sum, Count, Q, F
+    sources = job.items.filter(archive_item=False)
+    transfer = sources.aggregate(bytes_total=Sum('size'), bytes_received=Sum('offset'),
+        total_files=Count('pk'), completed_files=Count('pk', filter=Q(offset=F('size'))))
+    transfer['files'] = list(sources.values('relative_path', 'size', 'offset')[:5])
+    transfer['has_archive'] = sources.filter(relative_path__iregex=r'\.(zip|7z|rar)$').exists()
     items = job.items.order_by('pk')
-    fields = ['id', 'relative_path', 'size', 'offset', 'state', 'error', 'image_id']
+    fields = ['id', 'relative_path', 'size', 'offset', 'state', 'error', 'image_id', 'archive_item']
     if detailed:
         fields += ['sha256', 'chunk_hashes']
     else:
         items = items.exclude(error='')
     return {'id': job.pk, 'task_id': job.task_id, 'state': job.state, 'error': job.error,
             'summary': job.summary, 'options': {key: value for key, value in job.options.items() if key != 'directory_map'},
+            'transfer': transfer, 'progress': job.summary.get('progress'),
+            'heartbeat': job.heartbeat.isoformat() if job.heartbeat else None,
             'target_folder': job.target_folder_id,
             'destination_folder': job.options.get('directory_map', {}).get('/' + job.options.get('resolved_name', ''), job.target_folder_id),
             'items': list(items.values(*fields)), 'created_at': job.created_at.isoformat()}
@@ -135,6 +143,7 @@ class ImportJobViewSet(viewsets.GenericViewSet):
             hashes.append({'offset': offset, 'size': payload.size, 'sha256': hashlib.sha256(payload.read()).hexdigest()})
             item.chunk_hashes = hashes
             item.save(update_fields=['offset', 'chunk_hashes'])
+            ImportJob.objects.filter(pk=job.pk, state='uploading').update(heartbeat=timezone.now(), error='')
         return Response({'offset': item.offset})
 
     @action(detail=True, methods=['post'])
@@ -145,16 +154,32 @@ class ImportJobViewSet(viewsets.GenericViewSet):
         if job.state != 'uploading':
             raise ValidationError('任务不能提交')
         for item in job.items.all():
+            report_progress(job, 'verifying', item.relative_path, 0, item.size)
             path = item_path(item)
             if item.offset != item.size or not path.is_file() or path.stat().st_size != item.size:
                 raise ValidationError(f'文件尚未传完整：{item.relative_path}')
             digest = hashlib.sha256()
+            verified = 0
             with path.open('rb') as stream:
                 for chunk in iter(lambda: stream.read(CHUNK_SIZE), b''):
                     digest.update(chunk)
+                    verified += len(chunk)
+                    if verified == item.size or verified % (32 * 1024**2) == 0:
+                        report_progress(job, 'verifying', item.relative_path, verified, item.size)
+                        if ImportJob.objects.filter(pk=job.pk, state='cancelled').exists():
+                            job.refresh_from_db()
+                            return Response(job_data(job))
             item.sha256, item.state = digest.hexdigest(), 'ready'
             item.save(update_fields=['sha256', 'state'])
-        ImportJob.objects.filter(pk=job.pk, state='uploading').update(state='queued', heartbeat=timezone.now())
+        ImportJob.objects.filter(pk=job.pk, state='uploading').update(state='queued', heartbeat=timezone.now(), error='')
+        job.refresh_from_db()
+        return Response(job_data(job))
+
+    @action(detail=True, methods=['post'])
+    def pause(self, request, pk=None):
+        job = self.get_object()
+        reason = str(request.data.get('reason') or '上传已中断，请重新选择原文件继续')[:500]
+        ImportJob.objects.filter(pk=job.pk, state='uploading').update(error=reason)
         job.refresh_from_db()
         return Response(job_data(job))
 

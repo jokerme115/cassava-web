@@ -26,6 +26,16 @@ ARCHIVES = {'.zip', '.7z', '.rar'}
 IMAGES = {'.jpg', '.jpeg', '.png', '.bmp', '.webp', '.tif', '.tiff', '.mpo'}
 
 
+def report_progress(job, stage, current_file='', completed=0, total=None, **extra):
+    progress = {'stage': stage, 'current_file': current_file, 'completed': completed,
+                'total': total, 'updated_at': timezone.now().isoformat(), **extra}
+    job.summary = {**job.summary, 'progress': progress}
+    query = ImportJob.objects.filter(pk=job.pk, state__in=['uploading', 'queued', 'running'])
+    if job.lease:
+        query = query.filter(lease=job.lease)
+    query.update(summary=job.summary, heartbeat=timezone.now())
+
+
 def staging_root():
     root = Path(getattr(settings, 'IMPORT_STAGING_ROOT', settings.BASE_DIR / 'import_staging'))
     root.mkdir(parents=True, exist_ok=True)
@@ -120,8 +130,10 @@ def sync_progress(job):
     counts = dict(job.items.exclude(state='container').values('state').annotate(n=Count('pk')).values_list('state', 'n'))
     total = sum(counts.values())
     done = sum(counts.get(state, 0) for state in ('success', 'skipped', 'failed'))
-    job.summary = {'total': total, 'success': counts.get('success', 0), 'skipped': counts.get('skipped', 0),
+    job.summary = {**job.summary, 'total': total, 'success': counts.get('success', 0), 'skipped': counts.get('skipped', 0),
                    'failed': counts.get('failed', 0), 'finished': done}
+    if job.summary.get('progress', {}).get('stage') == 'importing':
+        job.summary['progress'].update(completed=done, total=total, updated_at=timezone.now().isoformat())
     job.heartbeat = timezone.now()
     job.save(update_fields=['summary', 'heartbeat'])
     ProcessingTask.all_objects.filter(pk=job.task_id).update(progress=int(100 * done / max(total, 1)),
@@ -139,12 +151,14 @@ def process_job(job_id, lease):
                 return
             try:
                 if PurePosixPath(item.relative_path).suffix.lower() in ARCHIVES and not item.archive_item:
+                    report_progress(job, 'scanning', item.relative_path)
                     entries = archive_entries(item_path(item))
                     if not entries:
                         raise ValueError('压缩包中没有支持的图片')
                     common = PurePosixPath(entries[0][0]).parts[0]
                     strip_outer = all(len(PurePosixPath(n).parts) > 1 and PurePosixPath(n).parts[0] == common for n, _ in entries)
-                    for original, size in entries:
+                    for index, (original, size) in enumerate(entries):
+                        report_progress(job, 'extracting', original, index, len(entries), archive=item.relative_path)
                         reserve = getattr(settings, 'IMPORT_MIN_FREE_BYTES', 512 * 1024**2)
                         if shutil.disk_usage(staging_root()).free < size * 2 + reserve:
                             raise ValueError('磁盘可用空间不足，请释放空间后重试失败项')
@@ -177,9 +191,12 @@ def process_job(job_id, lease):
                                     proc.kill(); proc.wait()
                         child.offset = size; child.state = 'ready'; child.error = ''
                         child.save(update_fields=['offset', 'state', 'error'])
+                        report_progress(job, 'extracting', original, index + 1, len(entries), archive=item.relative_path)
                     # Container is not an image outcome; keep a stable scan marker.
                     item.state = 'container'; item.save(update_fields=['state'])
                 else:
+                    report_progress(job, 'importing', item.relative_path,
+                        job.summary.get('finished', 0), job.summary.get('total'))
                     relative = item.relative_path
                     parts = PurePosixPath(relative).parts
                     if job.options.get('mode') in ('new', 'custom') and parts:
@@ -210,10 +227,10 @@ def process_job(job_id, lease):
         if job.items.filter(state='ready').exists():
             return process_job(job.pk, lease)
         sync_progress(job)
-        job.state = 'partial' if job.summary.get('failed') else 'completed'
+        job.state = ('partial' if job.summary.get('success', 0) + job.summary.get('skipped', 0) else 'failed') if job.summary.get('failed') else 'completed'
         job.save(update_fields=['state'])
         sync_progress(job)
-        ProcessingTask.all_objects.filter(pk=job.task_id).update(status='completed', progress=100,
+        ProcessingTask.all_objects.filter(pk=job.task_id).update(status='failed' if job.state == 'failed' else 'completed', progress=100,
             error=f'{job.summary.get("failed", 0)} 个文件失败' if job.summary.get('failed') else '')
     except Exception as exc:
         if ImportJob.objects.filter(pk=job.pk, state='cancelled').exists():

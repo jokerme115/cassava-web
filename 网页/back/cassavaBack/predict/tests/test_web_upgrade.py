@@ -1,6 +1,7 @@
 import hashlib
 import shutil
 import tempfile
+from unittest.mock import patch, MagicMock
 from io import BytesIO
 from pathlib import Path
 from PIL import Image
@@ -9,7 +10,7 @@ from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APITestCase
 from predict.models import CassavaImage, Folder, ProcessingTask, PredictionResult, PredictionCorrection, ImportJob
-from predict.import_pipeline import claim_next_job, archive_entries, item_path
+from predict.import_pipeline import claim_next_job, archive_entries, item_path, report_progress
 from predict.services.image import ImageService
 from predict.recycling import recycle
 
@@ -32,6 +33,78 @@ class WebUpgradeTest(APITestCase):
 
     def tearDown(self):
         self.override.disable(); shutil.rmtree(self.root)
+
+    def test_compact_import_list_exposes_acknowledged_bytes_and_source_name(self):
+        job = self.client.post('/api/imports/', {'files': [{'path': '中文资料.zip', 'size': 10}]}, format='json').data
+        item = job['items'][0]
+        reply = self.client.post(f'/api/imports/{job["id"]}/items/{item["id"]}/chunk/',
+            {'offset': 0, 'chunk': SimpleUploadedFile('chunk', b'abcd')}, format='multipart')
+        self.assertEqual(reply.status_code, 200)
+        compact = self.client.get('/api/imports/').data[0]
+        self.assertEqual(compact['items'], [])
+        self.assertEqual(compact['transfer']['bytes_received'], 4)
+        self.assertEqual(compact['transfer']['bytes_total'], 10)
+        self.assertTrue(compact['transfer']['has_archive'])
+        self.assertEqual(compact['transfer']['files'][0]['relative_path'], '中文资料.zip')
+        self.assertIsNotNone(compact['heartbeat'])
+
+    def test_upload_interruption_survives_reload_and_next_chunk_clears_it(self):
+        job = self.client.post('/api/imports/', {'files': [{'path': 'a.zip', 'size': 4}]}, format='json').data
+        self.client.post(f'/api/imports/{job["id"]}/pause/', {'reason': '网络连接中断'}, format='json')
+        self.assertEqual(self.client.get('/api/imports/').data[0]['error'], '网络连接中断')
+        item = job['items'][0]
+        self.client.post(f'/api/imports/{job["id"]}/items/{item["id"]}/chunk/',
+            {'offset': 0, 'chunk': SimpleUploadedFile('chunk', b'abcd')}, format='multipart')
+        self.assertEqual(self.client.get('/api/imports/').data[0]['error'], '')
+
+    def test_other_account_cannot_pause_an_import(self):
+        job = self.client.post('/api/imports/', {'files': [{'path': 'a.zip', 'size': 1}]}, format='json').data
+        other = User.objects.create_superuser('other-import', password='test-pass')
+        self.client.force_authenticate(other)
+        reply = self.client.post(f'/api/imports/{job["id"]}/pause/', {'reason': 'x'}, format='json')
+        self.assertEqual(reply.status_code, 404)
+
+    def test_worker_reports_scan_extract_and_import_without_counting_archive_as_image(self):
+        job = self.client.post('/api/imports/', {'files': [{'path': '中文.zip', 'size': 3}]}, format='json').data
+        self.client.post(f'/api/imports/{job["id"]}/items/{job["items"][0]["id"]}/chunk/',
+            {'offset': 0, 'chunk': SimpleUploadedFile('chunk', b'zip')}, format='multipart')
+        with patch('predict.import_views.report_progress', wraps=report_progress) as verify:
+            self.assertEqual(self.client.post(f'/api/imports/{job["id"]}/finalize/').status_code, 200)
+            self.assertEqual(verify.call_args.args[1], 'verifying')
+        process = MagicMock()
+        process.stdout = BytesIO(photo());process.wait.return_value = 0;process.poll.return_value = 0
+        with patch('predict.import_pipeline.archive_entries', return_value=[('第1天/a.jpg', len(photo()))]), \
+             patch('predict.import_pipeline.subprocess.Popen', return_value=process), \
+             patch('predict.import_pipeline.report_progress', wraps=report_progress) as progress:
+            claim_next_job()
+        self.assertTrue({'scanning', 'extracting', 'importing'}.issubset({c.args[1] for c in progress.call_args_list}))
+        reply = self.client.get('/api/imports/').data[0]
+        self.assertEqual(reply['state'], 'completed')
+        self.assertEqual(reply['summary']['success'], 1)
+        self.assertEqual(reply['transfer']['bytes_total'], 3)
+        self.assertEqual(reply['transfer']['total_files'], 1)
+        self.assertEqual(reply['progress']['completed'], 1)
+
+    def test_cancelled_import_is_not_relabelled_by_late_progress(self):
+        job = self.client.post('/api/imports/', {'files': [{'path': 'a.zip', 'size': 1}]}, format='json').data
+        obj = ImportJob.objects.get(pk=job['id'])
+        self.client.post(f'/api/imports/{job["id"]}/cancel/')
+        report_progress(obj, 'extracting', 'a.jpg', 1, 3)
+        obj.refresh_from_db()
+        self.assertEqual(obj.state, 'cancelled')
+        self.assertNotIn('progress', obj.summary)
+
+    def test_bad_archive_is_failed_instead_of_claiming_partial_success(self):
+        job = self.client.post('/api/imports/', {'files': [{'path': 'bad.zip', 'size': 3}]}, format='json').data
+        self.client.post(f'/api/imports/{job["id"]}/items/{job["items"][0]["id"]}/chunk/',
+            {'offset': 0, 'chunk': SimpleUploadedFile('chunk', b'bad')}, format='multipart')
+        self.client.post(f'/api/imports/{job["id"]}/finalize/')
+        with patch('predict.import_pipeline.archive_entries', side_effect=ValueError('压缩包已损坏')):
+            claim_next_job()
+        reply = self.client.get('/api/imports/').data[0]
+        self.assertEqual(reply['state'], 'failed')
+        self.assertEqual(reply['items'][0]['error'], '压缩包已损坏')
+        self.assertEqual(ProcessingTask.objects.get(pk=job['task_id']).status, 'failed')
 
     def test_dedup_is_exactly_one_folder_and_same_name_different_bytes_is_retained(self):
         a = Folder.objects.create(owner=self.user, name='a')
