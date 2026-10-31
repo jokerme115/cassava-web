@@ -105,6 +105,7 @@ class WebUpgradeTest(APITestCase):
         reply = self.client.get('/api/imports/').data[0]
         self.assertEqual(reply['state'], 'failed')
         self.assertEqual(reply['items'][0]['error'], '压缩包已损坏')
+        self.assertEqual(reply['error'], '压缩包已损坏')
         self.assertEqual(ProcessingTask.objects.get(pk=job['task_id']).status, 'failed')
 
     def test_dedup_is_exactly_one_folder_and_same_name_different_bytes_is_retained(self):

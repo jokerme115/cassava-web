@@ -228,10 +228,11 @@ def process_job(job_id, lease):
             return process_job(job.pk, lease)
         sync_progress(job)
         job.state = ('partial' if job.summary.get('success', 0) + job.summary.get('skipped', 0) else 'failed') if job.summary.get('failed') else 'completed'
-        job.save(update_fields=['state'])
+        job.error = (job.items.filter(state='failed').order_by('pk').values_list('error', flat=True).first() or '') if job.summary.get('failed') else ''
+        job.save(update_fields=['state', 'error'])
         sync_progress(job)
         ProcessingTask.all_objects.filter(pk=job.task_id).update(status='failed' if job.state == 'failed' else 'completed', progress=100,
-            error=f'{job.summary.get("failed", 0)} 个文件失败' if job.summary.get('failed') else '')
+            error=f'{job.summary.get("failed", 0)} 个文件失败：{job.error}' if job.summary.get('failed') else '')
     except Exception as exc:
         if ImportJob.objects.filter(pk=job.pk, state='cancelled').exists():
             return
