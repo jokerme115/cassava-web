@@ -74,6 +74,7 @@ class WebUpgradeTest(APITestCase):
         process = MagicMock()
         process.stdout = BytesIO(photo());process.wait.return_value = 0;process.poll.return_value = 0
         with patch('predict.import_pipeline.archive_entries', return_value=[('第1天/a.jpg', len(photo()))]), \
+             patch('predict.import_pipeline.archive_runtime', return_value='fixture-7zz'), \
              patch('predict.import_pipeline.subprocess.Popen', return_value=process), \
              patch('predict.import_pipeline.report_progress', wraps=report_progress) as progress:
             claim_next_job()
