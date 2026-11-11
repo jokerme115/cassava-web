@@ -1,6 +1,7 @@
 export type CorrectionDraft = {
   id: string;
   baseVersion: number;
+  rotation?: number;
   width: number;
   height: number;
   cassava: Uint8Array;

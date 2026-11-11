@@ -1,4 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import { getUserPreferences } from '../utils/userPreferences';
+import { useViewState } from '../utils/useViewState';
+import WorkspacePagination from './WorkspacePagination';
+import { tasksApi } from '../services/api';
+import { message } from '../utils/feedback';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   Activity,
   AlertCircle,
@@ -15,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useTaskStore } from '../hooks/useTaskStore';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import PageHeader from './PageHeader';
 import { PredictionTask, User } from '../types';
 
@@ -26,13 +31,30 @@ interface TaskCenterProps {
 const TaskCenter: React.FC<TaskCenterProps> = ({ currentUser }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { tasks, loading, cancelTask, deleteTask, retryTask, getTaskStatistics, loadTasks } = useTaskStore(currentUser);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const focusedLink = useRef<string | null>(null);
+  const [searchQuery, setSearchQuery] = useViewState('task-search', '');
+  const [statusFilter, setStatusFilter] = useViewState<string>('task-status', '');
+  const [page, setPage] = useViewState('task-page', 1);
+  const [pageSize, setPageSize] = useViewState('task-page-size', getUserPreferences().listPageSize);
+  const { tasks, totalCount, loading, cancelTask, deleteTask, retryTask, getTaskStatistics, loadTasks } = useTaskStore(currentUser, { search: searchQuery, status: statusFilter, page, pageSize, onInvalidPage: () => setPage(1) });
   const [selectedTask, setSelectedTask] = useState<PredictionTask | null>(null);
   const [showTaskDetail, setShowTaskDetail] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+
+  useEffect(() => {
+    const id = searchParams.get('task');
+    if (id && id !== focusedLink.current) {
+      const task = tasks.find(item => String(item.id) === id);
+      if (task) { setSelectedTask(task); setShowTaskDetail(true); focusedLink.current = id; }
+      else if (!loading) {
+        focusedLink.current = id;
+        void tasksApi.getById(id).then(item => { setSelectedTask(item); setShowTaskDetail(true); }).catch(() => message.error('任务不存在或无权访问'));
+      }
+    }
+    setSelectedTask(current => current ? tasks.find(item => item.id === current.id) || current : current);
+  }, [tasks, searchParams, loading]);
 
   const statistics = getTaskStatistics();
 
@@ -51,9 +73,12 @@ const TaskCenter: React.FC<TaskCenterProps> = ({ currentUser }) => {
 
   const confirmDelete = async () => {
     if (!pendingDelete) return;
-    await deleteTask(pendingDelete);
-    setConfirmOpen(false);
-    setPendingDelete(null);
+    try {
+      await deleteTask(pendingDelete);
+      if (tasks.length === 1 && page > 1) setPage(page - 1);
+      setConfirmOpen(false);
+      setPendingDelete(null);
+    } catch { message.error('移入回收站失败，请重试'); }
   };
 
   const getStatusMeta = (status: string) => {
@@ -162,7 +187,7 @@ const TaskCenter: React.FC<TaskCenterProps> = ({ currentUser }) => {
                 type="text"
                 placeholder={t('tasks.search')}
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
                 className="w-full rounded-xl border border-hairline bg-white py-2 pl-9 pr-3 text-sm text-ink outline-none transition focus:border-slate-400 focus:bg-white"
               />
             </div>
@@ -170,7 +195,7 @@ const TaskCenter: React.FC<TaskCenterProps> = ({ currentUser }) => {
               id="task-status-filter"
               name="task-status-filter"
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
               aria-label={t('tasks.all_status')}
               className="w-full rounded-xl border border-hairline bg-white px-3 py-2 text-sm text-ink outline-none transition focus:border-slate-400 focus:bg-white"
             >
@@ -183,7 +208,7 @@ const TaskCenter: React.FC<TaskCenterProps> = ({ currentUser }) => {
           </div>
         </section>
 
-        <section className="flex min-h-0 max-h-full flex-col overflow-hidden rounded-[16px] border border-hairline/80 bg-white shadow-[0_4px_16px_rgba(17,24,28,0.05)]">
+        <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[16px] border border-hairline/80 bg-white shadow-[0_4px_16px_rgba(17,24,28,0.05)]">
           {loading ? (
             <div className="flex flex-1 items-center justify-center">
               <div className="flex items-center gap-3 text-sm text-muted">
@@ -240,16 +265,16 @@ const TaskCenter: React.FC<TaskCenterProps> = ({ currentUser }) => {
                             {task.statistics?.processingTime !== undefined && <span>{t('tasks.runtime_short', { value: task.statistics.processingTime })}</span>}
                           </div>
                           <div className="flex shrink-0 items-center gap-1">
-                            {task.status === 'completed' && (
+                            {task.status === 'completed' && task.type !== 'upload' && (
                               <button onClick={() => navigate(`/results?task=${task.id}`)} title={t('tasks.view_results')} aria-label={t('tasks.view_results')} className="rounded-lg border border-hairline bg-white p-1.5 text-ink-secondary transition hover:bg-white"><ExternalLink className="h-3.5 w-3.5" /></button>
                             )}
-                            {task.status === 'failed' && (
+                            {task.status === 'failed' && task.type !== 'upload' && (
                               <button onClick={() => { void retryTask(task); }} title={t('tasks.retry')} aria-label={t('tasks.retry')} className="rounded-lg border border-hairline bg-white p-1.5 text-ink-secondary transition hover:bg-white"><RotateCcw className="h-3.5 w-3.5" /></button>
                             )}
                             {(task.status === 'pending' || task.status === 'running') && (
                               <button onClick={() => cancelTask(task.id)} title={t('tasks.cancel_task')} aria-label={t('tasks.cancel_task')} className="rounded-lg border border-hairline bg-white p-1.5 text-ink-secondary transition hover:bg-white"><X className="h-3.5 w-3.5" /></button>
                             )}
-                            <button onClick={() => { setSelectedTask(task); setShowTaskDetail(true); }} title={t('tasks.details')} aria-label={t('tasks.details')} className="rounded-lg border border-hairline bg-white p-1.5 text-ink-secondary transition hover:bg-white"><Info className="h-3.5 w-3.5" /></button>
+                            <button onClick={() => { setSelectedTask(task); setShowTaskDetail(true); setSearchParams({ task: task.id }); }} title={t('tasks.details')} aria-label={t('tasks.details')} className="rounded-lg border border-hairline bg-white p-1.5 text-ink-secondary transition hover:bg-white"><Info className="h-3.5 w-3.5" /></button>
                             <button onClick={() => handleDelete(task.id)} title={t('tasks.delete_task')} aria-label={t('tasks.delete_task')} className="rounded-lg border border-hairline bg-white p-1.5 text-danger-strong transition hover:bg-[rgba(243,18,96,0.08)]"><Trash2 className="h-3.5 w-3.5" /></button>
                           </div>
                         </div>
@@ -270,10 +295,11 @@ const TaskCenter: React.FC<TaskCenterProps> = ({ currentUser }) => {
                   </article>
                 );
               })}
-              <div className="py-4 text-center text-xs text-muted">{t('tasks.list_end')}</div>
+
             </div>
           )}
         </section>
+        <WorkspacePagination page={page} pageSize={pageSize} total={totalCount} onChange={(next, size) => { setPage(size === pageSize ? next : 1); setPageSize(size); }} />
       </div>
 
       {showTaskDetail && selectedTask && selectedTaskMeta && (
@@ -284,7 +310,7 @@ const TaskCenter: React.FC<TaskCenterProps> = ({ currentUser }) => {
                 <h3 className="truncate text-base font-semibold text-ink">{selectedTask.name}</h3>
                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${selectedTaskMeta.chip}`}>{selectedTaskMeta.text}</span>
               </div>
-              <button onClick={() => setShowTaskDetail(false)} className="rounded-xl border border-hairline p-1.5 text-muted transition hover:bg-white hover:text-ink-secondary" title={t('common.close')} aria-label={t('common.close')}>
+              <button onClick={() => { setShowTaskDetail(false); setSearchParams({}, { replace: true }); }} className="rounded-xl border border-hairline p-1.5 text-muted transition hover:bg-white hover:text-ink-secondary" title={t('common.close')} aria-label={t('common.close')}>
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -393,10 +419,10 @@ const TaskCenter: React.FC<TaskCenterProps> = ({ currentUser }) => {
                       <div className="h-full rounded-full bg-slate-700" style={{ width: `${Math.max(selectedTask.progress, 2)}%` }} />
                     </div>
                     <div className="mt-3 flex flex-wrap gap-1.5">
-                      {selectedTask.status === 'completed' && (
+                      {selectedTask.status === 'completed' && selectedTask.type !== 'upload' && (
                         <button onClick={() => { setShowTaskDetail(false); navigate(`/results?task=${selectedTask.id}`); }} className="inline-flex items-center gap-1.5 rounded-xl bg-brand-fill px-3 py-1.5 text-xs font-medium text-white transition hover:bg-brand-fill-hover"><ExternalLink className="h-3.5 w-3.5" />{t('tasks.view_results')}</button>
                       )}
-                      {selectedTask.status === 'failed' && (
+                      {selectedTask.status === 'failed' && selectedTask.type !== 'upload' && (
                         <button onClick={() => { void retryTask(selectedTask); setShowTaskDetail(false); }} className="inline-flex items-center gap-1.5 rounded-xl border border-hairline bg-white px-3 py-1.5 text-xs font-medium text-ink-secondary transition hover:bg-white"><RotateCcw className="h-3.5 w-3.5" />{t('tasks.retry')}</button>
                       )}
                     </div>

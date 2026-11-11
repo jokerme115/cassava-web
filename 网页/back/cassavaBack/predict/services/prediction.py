@@ -1,7 +1,7 @@
 """PredictionService —— 批次6 从 services.py 拆出。"""
 
 from ..deeplab_service import deeplabv3plus_service
-from ..ensemble import LABELS
+from ..model_registry import LABELS
 from ..ensemble import METHOD
 from ..m6_predictor import m6_best_predictor
 from ..mask_utils import calculate_mask_metrics
@@ -95,12 +95,12 @@ class PredictionService(BaseService):
                 return bool(value)
             return default
 
-        model_name = str(advanced.get('single_model_type') or advanced.get('modelType') or 'resnet101')
+        model_name = str(advanced.get('single_model_type') or advanced.get('modelType') or 'pbt_c512')
         use_ensemble = model_name == 'ensemble' or read_bool(
             advanced.get('use_ensemble'), advanced.get('predictionMode') == 'ensemble')
         if use_ensemble:
             model_name = 'ensemble'
-        return {
+        parsed = {
             'confidence': float(advanced.get('confidenceThreshold', params.get('confidence', 0.5))),
             'use_ensemble': use_ensemble,
             'ensemble_method': METHOD if use_ensemble else None,
@@ -158,6 +158,12 @@ class PredictionService(BaseService):
                 advanced.get('stageBoxIou', params.get('stage_box_iou', 0.50))
             ),
         }
+
+        from ..model_registry import MODERN_KEYS
+        if model_name in MODERN_KEYS:
+            parsed.update(confidence=.5, min_area=0, morph_kernel_size=0, morph_iterations=0,
+                use_post_processing=False, use_tta=False, stage1_confidence=.5, stage2_confidence=.5)
+        return parsed
 
     @staticmethod
     def _save_mask_image(mask_array, image_name, work_dir):
@@ -401,7 +407,7 @@ class PredictionService(BaseService):
             vis_images=vis_images,
             processing_task=processing_task,
             model_type=prediction_params.get('model_label', 'YOLOv11'),
-            is_ensemble=prediction_params.get('use_ensemble', False),
+            is_ensemble=prediction_params.get('use_ensemble', False) or prediction_params.get('single_model_type', '').startswith('pbt_'),
             ensemble_method=prediction_params.get('ensemble_method'),
             ensemble_details=result.get('ensemble_details') or {},
             confidence_threshold=prediction_params.get('confidence', 0.5),
@@ -477,28 +483,33 @@ class PredictionService(BaseService):
                         errors.append({'image_id': image.id, 'message': f'无法获取图片文件: {image.name}'})
                         continue
 
-                    prediction_result = deeplabv3plus_service.integrated_prediction(
-                        local_image_path,
-                        work_dir,
-                        confidence_threshold=prediction_params['confidence'],
-                        min_area=prediction_params['min_area'],
-                        morph_kernel_size=prediction_params['morph_kernel_size'],
-                        morph_iterations=prediction_params['morph_iterations'],
-                        use_ensemble=prediction_params['use_ensemble'],
-                        ensemble_method=prediction_params.get('ensemble_method') or METHOD,
-                        single_model_type=prediction_params['single_model_type'],
-                        patch_size=prediction_params.get('patch_size', (512, 512)),
-                        stride=prediction_params.get('stride', (256, 256)),
-                        overlay_opacity=prediction_params.get('overlay_opacity', 0.45),
-                        stage1_confidence=prediction_params.get('stage1_confidence'),
-                        stage2_confidence=prediction_params.get('stage2_confidence'),
-                        roi_padding=prediction_params.get('roi_padding', 0.10),
-                        fallback_roi_padding=prediction_params.get('fallback_roi_padding', 0.70),
-                        expected_count=prediction_params.get('expected_count', 0),
-                        stage_box_iou=prediction_params.get('stage_box_iou', 0.50),
-                        use_post_processing=prediction_params['use_post_processing'],
-                        use_tta=prediction_params['use_tta']
-                    )
+                    from ..model_registry import MODERN_KEYS
+                    if prediction_params['single_model_type'] in MODERN_KEYS:
+                        from ..modern_predictor import run_pipeline
+                        prediction_result = run_pipeline(local_image_path, work_dir, prediction_params['single_model_type'], stop_check)
+                    else:
+                        prediction_result = deeplabv3plus_service.integrated_prediction(
+                            local_image_path,
+                            work_dir,
+                            confidence_threshold=prediction_params['confidence'],
+                            min_area=prediction_params['min_area'],
+                            morph_kernel_size=prediction_params['morph_kernel_size'],
+                            morph_iterations=prediction_params['morph_iterations'],
+                            use_ensemble=prediction_params['use_ensemble'],
+                            ensemble_method=prediction_params.get('ensemble_method') or METHOD,
+                            single_model_type=prediction_params['single_model_type'],
+                            patch_size=prediction_params.get('patch_size', (512, 512)),
+                            stride=prediction_params.get('stride', (256, 256)),
+                            overlay_opacity=prediction_params.get('overlay_opacity', 0.45),
+                            stage1_confidence=prediction_params.get('stage1_confidence'),
+                            stage2_confidence=prediction_params.get('stage2_confidence'),
+                            roi_padding=prediction_params.get('roi_padding', 0.10),
+                            fallback_roi_padding=prediction_params.get('fallback_roi_padding', 0.70),
+                            expected_count=prediction_params.get('expected_count', 0),
+                            stage_box_iou=prediction_params.get('stage_box_iou', 0.50),
+                            use_post_processing=prediction_params['use_post_processing'],
+                            use_tta=prediction_params['use_tta']
+                        )
 
                     if "error" in prediction_result:
                         message = prediction_result.get('error') or '预测失败'
@@ -521,6 +532,15 @@ class PredictionService(BaseService):
                     processed_count += 1
                     if callable(progress_callback):
                         progress_callback(processed_count, total_images)
+
+            if callable(stop_check) and stop_check():
+                return {
+                    'results': results,
+                    'errors': errors,
+                    'processed_count': processed_count,
+                    'requested_count': requested_count,
+                    'cancelled': True,
+                }
         finally:
             shutil.rmtree(work_dir, ignore_errors=True)
 

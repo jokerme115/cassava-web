@@ -2,9 +2,12 @@ from rest_framework import viewsets, status, permissions
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.db import transaction
+from rest_framework.exceptions import ValidationError as ApiValidationError
 from .models import Permission, Role, UserRole, UserPermission, AuditLog, GuestAccessibleResource, PermissionTemplate
 from .serializers import (
     PermissionSerializer, RoleSerializer, UserRoleSerializer, 
@@ -13,6 +16,17 @@ from .serializers import (
     GuestAccessibleResourceSerializer, PermissionTemplateSerializer
 )
 from .permissions import HasPermission, get_user_permissions, get_user_roles, get_permission_hierarchy, user_has_permission, user_has_role
+
+
+class ManagementPermission(HasPermission):
+    def has_object_permission(self, request, view, obj):
+        return self.has_permission(request, view)
+
+
+class ManagementPagination(PageNumberPagination):
+    page_size = 24
+    page_size_query_param = 'page_size'
+    max_page_size = 200
 
 class GuestResourceViewSet(viewsets.ModelViewSet):
     """访客资源白名单管理视图集"""
@@ -91,9 +105,12 @@ class GuestResourceViewSet(viewsets.ModelViewSet):
 
 class PermissionViewSet(viewsets.ModelViewSet):
     """权限管理视图集"""
-    queryset = Permission.objects.all()
+    queryset = Permission.objects.all().order_by('category', 'id')
+    filter_backends = [SearchFilter]
+    search_fields = ['name', 'codename', 'description', 'category']
     serializer_class = PermissionSerializer
-    permission_classes = [HasPermission]
+    permission_classes = [ManagementPermission]
+    pagination_class = ManagementPagination
     perms_map = {
         'list': 'view_permission',
         'retrieve': 'view_permission',
@@ -122,7 +139,8 @@ class RoleViewSet(viewsets.ModelViewSet):
     """角色管理视图集"""
     queryset = Role.objects.all().order_by('id')
     serializer_class = RoleSerializer
-    permission_classes = [HasPermission]
+    permission_classes = [ManagementPermission]
+    pagination_class = ManagementPagination
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['name', 'description']
     ordering_fields = ['id', 'name']
@@ -138,6 +156,22 @@ class RoleViewSet(viewsets.ModelViewSet):
         'users': 'view_role'
     }
 
+    @transaction.atomic
+    def perform_create(self, serializer):
+        role = serializer.save()
+        AuditLog.objects.create(user=self.request.user, action='CREATE', resource='Role', resource_id=str(role.pk), details=f'创建角色 {role.name}', success=True)
+
+    @transaction.atomic
+    def perform_update(self, serializer):
+        role = serializer.save()
+        AuditLog.objects.create(user=self.request.user, action='UPDATE', resource='Role', resource_id=str(role.pk), details=f'更新角色 {role.name}，权限 {list(role.permissions.values_list("codename", flat=True))}', success=True)
+
+    def destroy(self, request, *args, **kwargs):
+        role = self.get_object()
+        if role.user_roles.exists():
+            return Response({'error': '该角色仍有成员，请先为成员更换角色'}, status=400)
+        return super().destroy(request, *args, **kwargs)
+
     @action(detail=True, methods=['post'])
     def assign_permissions(self, request, pk=None):
         """为角色分配权限"""
@@ -148,6 +182,8 @@ class RoleViewSet(viewsets.ModelViewSet):
             return Response({'error': 'permission_ids 必须是列表'}, status=status.HTTP_400_BAD_REQUEST)
         
         permissions = Permission.objects.filter(id__in=permission_ids)
+        if permissions.count() != len(set(map(str, permission_ids))):
+            return Response({'error': '包含不存在的权限'}, status=400)
         role.permissions.set(permissions)
         
         return Response({'message': '权限分配成功'})
@@ -179,7 +215,7 @@ class UserRoleViewSet(viewsets.ModelViewSet):
     """用户角色关联管理视图集"""
     queryset = UserRole.objects.all()
     serializer_class = UserRoleSerializer
-    permission_classes = [HasPermission]
+    permission_classes = [ManagementPermission]
     perms_map = {
         'list': 'view_userrole',
         'retrieve': 'view_userrole',
@@ -232,7 +268,7 @@ class UserPermissionViewSet(viewsets.ModelViewSet):
     """用户权限管理视图集"""
     queryset = UserPermission.objects.all()
     serializer_class = UserPermissionSerializer
-    permission_classes = [HasPermission]
+    permission_classes = [ManagementPermission]
     perms_map = {
         'list': 'view_userpermission',
         'retrieve': 'view_userpermission',
@@ -281,15 +317,20 @@ class UserPermissionViewSet(viewsets.ModelViewSet):
             # 获取用户直接关联的权限对象
             direct_permissions = UserPermission.objects.filter(user=user, action='grant')
             direct_permission_ids = list(direct_permissions.values_list('permission_id', flat=True))
+            revoked_permission_ids = list(UserPermission.objects.filter(user=user, action='revoke').values_list('permission_id', flat=True))
+            inherited_permission_ids = list(Permission.objects.filter(roles__user_roles__user=user, roles__is_active=True).values_list('id', flat=True).distinct())
             
             return Response({
                 'all_permissions': permissions, # list of codenames
-                'direct_permission_ids': direct_permission_ids # list of ids
+                'direct_permission_ids': direct_permission_ids,
+                'revoked_permission_ids': revoked_permission_ids,
+                'inherited_permission_ids': inherited_permission_ids,
             })
         except User.DoesNotExist:
             return Response({'error': '用户不存在'}, status=status.HTTP_404_NOT_FOUND)
 
     @action(detail=False, methods=['post'])
+    @transaction.atomic
     def update_permissions(self, request):
         """批量更新用户的权限"""
         user_id = request.data.get('user_id')
@@ -303,17 +344,28 @@ class UserPermissionViewSet(viewsets.ModelViewSet):
             # 更新 user.user_permissions
             # 记录审计日志
             
-            permission_ids = [int(pid) for pid in permission_ids]
+            revoked_ids = request.data.get('revoked_permission_ids', [])
+            if not isinstance(permission_ids, list) or not isinstance(revoked_ids, list):
+                raise ApiValidationError('权限必须为列表')
+            try:
+                permission_ids = set(int(pid) for pid in permission_ids)
+                revoked_ids = set(int(pid) for pid in revoked_ids)
+            except (ValueError, TypeError):
+                raise ApiValidationError('权限编号无效')
+            if permission_ids & revoked_ids:
+                raise ApiValidationError('同一权限不能同时允许和禁止')
+            if Permission.objects.filter(pk__in=permission_ids | revoked_ids).count() != len(permission_ids | revoked_ids):
+                raise ApiValidationError('包含不存在的权限')
+            if user.is_superuser:
+                raise ApiValidationError('超级管理员始终拥有全部权限，无需单独授权')
             old_permissions = list(
                 UserPermission.objects.filter(user=user, action='grant').values_list('permission_id', flat=True)
             )
-            UserPermission.objects.filter(user=user).exclude(permission_id__in=permission_ids).delete()
-            existing_permission_ids = set(
-                UserPermission.objects.filter(user=user, action='grant').values_list('permission_id', flat=True)
-            )
+            UserPermission.objects.filter(user=user).delete()
             for permission_id in permission_ids:
-                if permission_id not in existing_permission_ids:
-                    UserPermission.objects.create(user=user, permission_id=permission_id, action='grant')
+                UserPermission.objects.create(user=user, permission_id=permission_id, action='grant')
+            for permission_id in revoked_ids:
+                UserPermission.objects.create(user=user, permission_id=permission_id, action='revoke')
             
             AuditLog.objects.create(
                 user=request.user,
@@ -376,7 +428,8 @@ class UserManagementViewSet(viewsets.ModelViewSet):
     """用户管理视图集"""
     queryset = User.objects.all().order_by('-date_joined')
     serializer_class = UserSerializer
-    permission_classes = [HasPermission]
+    permission_classes = [ManagementPermission]
+    pagination_class = ManagementPagination
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['username', 'email', 'first_name', 'last_name']
     ordering_fields = ['date_joined', 'last_login', 'username', 'is_active']
@@ -462,6 +515,7 @@ class UserManagementViewSet(viewsets.ModelViewSet):
             
         return queryset
 
+    @transaction.atomic
     def perform_create(self, serializer):
         user = serializer.save()
         AuditLog.objects.create(
@@ -473,6 +527,7 @@ class UserManagementViewSet(viewsets.ModelViewSet):
             success=True
         )
 
+    @transaction.atomic
     def perform_update(self, serializer):
         user = serializer.save()
         AuditLog.objects.create(
@@ -614,6 +669,7 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = AuditLog.objects.all()
     serializer_class = AuditLogSerializer
     permission_classes = [HasPermission]
+    pagination_class = ManagementPagination
     required_permissions = ['view_audit_log']
     
     def get_queryset(self):

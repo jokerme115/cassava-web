@@ -1,63 +1,35 @@
-import { useState, useEffect, useCallback } from 'react';
+import { message } from '../utils/feedback';
+import api from '../services/rest/client';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { PredictionResult, TaskStatistics } from '../types';
-import { predictionsApi, systemSettingsApi } from '../services/api';
-import { message } from 'antd';
+import { predictionsApi } from '../services/api';
+
 import i18n from '../i18n';
 import { effectivePpd } from '../utils/measurement';
 
-export const useResultsStore = (currentUser?: any, taskId?: string | null) => {
+export const useResultsStore = (currentUser?: any, taskId?: string | null, search = '', status = 'all', reviewStatus = 'all', page = 1, pageSize = 48, onInvalidPage?: () => void) => {
   const [results, setResults] = useState<PredictionResult[]>([]);
+  const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [allResultsCount, setAllResultsCount] = useState(0);
-  const [nextPage, setNextPage] = useState<string | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const requestSequence = useRef(0);
+  const invalidPage = useRef(onInvalidPage);
+  invalidPage.current = onInvalidPage;
 
   const loadResults = useCallback(async () => {
+    const sequence = ++requestSequence.current;
     setLoading(true);
     try {
-      // Get system settings for pagination limit
-      // 访客没有认证态，只能读公开设置，否则会打出 401
-      let limit = 100;
-      try {
-        const settings = currentUser?.is_guest
-          ? await systemSettingsApi.getPublic()
-          : await systemSettingsApi.get();
-        limit = Number(settings.maxDisplayResults) || 100;
-      } catch (e) {
-        console.warn('Failed to load system settings for results limit', e);
-      }
-
-      const baseParams = {
-        ...(currentUser?.is_guest ? { user_id: currentUser.id } : {}),
-        page_size: limit
-      };
-
-      // 聚焦某个任务时，额外拉取该任务的全部结果并合并进来：
-      // 否则历史任务的结果落在第一页之外时，结果中心会显示“0 条”。
-      const [data, taskData] = await Promise.all([
-        predictionsApi.getAll(baseParams),
-        taskId ? predictionsApi.getAll({ ...baseParams, task_id: taskId, page_size: 2000 }) : Promise.resolve(null),
-      ]);
-      const resultsList = Array.isArray(data) ? data : ((data as any)?.results || []);
-      const taskList = taskData ? (Array.isArray(taskData) ? taskData : ((taskData as any)?.results || [])) : [];
-      const overallCount = Array.isArray(data) ? data.length : data.count ?? resultsList.length;
-      setAllResultsCount(overallCount);
-      // 聚焦某个任务时，导出与“已加载/总数”都以该任务为准；否则用全库计数。
-      if (taskId) {
-        setTotalCount(taskList.length);
-        setNextPage(null);
-      } else {
-        setTotalCount(overallCount);
-        setNextPage(Array.isArray(data) ? null : data.next ?? null);
-      }
-      const mergedRaw = [...resultsList];
-      const seenIds = new Set(mergedRaw.map((item: any) => String(item?.id ?? '')));
-      for (const item of taskList) {
-        const key = String((item as any)?.id ?? '');
-        if (!seenIds.has(key)) { seenIds.add(key); mergedRaw.push(item); }
-      }
+      const baseParams = { ...(currentUser?.is_guest ? { user_id: currentUser.id } : {}), page, page_size: pageSize };
+      const query = { ...baseParams, ...(taskId ? { task_id: taskId } : {}), search, status, review_status: reviewStatus };
+      const [data, aggregate, overall] = await Promise.all([predictionsApi.getAll(query), api.get('/predictions/summary/', { params: query }), api.get('/predictions/summary/', { params: currentUser?.is_guest ? { user_id: currentUser.id } : {} })]);
+      if (sequence !== requestSequence.current) return;
+      setSummary(aggregate.data);
+      const mergedRaw = data.results;
+      setAllResultsCount(overall.data.total ?? data.count ?? mergedRaw.length);
+      setTotalCount(data.count ?? mergedRaw.length);
       const normalizedResults = mergedRaw.map((r: any) => ({
         ...r,
         imageUrl: r.original_image_url || r.image_url || r.imageUrl || '',
@@ -74,19 +46,21 @@ export const useResultsStore = (currentUser?: any, taskId?: string | null) => {
         split_count: r.split_count ?? r.splitCount ?? (Array.isArray(r.sub_ppd_values) ? r.sub_ppd_values.length : 0),
       }));
       setResults(normalizedResults);
-    } catch (error) {
+    } catch (error: any) {
+      if (sequence !== requestSequence.current) return;
+      if (page > 1 && error?.response?.status === 404 && invalidPage.current) { invalidPage.current(); return; }
       message.error(i18n.t('results.load_failed'));
       console.error(error);
     } finally {
-      setLoading(false);
+      if (sequence === requestSequence.current) setLoading(false);
     }
-  }, [currentUser, taskId]);
+  }, [currentUser, taskId, search, status, reviewStatus, page, pageSize]);
 
   useEffect(() => {
     void loadResults();
     const handleReload = () => { void loadResults(); };
     window.addEventListener('results:reload', handleReload);
-    return () => window.removeEventListener('results:reload', handleReload);
+    return () => { requestSequence.current++; window.removeEventListener('results:reload', handleReload); };
   }, [loadResults]);
 
   // 同步本地过滤
@@ -121,23 +95,7 @@ export const useResultsStore = (currentUser?: any, taskId?: string | null) => {
     };
   };
 
-  const loadMore = async () => {
-    if (!nextPage || loadingMore) return;
-    setLoadingMore(true);
-    try {
-      const query = new URL(nextPage, window.location.origin).searchParams;
-      const data = await predictionsApi.getAll({
-        page: query.get('page') || 1,
-        page_size: query.get('page_size') || 100,
-        ...(taskId ? { task_id: taskId } : {}),
-      });
-      setResults((current) => [...current, ...data.results.filter((item) => !current.some((old) => old.id === item.id))]);
-      setNextPage(data.next ?? null);
-    } catch { message.error('加载下一页失败，请重试'); }
-    finally { setLoadingMore(false); }
-  };
-
-  const exportResults = async (fileType: 'csv' | 'xlsx' | 'zip', filters: { task_id?: string; search?: string; status?: string } = {}) => {
+  const exportResults = async (fileType: 'csv' | 'xlsx' | 'zip', filters: { task_id?: string; search?: string; status?: string; review_status?: string; style?: string; version?: string; result_ids?: string } = {}) => {
     if (exporting) return;
     setExporting(true);
     try {
@@ -157,7 +115,13 @@ export const useResultsStore = (currentUser?: any, taskId?: string | null) => {
     } catch (error: any) {
       let detail = '导出失败，请重试';
       if (error?.response?.data instanceof Blob) {
-        try { const payload = JSON.parse(await error.response.data.text()); detail = payload.message || payload.detail || detail; } catch { /* Keep the readable fallback. */ }
+        try {
+          const payload = JSON.parse(await error.response.data.text());
+          detail = payload.message || payload.detail || payload.error || detail;
+        } catch { /* Keep the readable fallback. */ }
+      } else if (error?.response?.data) {
+        const payload = error.response.data;
+        detail = payload.message || payload.detail || payload.error || detail;
       }
       message.error(detail);
     } finally {
@@ -167,13 +131,12 @@ export const useResultsStore = (currentUser?: any, taskId?: string | null) => {
 
   return {
     results,
+    summary,
     loading,
     exporting,
     totalCount,
     allResultsCount,
-    hasMore: Boolean(nextPage),
-    loadingMore,
-    loadMore,
+    hasMore: page * pageSize < totalCount,
     loadResults,
     getResultsByTask,
     getStatistics,

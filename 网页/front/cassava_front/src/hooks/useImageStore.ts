@@ -1,17 +1,25 @@
+import { getUserPreferences } from '../utils/userPreferences';
+import { message } from '../utils/feedback';
+import { useWorkspace, updateWorkspace, workspaceStorageKey, getWorkspace } from '../utils/workspaceContext';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Image, Folder } from '../types';
 import { imagesApi, foldersApi, systemSettingsApi } from '../services/api';
-import { message } from 'antd';
+
 import i18n from '../i18n';
 
 export const useImageStore = (isGuest: boolean = false) => {
-  const DEFAULT_IMAGE_PAGE_SIZE = isGuest ? 36 : 48;
+  const DEFAULT_IMAGE_PAGE_SIZE = isGuest ? 36 : getUserPreferences().listPageSize;
   const [images, setImages] = useState<Image[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
-  const [selectedImages, setSelectedImages] = useState<string[]>([]);
-  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const workspace = useWorkspace();
+  const selectedImages = workspace.selectedIds;
+  const setSelectedImages = (value: string[] | ((previous: string[]) => string[])) => updateWorkspace({ selectedIds: typeof value === 'function' ? value(workspace.selectedIds) : value });
+  const selectedFolder = workspace.folder;
+  const setSelectedFolder = (value: string | null) => updateWorkspace({ folder: value, selectedIds: [] });
+  const readPage = () => { try { return JSON.parse(sessionStorage.getItem(workspaceStorageKey('image-page')) || '{}'); } catch { return {}; } };
+
   const [loading, setLoading] = useState(true);
-  const [imagesPage, setImagesPage] = useState(1);
+  const [imagesPage, setImagesPage] = useState(() => readPage().page || 1);
   const [imagesPageSize, setImagesPageSize] = useState(DEFAULT_IMAGE_PAGE_SIZE);
   const [hasMoreImages, setHasMoreImages] = useState(false);
   const [loadingMoreImages, setLoadingMoreImages] = useState(false);
@@ -19,15 +27,26 @@ export const useImageStore = (isGuest: boolean = false) => {
 
   const [maxDisplayImages, setMaxDisplayImages] = useState(200);
   const initializedRef = useRef(false);
+  const requestSequence = useRef(0);
   const imagesRef = useRef<Image[]>([]);
   const maxDisplayImagesRef = useRef(maxDisplayImages);
   const imageQueryRef = useRef<{ search: string; ordering: string }>({ search: '', ordering: '-created_at' });
-  const loadImagesRef = useRef<(options?: { reset?: boolean; max?: number; page_size?: number }) => Promise<Image[]>>(async () => []);
+  const loadImagesRef = useRef<(options?: { reset?: boolean; max?: number; page_size?: number; page?: number; search?: string; ordering?: string }) => Promise<Image[]>>(async () => []);
   const loadFoldersRef = useRef<(sourceImages?: Image[]) => Promise<void>>(async () => undefined);
   const getPageSize = (maxValue?: number) => Math.min(DEFAULT_IMAGE_PAGE_SIZE, Math.max(1, maxValue ?? maxDisplayImages));
 
+  useEffect(() => {
+    const value = new URLSearchParams(window.location.search).get('folder');
+    if (value && (/^\d+$/.test(value) || ['root', 'uncategorized'].includes(value))) setSelectedFolder(value);
+  }, []);
+  useEffect(() => {
+    if (!['/images', '/prediction'].includes(window.location.pathname)) return;
+    const url = new URL(window.location.href);
+    if (selectedFolder) url.searchParams.set('folder', selectedFolder); else url.searchParams.delete('folder');
+    window.history.replaceState(window.history.state, '', url);
+  }, [selectedFolder]);
   const getFolderFilter = () => {
-    if (selectedFolder === 'uncategorized') {
+    if (selectedFolder === 'uncategorized' || selectedFolder === 'root') {
       return 'uncategorized';
     }
 
@@ -83,7 +102,7 @@ export const useImageStore = (isGuest: boolean = false) => {
         if (Number.isFinite(n) && n > 0) {
           const desiredMax = Math.min(1000, Math.floor(n));
           setMaxDisplayImages(desiredMax);
-          await loadImagesRef.current({ reset: true, max: desiredMax });
+          await loadImagesRef.current({ reset: true, max: desiredMax, ...readPage() });
         }
       } catch (e) {
         void e;
@@ -97,12 +116,13 @@ export const useImageStore = (isGuest: boolean = false) => {
     const refreshImages = options?.images !== false;
     const refreshFolders = options?.folders !== false;
     const tasks: Promise<any>[] = [];
-    if (refreshImages) tasks.push(loadImages({ reset: true }));
+    if (refreshImages) tasks.push(loadImages({ reset: true, page: imagesPage }));
     if (refreshFolders) tasks.push(loadFolders());
     await Promise.all(tasks);
   };
 
-  const loadImages = async (options?: { reset?: boolean; max?: number; page_size?: number; page?: number; append?: boolean; search?: string; ordering?: string }) => {
+  const loadImages = async (options?: { reset?: boolean; max?: number; page_size?: number; page?: number; append?: boolean; search?: string; ordering?: string }): Promise<Image[]> => {
+    const requestId = ++requestSequence.current;
     setLoading(true);
     try {
       if (options?.search !== undefined || options?.ordering !== undefined) {
@@ -126,17 +146,23 @@ export const useImageStore = (isGuest: boolean = false) => {
         ...(imageQueryRef.current.search ? { search: imageQueryRef.current.search } : {}),
         ordering: imageQueryRef.current.ordering,
       });
+      if (requestId !== requestSequence.current) return res.items;
       const nextHasMore = res.next !== undefined ? Boolean(res.next) : res.items.length >= localPageSize;
       const merged = options?.append ? [...imagesRef.current, ...res.items] : res.items;
       const limited = merged.slice(0, localMax);
       setImages(limited);
       setImagesPage(page);
+      sessionStorage.setItem(workspaceStorageKey('image-page'), JSON.stringify({ page, page_size: localPageSize, ...imageQueryRef.current }));
       setImagesPageSize(localPageSize);
       setHasMoreImages(nextHasMore && limited.length < localMax);
       if (typeof res.count === 'number') setTotalImages(res.count);
       const data = limited;
       return data;
-    } catch (error) {
+    } catch (error: any) {
+      if (requestId !== requestSequence.current) return [];
+      if (error?.response?.status === 404 && (options?.page ?? imagesPage) > 1) {
+        return await loadImages({ ...options, page: 1 });
+      }
       console.error(error);
       if (!isGuest) {
         message.error(i18n.t('images.load_images_failed'));
@@ -145,7 +171,7 @@ export const useImageStore = (isGuest: boolean = false) => {
       }
       return [];
     } finally {
-      setLoading(false);
+      if (requestId === requestSequence.current) setLoading(false);
     }
   };
 
@@ -250,6 +276,10 @@ export const useImageStore = (isGuest: boolean = false) => {
         data = Array.from(inferredMap.values());
       }
 
+      const remembered = getWorkspace();
+      const available = new Set((data || []).map((folder: Folder) => String(folder.id)));
+      if (remembered.folder && /^\d+$/.test(remembered.folder) && !available.has(remembered.folder)) updateWorkspace({ folder: 'root', lastWritableFolder: null, selectedIds: [] });
+      else if (remembered.lastWritableFolder && !available.has(remembered.lastWritableFolder)) updateWorkspace({ lastWritableFolder: null });
       setFolders(data);
     } catch (error) {
       console.error(error);
@@ -384,15 +414,12 @@ export const useImageStore = (isGuest: boolean = false) => {
   };
 
   const deleteImages = async (ids: string[]) => {
-    try {
-      await Promise.all(ids.map(id => imagesApi.delete(id)));
-      message.success(i18n.t('images.delete_success'));
-      await refresh();
-      setSelectedImages([]);
-    } catch (error) {
-      message.error(i18n.t('images.delete_failed'));
-      console.error(error);
-    }
+    const settled = await Promise.allSettled(ids.map(id => imagesApi.delete(id)));
+    const failures = ids.filter((_, index) => settled[index].status === 'rejected');
+    await refresh(); setSelectedImages(failures);
+    if (failures.length) message.warning(`已移入回收站 ${ids.length - failures.length} 张，${failures.length} 张失败，已保留选中`);
+    else message.success('已移入回收站，历史预测与修订保留');
+    return failures;
   };
 
   const updateImage = async (id: string, data: any) => {
@@ -408,21 +435,19 @@ export const useImageStore = (isGuest: boolean = false) => {
   };
 
   const moveImages = async (imageIds: string[], folderId: string) => {
-    try {
-      // 这里假设后端有move接口，如无可用foldersApi.addImages
-      await foldersApi.addImages(folderId, imageIds);
-      await refresh();
-      message.success(i18n.t('images.move_success', { count: imageIds.length }));
-    } catch (error) {
-      message.error(i18n.t('images.move_failed'));
-      console.error(error);
-    }
+    const result = await foldersApi.addImages(folderId, imageIds);
+    await refresh();
+    const failedIds = (result.failed_ids || []).map(String);
+    setSelectedImages(failedIds);
+    if (failedIds.length) message.warning(`已移动 ${result.updated} 张，${failedIds.length} 张未移动`);
+    else message.success(`已移动 ${result.updated} 张`);
+    return result;
   };
 
   const getFilteredImages = () => {
     if (!Array.isArray(images)) return [];
     if (selectedFolder === null) return images;
-    if (selectedFolder === 'uncategorized') return images.filter(img => !img.folderId);
+    if (selectedFolder === 'uncategorized' || selectedFolder === 'root') return images.filter(img => !img.folderId);
     return images.filter(img => img.folderId === selectedFolder);
   };
 

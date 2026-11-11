@@ -169,11 +169,6 @@ def get_user_permissions(user):
         Permission = get_permission_model()
         return list(Permission.objects.values_list('codename', flat=True))
 
-    cache_key = _get_user_cache_key(user)
-    cached_perms = cache.get(cache_key)
-    if cached_perms is not None:
-        return cached_perms
-
     Permission = get_permission_model()
     UserRole = get_user_role_model()
     UserPermission = get_user_permission_model()
@@ -207,9 +202,6 @@ def get_user_permissions(user):
     # 移除被撤销的权限
     final_permissions = list(all_permissions - set(revoked_permissions))
     
-    # Cache for 1 hour
-    cache.set(cache_key, final_permissions, 3600)
-
     return final_permissions
 
 # 已在上方定义了完整的user_has_permission函数，此处删除重复定义

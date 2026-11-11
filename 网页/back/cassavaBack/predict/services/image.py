@@ -57,178 +57,80 @@ class ImageService(BaseService):
     
     @staticmethod
     def upload_image(file, folder_id=None, check_duplicate=True, force=False, user=None):
-        """
-        上传图像文件
-        
-        Args:
-            file: 文件对象
-            folder_id: 文件夹ID
-            check_duplicate: 是否检查重复
-            force: 是否强制覆盖
-            user: 上传用户
-            
-        Returns:
-            tuple: (image_obj, error) 元组，image_obj为创建的图像对象，error为错误信息
-        """
-        from ..oss_service import upload_file_to_oss, check_oss_configured
-        from ..storage_utils import build_preview_storage_key
+        """All upload routes share original-byte identity and metadata. Never overwrite."""
+        import hashlib
+        from datetime import datetime, timezone as dt_timezone, timedelta
         from django.db import transaction
-        from django.core.files.storage import default_storage
-        from django.core.files.base import ContentFile
-        import uuid
-        from PIL.ExifTags import TAGS
-        import io
-        from datetime import datetime
-        
-        CassavaImage = ImageService.get_model('CassavaImage')
-        Folder = ImageService.get_model('Folder')
-        
-        name = file.name
-        folder = None
-        if folder_id:
-            try:
-                folder = Folder.objects.get(id=folder_id)
-            except Folder.DoesNotExist:
-                folder = None
-        
-        if folder and user and (not user.is_superuser) and folder.owner_id != user.id:
-            if not ShareService.check_permission(user, 'folder', folder, 'edit'):
+        from django.contrib.auth.models import User
+        from ..models import CassavaImage, Folder
+        from ..storage_utils import read_storage_bytes, save_storage_bytes
+        from ..recycling import unique_name
+        from PIL import ImageOps
+        try:
+            file.seek(0)
+            raw = file.read(128 * 1024 * 1024 + 1)
+            if len(raw) > 128 * 1024 * 1024:
+                return None, ('IMAGE_TOO_LARGE', '单张图片超过128MB')
+            digest = hashlib.sha256(raw).hexdigest()
+            normalized = ImageService._normalize_uploaded_image_bytes(raw)
+            data, image = normalized['content'], normalized['image']
+            width, height = image_dimensions(data)
+            if width * height > 50000000:
+                return None, ('IMAGE_TOO_LARGE', '图片超过5000万像素')
+            folder = Folder.objects.get(pk=folder_id) if folder_id else None
+            if folder and (not user or (not user.is_superuser and folder.owner_id != user.pk
+                    and not ShareService.check_permission(user, 'folder', folder, 'edit'))):
                 return None, ('PERMISSION_DENIED', '无权上传到该文件夹')
-        
-        # 检查重名
-        qs = CassavaImage.objects.filter(name=name)
-        if user:
-            qs = qs.filter(owner=user)
-            
-        if folder:
-            qs = qs.filter(folder=folder)
-        else:
-            qs = qs.filter(folder=None)
-        
-        if qs.exists():
-            if force:
-                # 覆盖：删除原图片（含OSS）
-                for img in qs:
-                    img.delete()
-            elif check_duplicate:
-                return None, ('DUPLICATE_NAME', '文件重名')
-            else:
-                # 自动重命名
-                base, ext = name.rsplit('.', 1) if '.' in name else (name, '')
-                i = 1
-                new_name = f"{base}({i}).{ext}" if ext else f"{base}({i})"
-                
-                # 检查新名字是否重复
-                check_qs = CassavaImage.objects.filter(name=new_name, folder=folder)
-                if user:
-                    check_qs = check_qs.filter(owner=user)
-                else:
-                    # 如果没有用户，且是旧数据兼容，可能不filter owner
-                    # 但为了安全，如果不传user，默认只查自己的？或者全局？
-                    # 假设不传user就是系统级或公开，或者不检查owner
-                    pass
-
-                while check_qs.exists():
-                    i += 1
-                    new_name = f"{base}({i}).{ext}" if ext else f"{base}({i})"
-                    check_qs = CassavaImage.objects.filter(name=new_name, folder=folder)
-                    if user:
-                        check_qs = check_qs.filter(owner=user)
-                name = new_name
-        
-        # 验证图片有效性并尝试获取EXIF
-        capture_time = None
-        normalized_upload = None
-        try:
-            # 重置文件指针
-            file.seek(0)
-            image_data = file.read()
-
-            normalized_upload = ImageService._normalize_uploaded_image_bytes(image_data)
-            image_data = normalized_upload['content']
-            image = normalized_upload['image']
-            pixel_width, pixel_height = image_dimensions(image_data)
-            
-            # 获取EXIF数据
-            exif_data = image.getexif()
-            if exif_data:
-                # 优先检查的标签列表
-                # 36867: DateTimeOriginal (拍摄时间)
-                # 36868: DateTimeDigitized (数字化时间)
-                # 306: DateTime (修改时间)
-                date_tags = [36867, 36868, 306]
-                
-                for tag_id in date_tags:
-                    if tag_id in exif_data:
-                        date_str = exif_data[tag_id]
+            capture = None
+            exif = image.getexif()
+            try:
+                exif = {**dict(exif), **dict(exif.get_ifd(34665))}
+            except (KeyError, ValueError, TypeError):
+                pass
+            if exif.get(36867):
+                try:
+                    capture = datetime.strptime(str(exif[36867]).strip().strip('\x00'), '%Y:%m:%d %H:%M:%S')
+                    offset = str(exif.get(36881, '+08:00'))
+                    zone = dt_timezone(timedelta(hours=8))
+                    if len(offset) == 6 and offset[0] in '+-' and offset[3] == ':':
+                        zone = dt_timezone(timedelta(minutes=(int(offset[1:3])*60+int(offset[4:]))*(1 if offset[0]=='+' else -1)))
+                    capture = capture.replace(tzinfo=zone)
+                except (ValueError, TypeError):
+                    capture = None
+            name = os.path.basename(str(file.name).replace('\\', '/'))
+            with transaction.atomic():
+                # Owner row serializes root-directory names as well as folder uploads.
+                from ..resource_lock import lock_owner
+                lock_owner(user)
+                candidates = CassavaImage.objects.filter(owner=user, folder=folder)
+                if check_duplicate:
+                    for old in candidates.filter(content_sha256=''):
                         try:
-                            # 尝试解析EXIF日期时间字符串 "YYYY:MM:DD HH:MM:SS"
-                            # 有些设备可能会在字符串末尾包含null字符或其他非标准格式
-                            clean_date_str = str(date_str).strip().replace('\x00', '')
-                            capture_time = datetime.strptime(clean_date_str, '%Y:%m:%d %H:%M:%S')
-                            if capture_time:
-                                break
-                        except (ValueError, TypeError):
-                            continue
-            
-            # 重置文件指针以供后续使用
-            file.seek(0)
-        except Exception as e:
-            logger.warning(f"无效图片文件: {e}")
-            return None, ('INVALID_IMAGE', f"Invalid image file: {str(e)}")
-        
-        import os
-        _, ext = os.path.splitext(name)
-        safe_ext = normalized_upload.get('suggested_extension') or (ext or '').lower()
-        if folder:
-            storage_key = f"images/{folder.id}/{uuid.uuid4().hex}{safe_ext}"
-        else:
-            storage_key = f"images/{uuid.uuid4().hex}{safe_ext}"
-        data = image_data
-        if check_oss_configured():
-            upload_result = upload_file_to_oss(storage_key, data)
-            if upload_result.get('status_code') != 200:
-                return None, ('OSS_UPLOAD_FAILED', 'OSS上传失败')
-            saved_path = storage_key
-        else:
-            saved_path = default_storage.save(storage_key, ContentFile(data))
-
-        preview_oss_key = None
-        try:
-            preview_image = image.copy()
-            if preview_image.mode in ('RGBA', 'P'):
-                preview_image = preview_image.convert('RGB')
-
-            preview_image.thumbnail((600, 600))
-            thumb_io = io.BytesIO()
-            preview_image.save(thumb_io, format='JPEG', quality=60)
-            preview_content = thumb_io.getvalue()
-            preview_path = build_preview_storage_key(folder=folder)
-
-            if check_oss_configured():
-                preview_result = upload_file_to_oss(preview_path, preview_content)
-                if preview_result.get('status_code') == 200:
-                    preview_oss_key = preview_path
-            else:
-                preview_oss_key = default_storage.save(preview_path, ContentFile(preview_content))
+                            old.content_sha256 = hashlib.sha256(read_storage_bytes(old.oss_key)).hexdigest()
+                            old.save(update_fields=['content_sha256'])
+                        except (OSError, ValueError):
+                            pass
+                    existing = candidates.filter(content_sha256=digest).first()
+                    if existing:
+                        return None, ('DUPLICATE_CONTENT', f'同目录内容重复，已跳过：{existing.name}')
+                name = unique_name(candidates, name)
+                extension = normalized.get('suggested_extension') or os.path.splitext(name)[1].lower()
+                key = f'images/{folder.pk if folder else "unclassified"}/{uuid.uuid4().hex}{extension}'
+                saved = save_storage_bytes(key, data, error_message='原图保存失败')
+                preview = ImageOps.exif_transpose(image).convert('RGB')
+                preview.thumbnail((600, 600))
+                buffer = BytesIO(); preview.save(buffer, format='JPEG', quality=75)
+                preview_key = save_storage_bytes(f'previews/{uuid.uuid4().hex}.jpg', buffer.getvalue(), error_message='预览保存失败')
+                result = CassavaImage.objects.create(name=name, oss_key=saved, preview_oss_key=preview_key,
+                    size=len(data), pixel_width=width, pixel_height=height, folder=folder, capture_time=capture,
+                    capture_time_source='exif' if capture else 'unknown', content_sha256=digest, owner=user)
+                return result, None
+        except Folder.DoesNotExist:
+            return None, ('FOLDER_NOT_FOUND', '目标目录不存在或已进入回收站')
         except Exception as exc:
-            logger.warning(f"预览图生成失败: {exc}")
-        
-        # 创建图像记录
-        real_size = len(data)
-        image = CassavaImage.objects.create(
-            name=name,
-            oss_key=saved_path,
-            preview_oss_key=preview_oss_key,
-            size=real_size,
-            pixel_width=pixel_width, pixel_height=pixel_height,
-            folder=folder,
-            capture_time=capture_time,
-            owner=user
-        )
-        
-        return image, None
-    
+            logger.warning('Image import failed: %s', exc)
+            return None, ('INVALID_IMAGE', str(exc))
+
     @staticmethod
     def upload_single_image(file, folder_id=None, check_duplicate=True, force=False, user=None):
         image, error = ImageService.upload_image(

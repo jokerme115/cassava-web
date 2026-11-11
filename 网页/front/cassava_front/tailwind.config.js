@@ -1,11 +1,14 @@
 import colors from 'tailwindcss/colors';
+import typography from './src/theme/typography.json';
+
+const typeRole = role => [`${typography.sizes[role]}px`, { lineHeight: `${typography.lineHeights[role]}px` }];
 
 /**
  * 全站视觉基线：HeroUI 口径（柔和现代 · 单一强调色 · 实底卡片）。
  *
  * 设计约束：
- * - 页面底是纯色 #f7f8fa，卡片是纯白实底 + 1px 发丝描边 + 极淡投影；
- * - 强调色只有一支：#0a84ff 做图标/描边/装饰，#0070e0（--brand-fill/--brand-text）做底与文字；
+ * - 页面底是纯色 #f7f6f0，卡片是纯白实底 + 1px 发丝描边 + 极淡投影；
+ * - 强调色只有一支：#3d8060 做图标/描边/装饰，#245c45（--brand-fill/--brand-text）做底与文字；
  * - 语义色沿用 status 口径：绿=完成、蓝=进行中、橙=等待/警告、红=失败/危险；
  * - 色阶仍由系统色按固定比例生成，保证同一色相内明度一致，避免脏色。
  *
@@ -43,7 +46,7 @@ const ramp = (base, dark = '#000000', light = '#ffffff') => {
   };
 };
 
-const iosBlue = ramp('#0a84ff');
+const iosBlue = ramp('#3d8060');
 const iosGreen = ramp('#34c759');
 const iosOrange = ramp('#ff9500');
 const iosRed = ramp('#ff3b30');
@@ -57,6 +60,14 @@ const iosYellow = ramp('#ffcc00');
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
+    fontFamily: { sans: [typography.fontFamily], serif: [typography.fontFamily] },
+    fontSize: {
+      xs: typeRole('caption'), sm: typeRole('control'), base: typeRole('body'),
+      lg: typeRole('panel'), xl: typeRole('panel'), '2xl': typeRole('page'),
+      '3xl': typeRole('metric'), '4xl': typeRole('metric'), '5xl': typeRole('hero'),
+      '6xl': typeRole('hero'), '7xl': typeRole('hero'), '8xl': typeRole('hero'), '9xl': typeRole('hero'),
+    },
+    fontWeight: { normal: '400', medium: '500', semibold: '600', bold: '600', extrabold: '600', black: '600' },
     extend: {
       // 补 480px 断点：原代码里已有 8 处 xs: 前缀，未定义会被 Tailwind 直接丢弃
       screens: {
@@ -89,12 +100,12 @@ export default {
         danger: iosRed,
 
         // 实底主色（白字按钮/选中填充，白底 4.78 达标）
-        'brand-fill': '#0070e0',
-        'brand-fill-hover': '#005cb8',
+        'brand-fill': '#245c45',
+        'brand-fill-hover': '#173e31',
         // 文字档语义色（白底对比 ≥4.5:1，可承载正文）
-        'accent-text': '#0070e0',
+        'accent-text': '#245c45',
         // 描边/焦点环/装饰档（不承载正文，对应 --accent）
-        'accent-line': '#0a84ff',
+        'accent-line': '#3d8060',
         'success-text': '#12805c',
         'warning-text': '#b54708',
         'danger-text': '#d92d20',
@@ -102,15 +113,15 @@ export default {
         'danger-strong': '#b3122f',
 
         // 中性面：与 index.css 的 CSS 变量一一对应，方便在 className 里直接用
-        ink: '#11181c',
-        'ink-secondary': '#3f4650',
-        muted: '#687076',
+        ink: '#20392e',
+        'ink-secondary': '#48584e',
+        muted: '#68756b',
         'muted-light': '#8b9199',
         surface: '#ffffff',
-        'surface-muted': '#f7f8fa',
-        'surface-sunken': '#f2f3f6',
-        hairline: '#ededf2',
-        'hairline-strong': '#e4e5eb',
+        'surface-muted': '#f7f6f0',
+        'surface-sunken': '#eeefe7',
+        hairline: '#e3e7dd',
+        'hairline-strong': '#d5ddcf',
       },
       boxShadow: {
         // 普通卡片一层极淡投影；只有浮层才用大投影（与 --shadow-card/--shadow-float 对齐）

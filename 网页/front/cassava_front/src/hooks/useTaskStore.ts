@@ -1,21 +1,45 @@
+import { message } from '../utils/feedback';
+import api from '../services/rest/client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { PredictionTask } from '../types';
 import { tasksApi } from '../services/api';
-import { message } from 'antd';
+
 import i18n from '../i18n';
 import { getApiErrorMessage } from '../utils/apiError';
 
-export const useTaskStore = (currentUser?: any) => {
+export const useTaskStore = (currentUser?: any, scope?: { search: string; status: string; page: number; pageSize: number; onInvalidPage?: () => void }) => {
   const [tasks, setTasks] = useState<PredictionTask[]>([]);
   const [loading, setLoading] = useState(true);
   const completedSignatureRef = useRef('');
+  const hasActiveTasksRef = useRef(false);
+  const sequenceRef = useRef(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const [aggregate, setAggregate] = useState<any>(null);
+  const { search = '', status = '', page: selectedPage = 1, pageSize = 30 } = scope || {};
+  const paginated = Boolean(scope);
+  const invalidPageRef = useRef(scope?.onInvalidPage); invalidPageRef.current = scope?.onInvalidPage;
 
   const loadTasks = useCallback(async (silent = false) => {
+    const sequence = ++sequenceRef.current;
     if (!silent) setLoading(true);
     try {
-      const params = currentUser?.is_guest ? { user_id: currentUser.id } : {};
-      const data = await tasksApi.getAll(params);
-      const nextTasks = data.items || [];
+      const params = { ...(currentUser?.is_guest ? { user_id: currentUser.id } : {}), ...(paginated ? { search, status } : {}) };
+      let data = await tasksApi.getAll({ ...params, page: paginated ? selectedPage : 1, page_size: paginated ? pageSize : 100 });
+      if (sequence !== sequenceRef.current) return;
+      setTotalCount(data.count ?? data.items.length);
+      if (paginated) {
+        const response = await api.get('/tasks/summary/', { params });
+        if (sequence !== sequenceRef.current) return;
+        setAggregate(response.data);
+      }
+      const nextTasks = [...(data.items || [])];
+      let page = 1;
+      while (!paginated && data.next) {
+        data = await tasksApi.getAll({ ...params, page: ++page, page_size: 100 });
+        nextTasks.push(...(data.items || []));
+      }
+      if (sequence !== sequenceRef.current) return;
+      hasActiveTasksRef.current = nextTasks.some((t: PredictionTask) => t.status === 'running' || t.status === 'pending');
       setTasks(nextTasks);
       const completedSignature = nextTasks
         .filter((task: PredictionTask) => task.status === 'completed')
@@ -25,21 +49,41 @@ export const useTaskStore = (currentUser?: any) => {
         window.dispatchEvent(new CustomEvent('results:reload'));
       }
       completedSignatureRef.current = completedSignature;
-    } catch (error) {
+    } catch (error: any) {
+      if (sequence !== sequenceRef.current) return;
+      if (paginated && selectedPage > 1 && error?.response?.status === 404 && invalidPageRef.current) { invalidPageRef.current(); return; }
       if (!silent) message.error(i18n.t('tasks.load_failed'));
       console.error(error);
       if (!silent) setTasks([]);
     } finally {
-      if (!silent) setLoading(false);
+      if (!silent && sequence === sequenceRef.current) setLoading(false);
     }
-  }, [currentUser]);
+  }, [currentUser, paginated, search, status, selectedPage, pageSize]);
 
   useEffect(() => {
-    void loadTasks();
-    const timer = window.setInterval(() => {
-      if (document.visibilityState === 'visible') void loadTasks(true);
-    }, 2500);
-    return () => window.clearInterval(timer);
+    let timeoutId: number | null = null;
+    let cancelled = false;
+
+    const scheduleNext = () => {
+      if (cancelled) return;
+      const delay = hasActiveTasksRef.current ? 2500 : 15000;
+      timeoutId = window.setTimeout(async () => {
+        if (!cancelled && document.visibilityState === 'visible') {
+          await loadTasks(true);
+        }
+        scheduleNext();
+      }, delay);
+    };
+
+    void loadTasks().finally(() => {
+      scheduleNext();
+    });
+
+    return () => {
+      cancelled = true;
+      sequenceRef.current++;
+      if (timeoutId !== null) window.clearTimeout(timeoutId);
+    };
   }, [loadTasks]);
 
   const createTask = async (taskData: any) => {
@@ -161,6 +205,7 @@ export const useTaskStore = (currentUser?: any) => {
   };
 
   const getTaskStatistics = () => {
+    if (paginated && aggregate) return { ...aggregate, successRate: aggregate.total ? Math.round(aggregate.completed / aggregate.total * 100) : 0 };
     const completed = tasks.filter(t => t.status === 'completed').length;
     const running = tasks.filter(t => t.status === 'running').length;
     const failed = tasks.filter(t => t.status === 'failed').length;
@@ -177,6 +222,7 @@ export const useTaskStore = (currentUser?: any) => {
 
   return {
     tasks,
+    totalCount,
     loading,
     loadTasks,
     createTask,

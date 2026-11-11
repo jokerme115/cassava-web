@@ -38,6 +38,8 @@ import numpy as np
 from .mask_utils import calculate_mask_metrics, load_mask_file
 from .image_quality import image_dimensions, resolution_info
 
+from .recycling import RecyclingActions, recycle
+
 logger = logging.getLogger(__name__)
 upload_logger = logging.getLogger('predict.upload')
 
@@ -70,7 +72,7 @@ class PredictionResultPagination(PageNumberPagination):
             
         return self.page_size
 
-class CassavaImageViewSet(viewsets.ModelViewSet, PermissionMixin, TaskProcessingMixin, FileUploadMixin, ResponseFormatMixin):
+class CassavaImageViewSet(RecyclingActions, viewsets.ModelViewSet, PermissionMixin, TaskProcessingMixin, FileUploadMixin, ResponseFormatMixin):
     """
     木薯图像管理视图集
     """
@@ -90,10 +92,11 @@ class CassavaImageViewSet(viewsets.ModelViewSet, PermissionMixin, TaskProcessing
         'destroy': 'delete_image',
         'upload_files': 'upload_image',
         'upload_batch': 'upload_image',
+        'capture_metadata': 'edit_image',
     }
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = (self.queryset.model.all_objects.filter(deleted_at__isnull=False) if self.request.user.is_authenticated and (self.request.query_params.get('trash') == '1' or self.action in ('restore', 'purge', 'deletion_impact')) else super().get_queryset())
         
         # 访客只能看到访客资源白名单中的图片 (且状态为active)
         # 这里实际上实现了 "访客之间共享"：所有访客看到的是同一个白名单池
@@ -144,6 +147,32 @@ class CassavaImageViewSet(viewsets.ModelViewSet, PermissionMixin, TaskProcessing
             return CassavaImageListSerializer
         return CassavaImageSerializer
 
+    @action(detail=False, methods=['get'])
+    def selection(self, request):
+        queryset = self.get_queryset()
+        if queryset.count() > 20000:
+            return self.error_response('一次最多选择20000张，请缩小目录或搜索范围', status_code=400)
+        ids = list(queryset.values_list('pk', flat=True))
+        return Response({'image_ids': ids, 'count': len(ids)})
+
+    @action(detail=False, methods=['post'], url_path='capture-metadata')
+    def capture_metadata(self, request):
+        ids = request.data.get('image_ids', [])
+        if not isinstance(ids, list) or not 1 <= len(ids) <= 1000:
+            return self.error_response('每次请选择1到1000张图片', status_code=400)
+        queryset = self.get_queryset().filter(pk__in=ids)
+        if not request.user.is_superuser:
+            queryset = queryset.filter(owner=request.user)
+        updated = []
+        with transaction.atomic():
+            from .resource_lock import lock_owner
+            lock_owner(request.user)
+            for image in queryset.select_for_update():
+                serializer = CassavaImageSerializer(image, data={'capture_time': request.data.get('capture_time')},
+                    partial=True, context=self.get_serializer_context())
+                serializer.is_valid(raise_exception=True); serializer.save(); updated.append(image.pk)
+        return Response({'updated': len(updated), 'failed_ids': [pk for pk in ids if str(pk) not in {str(value) for value in updated}]})
+
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         if request.user.is_authenticated and ('folder' in request.data) and (not request.user.is_superuser):
@@ -185,7 +214,7 @@ class CassavaImageViewSet(viewsets.ModelViewSet, PermissionMixin, TaskProcessing
     def perform_destroy(self, instance):
         image_id = instance.id
         image_name = instance.name
-        super().perform_destroy(instance)
+        recycle(instance, self.request.user)
         AuditService.log_action(
             self.request.user, 'DELETE', 'CassavaImage', image_id,
             {'name': image_name}, success=True, request=self.request,
@@ -193,304 +222,23 @@ class CassavaImageViewSet(viewsets.ModelViewSet, PermissionMixin, TaskProcessing
 
     @action(detail=False, methods=['post'], url_path='upload-files')
     def upload_files(self, request):
-        """
-        批量上传图片文件
-        """
+        if not request.user.is_authenticated:
+            return self.error_response('请先登录', status_code=401)
         files = request.FILES.getlist('files')
-        folder_id = request.data.get('folder_id')
-        check_duplicate = request.data.get('check_duplicate') == '1'
-        request_id = getattr(request, 'request_id', '-')
-        user_id = request.user.id if request.user.is_authenticated else 'anonymous'
-        storage_backend = getattr(settings, 'FILE_STORAGE_BACKEND', 'local')
-
-        upload_logger.info(
-            'upload_start request_id=%s user_id=%s folder_id=%s file_count=%s check_duplicate=%s storage=%s',
-            request_id,
-            user_id,
-            folder_id or '',
-            len(files),
-            check_duplicate,
-            storage_backend,
-        )
-        
-        # Check file size limit
-        try:
-            setting = SystemSetting.get_solo()
-            limit_mb = setting.upload_size_limit_mb
-            limit_bytes = limit_mb * 1024 * 1024
-            
-            for file in files:
-                if file.size > limit_bytes:
-                    upload_logger.warning(
-                        'upload_rejected_size request_id=%s user_id=%s name=%s size=%s limit_mb=%s',
-                        request_id,
-                        user_id,
-                        file.name,
-                        file.size,
-                        limit_mb,
-                    )
-                    return Response({'error': f'文件「{file.name}」超出大小限制（{limit_mb}MB），请压缩后再上传'}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception:
-            pass
-
-        folder = None
-        if folder_id:
-            try:
-                folder = Folder.objects.get(id=folder_id)
-            except Folder.DoesNotExist:
-                upload_logger.warning(
-                    'upload_rejected_folder_missing request_id=%s user_id=%s folder_id=%s',
-                    request_id,
-                    user_id,
-                    folder_id,
-                )
-                return Response({'error': '文件夹不存在，可能已被删除，请刷新后重试'}, status=status.HTTP_404_NOT_FOUND)
-            if request.user.is_authenticated and (not request.user.is_superuser) and folder.owner_id != request.user.id:
-                if not ShareService.check_permission(request.user, 'folder', folder, 'edit'):
-                    upload_logger.warning(
-                        'upload_rejected_permission request_id=%s user_id=%s folder_id=%s folder_owner_id=%s',
-                        request_id,
-                        user_id,
-                        folder_id,
-                        folder.owner_id,
-                    )
-                    return Response({'error': '没有权限向该文件夹上传图片'}, status=status.HTTP_403_FORBIDDEN)
-
-        uploaded_images = []
-        duplicate_files = []
-        failed_files = []
-
+        if not files:
+            return self.error_response('未提供文件', status_code=400)
+        uploaded, skipped, failed = [], [], []
         for file in files:
-            file_content = None
-            normalized_upload = None
-            # 检查重复
-            if check_duplicate:
-                exists_qs = CassavaImage.objects.filter(name=file.name)
-                if request.user.is_authenticated and (not request.user.is_superuser):
-                    exists_qs = exists_qs.filter(owner=request.user)
-                exists = exists_qs.exists()
-                if exists:
-                    duplicate_files.append(file.name)
-                    upload_logger.info(
-                        'upload_duplicate_skipped request_id=%s user_id=%s name=%s folder_id=%s',
-                        request_id,
-                        user_id,
-                        file.name,
-                        folder_id or '',
-                    )
-                    continue
-
-            try:
-                file.seek(0)
-                normalized_upload = ImageService._normalize_uploaded_image_bytes(file.read())
-                if normalized_upload.get('converted'):
-                    file = SimpleUploadedFile(
-                        file.name,
-                        normalized_upload['content'],
-                        content_type='image/jpeg',
-                    )
-            except Exception as e:
-                upload_logger.warning(
-                    'upload_rejected_invalid_normalized request_id=%s user_id=%s name=%s error=%s',
-                    request_id,
-                    user_id,
-                    file.name,
-                    str(e),
-                    exc_info=True,
-                )
-                return Response({'error': f'文件「{file.name}」不是有效图片或已损坏，请检查后重试'}, status=status.HTTP_400_BAD_REQUEST)
-
-            # 严格验证图片内容
-            try:
-                # 尝试打开并验证图片
-                file.seek(0)
-                img_verify = Image.open(file)
-                img_verify.verify() # 验证文件头和结构
-                # verify后需要重新seek(0)且对象不能再使用，需要重新open
-                file.seek(0)
-                if img_verify.format not in ['JPEG', 'PNG', 'BMP', 'WEBP', 'TIFF']:
-                     raise Exception(f"Unsupported image format: {img_verify.format}")
-            except Exception as e:
-                upload_logger.warning(
-                    'upload_rejected_invalid_image request_id=%s user_id=%s name=%s error=%s',
-                    request_id,
-                    user_id,
-                    file.name,
-                    str(e),
-                    exc_info=True,
-                )
-                return Response({'error': f'文件「{file.name}」不是有效图片或格式不受支持（仅支持 JPEG/PNG/BMP/WEBP/TIFF）'}, status=status.HTTP_400_BAD_REQUEST)
-
-
-            # 创建图片记录
-            try:
-                file_content = file.read()
-                original_name = file.name
-                _, ext = os.path.splitext(original_name)
-                safe_ext = (ext or '').lower()
-
-                # 构建存储路径 (OSS Key 或 本地路径)
-                if folder:
-                    file_path = f"images/{folder.id}/{uuid.uuid4().hex}{safe_ext}"
-                else:
-                    file_path = f"images/{uuid.uuid4().hex}{safe_ext}"
-                
-                saved_path = file_path
-                
-                # 检查OSS配置
-                if check_oss_configured():
-                    # 上传到OSS
-                    result = upload_file_to_oss(file_path, file_content)
-                    
-                    if result.get('status_code') != 200:
-                        raise Exception(f"OSS upload failed: {result.get('error')}")
-                    
-                    # OSS 上传成功，使用 file_path 作为 oss_key
-                    saved_path = file_path
-                else:
-                    # 本地存储
-                    # 检查文件是否存在，如果存在则自动重命名（Django default_storage 会自动处理）
-                    saved_path = default_storage.save(file_path, ContentFile(file_content))
-                
-                pixel_width, pixel_height = image_dimensions(file_content)
-
-                # Generate Preview
-                preview_oss_key = None
-                try:
-                    # Create image from content
-                    img = Image.open(io.BytesIO(file_content))
-                    
-                    # Convert to RGB if necessary
-                    if img.mode in ('RGBA', 'P'):
-                        img = img.convert('RGB')
-                        
-                    # Calculate new size maintaining aspect ratio
-                    # Max dimension 600px (optimized for cost reduction)
-                    # Changed from 800px to reduce storage size by ~30%
-                    max_size = (600, 600)
-                    img.thumbnail(max_size)
-                    
-                    # Save to buffer
-                    # Quality reduced from 70 to 60 for additional 15-20% size reduction
-                    thumb_io = io.BytesIO()
-                    img.save(thumb_io, format='JPEG', quality=60)
-                    thumb_content = thumb_io.getvalue()
-                    
-                    preview_path = build_preview_storage_key(folder=folder)
-                    
-                    # Upload/Save Preview
-                    if check_oss_configured():
-                        upload_file_to_oss(preview_path, thumb_content)
-                        preview_oss_key = preview_path
-                    else:
-                        preview_oss_key = default_storage.save(preview_path, ContentFile(thumb_content))
-                        
-                except Exception as e:
-                    upload_logger.warning(
-                        'upload_preview_failed request_id=%s user_id=%s name=%s storage_key=%s error=%s',
-                        request_id,
-                        user_id,
-                        file.name,
-                        saved_path,
-                        str(e),
-                        exc_info=True,
-                    )
-                    # Don't fail the upload if preview generation fails
-                
-                # 创建记录
-                image = CassavaImage.objects.create(
-                    name=original_name,
-                    oss_key=saved_path, 
-                    preview_oss_key=preview_oss_key,
-                    folder=folder,
-                    size=file.size,
-                    pixel_width=pixel_width, pixel_height=pixel_height,
-                    owner=request.user if request.user.is_authenticated else None
-                )
-                uploaded_images.append(image)
-                upload_logger.info(
-                    'upload_file_saved request_id=%s user_id=%s image_id=%s name=%s storage_key=%s preview_key=%s size=%s storage=%s',
-                    request_id,
-                    user_id,
-                    image.id,
-                    original_name,
-                    saved_path,
-                    preview_oss_key or '',
-                    file.size,
-                    storage_backend,
-                )
-            except Exception as e:
-                error_message = str(e)
-                upload_logger.exception(
-                    'upload_file_failed request_id=%s user_id=%s name=%s folder_id=%s storage=%s error=%s',
-                    request_id,
-                    user_id,
-                    file.name,
-                    folder_id or '',
-                    storage_backend,
-                    error_message,
-                )
-                failed_files.append({
-                    'name': file.name,
-                    'error': '保存失败，请重试或联系管理员',
-                })
-        
-        if failed_files and not uploaded_images:
-            upload_logger.error(
-                'upload_finished_failed request_id=%s user_id=%s uploaded_count=0 failed_count=%s duplicate_count=%s',
-                request_id,
-                user_id,
-                len(failed_files),
-                len(duplicate_files),
-            )
-            return Response({
-                'error': '上传失败，请稍后重试',
-                'uploaded_count': 0,
-                'failed': failed_files,
-                'duplicates': duplicate_files,
-            }, status=status.HTTP_502_BAD_GATEWAY)
-
-        if failed_files:
-            upload_logger.warning(
-                'upload_finished_partial request_id=%s user_id=%s uploaded_count=%s failed_count=%s duplicate_count=%s',
-                request_id,
-                user_id,
-                len(uploaded_images),
-                len(failed_files),
-                len(duplicate_files),
-            )
-            return Response({
-                'message': '部分文件上传失败',
-                'uploaded_count': len(uploaded_images),
-                'failed': failed_files,
-                'duplicates': duplicate_files,
-                'results': self.get_serializer(uploaded_images, many=True).data,
-            }, status=status.HTTP_207_MULTI_STATUS)
-
-        if duplicate_files:
-             upload_logger.info(
-                 'upload_finished_duplicates request_id=%s user_id=%s uploaded_count=%s duplicate_count=%s',
-                 request_id,
-                 user_id,
-                 len(uploaded_images),
-                 len(duplicate_files),
-             )
-             # 如果有重复文件且是部分成功，返回特定状态码或信息
-             return Response({
-                 'message': '有文件因重名被跳过',
-                 'uploaded_count': len(uploaded_images),
-                 'duplicates': duplicate_files,
-                 'results': self.get_serializer(uploaded_images, many=True).data
-             }, status=status.HTTP_200_OK) # 或者 207 Multi-Status
-
-        serializer = self.get_serializer(uploaded_images, many=True)
-        upload_logger.info(
-            'upload_finished_success request_id=%s user_id=%s uploaded_count=%s duplicate_count=0',
-            request_id,
-            user_id,
-            len(uploaded_images),
-        )
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+            image, error = ImageService.upload_image(file, request.data.get('folder_id') or None,
+                check_duplicate=request.data.get('check_duplicate', '1') != '0', user=request.user)
+            if error:
+                (skipped if error[0] == 'DUPLICATE_CONTENT' else failed).append({'name': file.name, 'code': error[0], 'error': error[1]})
+            else:
+                uploaded.append(image)
+        serialized = CassavaImageSerializer(uploaded, many=True, context=self.get_serializer_context()).data
+        if not skipped and not failed:
+            return Response(serialized, status=201)
+        return Response({'images': serialized, 'success_count': len(uploaded), 'duplicates': skipped, 'failed': failed}, status=207 if failed else 201)
 
     @action(detail=False, methods=['post'], url_path='upload-batch')
     def upload_batch(self, request):
@@ -604,7 +352,7 @@ class CassavaImageViewSet(viewsets.ModelViewSet, PermissionMixin, TaskProcessing
             return Response({'error': 'ZIP 解压处理失败，请检查压缩包内容后重试'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class FolderViewSet(viewsets.ModelViewSet, PermissionMixin, ResponseFormatMixin):
+class FolderViewSet(RecyclingActions, viewsets.ModelViewSet, PermissionMixin, ResponseFormatMixin):
     """
     文件夹管理视图集
     """
@@ -667,6 +415,9 @@ class FolderViewSet(viewsets.ModelViewSet, PermissionMixin, ResponseFormatMixin)
         )
         return context
 
+    def perform_destroy(self, instance):
+        recycle(instance, self.request.user)
+
     def perform_create(self, serializer):
         parent_id = self.request.data.get('parent')
         if parent_id and self.request.user.is_authenticated and (not self.request.user.is_superuser):
@@ -677,7 +428,7 @@ class FolderViewSet(viewsets.ModelViewSet, PermissionMixin, ResponseFormatMixin)
         serializer.save(owner=self.request.user)
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = (self.queryset.model.all_objects.filter(deleted_at__isnull=False) if self.request.user.is_authenticated and (self.request.query_params.get('trash') == '1' or self.action in ('restore', 'purge', 'deletion_impact')) else super().get_queryset())
         
         # Filter by parent folder
         parent_id = self.request.query_params.get('parent')
@@ -768,8 +519,17 @@ class FolderViewSet(viewsets.ModelViewSet, PermissionMixin, ResponseFormatMixin)
                 Q(expires_at__isnull=True) | Q(expires_at__gt=now)
             ).values_list('resource_id', flat=True))
             queryset = queryset.filter(Q(owner=request.user) | Q(id__in=editable_shared_ids))
-        updated = queryset.update(folder=folder)
-        return self.success_response({'updated': updated})
+        from .recycling import unique_name
+        moved = []
+        with transaction.atomic():
+            from .resource_lock import lock_owner
+            lock_owner(request.user)
+            Folder.objects.select_for_update().get(pk=folder.pk)
+            for image in queryset.select_for_update():
+                image.name = unique_name(CassavaImage.objects.filter(owner=image.owner, folder=folder), image.name, image.pk)
+                image.folder = folder; image.save(update_fields=['name', 'folder'])
+                moved.append(image.pk)
+        return self.success_response({'updated': len(moved), 'failed_ids': [value for value in image_ids if str(value) not in {str(pk) for pk in moved}]})
 
     @action(detail=True, methods=['post'], url_path='delete_with_strategy')
     def delete_with_strategy(self, request, pk=None):
@@ -778,49 +538,8 @@ class FolderViewSet(viewsets.ModelViewSet, PermissionMixin, ResponseFormatMixin)
             if not ShareService.check_permission(request.user, 'folder', folder, 'manage'):
                 return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
 
-        strategy = request.data.get('strategy') or 'keep'
-        target_folder_id = request.data.get('target_folder_id')
-
-        folder_ids = set()
-        queue = [folder.id]
-        while queue:
-            current = queue.pop()
-            if current in folder_ids:
-                continue
-            folder_ids.add(current)
-            children = list(Folder.objects.filter(parent_id=current).values_list('id', flat=True))
-            queue.extend(children)
-
-        images_qs = CassavaImage.objects.filter(folder_id__in=list(folder_ids))
-        if request.user.is_authenticated and (not request.user.is_superuser) and folder.owner_id == request.user.id:
-            images_qs = images_qs.filter(owner=request.user)
-
-        with transaction.atomic():
-            affected_images = images_qs.count()
-
-            if strategy == 'move':
-                if not target_folder_id:
-                    return self.error_response("未提供目标文件夹", status_code=status.HTTP_400_BAD_REQUEST)
-                try:
-                    target_folder = Folder.objects.get(id=target_folder_id)
-                except Folder.DoesNotExist:
-                    return self.error_response("目标文件夹不存在", status_code=status.HTTP_404_NOT_FOUND)
-                if request.user.is_authenticated and (not request.user.is_superuser) and target_folder.owner_id != request.user.id:
-                    if not ShareService.check_permission(request.user, 'folder', target_folder, 'edit'):
-                        return self.error_response("无权移动到该文件夹", status_code=status.HTTP_403_FORBIDDEN)
-                images_qs.update(folder=target_folder)
-            elif strategy == 'delete':
-                images_qs.delete()
-            else:
-                images_qs.update(folder=None)
-
-            folder.delete()
-
-        return self.success_response({
-            'deleted_folder_id': folder.id,
-            'affected_images': affected_images,
-            'strategy': strategy
-        })
+        recycle(folder, request.user)
+        return self.success_response({'recycled_folder_id': folder.pk, 'strategy': 'recycle'})
 
 class SegmentationResultViewSet(viewsets.ModelViewSet, PermissionMixin, ResponseFormatMixin):
     """
@@ -893,6 +612,9 @@ class PredictionResultViewSet(viewsets.ModelViewSet, PermissionMixin, ResponseFo
             else:
                 queryset = queryset.none()
 
+        from .result_queries import result_scope
+        queryset = result_scope(queryset, self.request.query_params)
+
         # If guest, filter by whitelist
         if not self.request.user.is_authenticated:
             from .models import GuestAccessibleResource
@@ -931,21 +653,58 @@ class PredictionResultViewSet(viewsets.ModelViewSet, PermissionMixin, ResponseFo
         query = request.query_params.get('search', '').strip()
         if query:
             queryset = queryset.filter(Q(original_image__name__icontains=query) | Q(original_image__folder__name__icontains=query))
-        level = request.query_params.get('status', 'all')
-        if level not in {'all', 'high', 'medium', 'low', 'review'}:
-            return self.error_response('无效筛选条件', status_code=400)
-        if level != 'all':
-            matching = []
-            for result in queryset:
-                value = measurement_info(result)['final_ppd']
-                if ((level == 'review' and value is None) or
-                    (value is not None and ((level == 'high' and value >= 7) or
-                     (level == 'medium' and 4 <= value < 7) or (level == 'low' and value < 4)))):
-                    matching.append(result.id)
-            queryset = queryset.filter(id__in=matching)
         try:
-            return export_response(queryset, file_type)
+            import json
+            ids = request.query_params.get('result_ids')
+            if ids:
+                try: queryset = queryset.filter(pk__in=[int(value) for value in ids.split(',')])
+                except ValueError: return self.error_response('无效结果编号', status_code=400)
+            return export_response(queryset, file_type, style=json.loads(request.query_params.get('style', '{}')),
+                version=request.query_params.get('version', 'latest'))
         except ValueError as exc:
+            return self.error_response(str(exc), status_code=400)
+
+    @action(detail=False, methods=['get'])
+    def summary(self, request):
+        from django.db.models import Avg, Min, Max, Count, Q
+        return Response(self.get_queryset().aggregate(total=Count('pk'), avg=Avg('_final_ppd'),
+            min=Min('_final_ppd'), max=Max('_final_ppd'), healthy=Count('pk', filter=Q(_final_ppd__lt=4)),
+            mild=Count('pk', filter=Q(_final_ppd__gte=4, _final_ppd__lt=7)), severe=Count('pk', filter=Q(_final_ppd__gte=7)),
+            needs_review=Count('pk', filter=Q(_final_ppd__isnull=True))))
+
+    @action(detail=True, methods=['post'])
+    def review(self, request, pk=None):
+        from .measurement import latest_correction, measurement_info
+        prediction = self.get_object()
+        if not request.user.is_authenticated or (not request.user.is_superuser and prediction.owner_id != request.user.pk):
+            return self.error_response('仅所有者可完成复检', status_code=403)
+        with transaction.atomic():
+            from .resource_lock import lock_owner
+            lock_owner(request.user)
+            prediction = PredictionResult.objects.select_for_update().get(pk=prediction.pk)
+            correction = latest_correction(prediction)
+            version = correction.version if correction else 0
+            if request.data.get('version') != version:
+                return self.error_response('结果版本已改变，请重新载入后复检', status_code=409)
+            prediction.reviewed_version = version
+            prediction.reviewed_at = timezone.now()
+            prediction.reviewed_by = request.user
+            prediction.save(update_fields=['reviewed_version', 'reviewed_at', 'reviewed_by'])
+            AuditService.log_action(request.user, 'UPDATE', 'PredictionResult', prediction.pk,
+                {'reviewed_version': version, 'reviewed_at': prediction.reviewed_at.isoformat()}, success=True, request=request)
+        return self.success_response(measurement_info(prediction))
+
+    @action(detail=True, methods=['get'])
+    def figure(self, request, pk=None):
+        from django.http import HttpResponse
+        from .contour_export import figure_png
+        from .measurement import selected_correction
+        import json
+        prediction = self.get_object()
+        try:
+            correction = selected_correction(prediction, request.query_params.get('version', 'latest'))
+            return HttpResponse(figure_png(prediction, correction, json.loads(request.query_params.get('style', '{}'))), content_type='image/png')
+        except (ValueError, OSError, TypeError) as exc:
             return self.error_response(str(exc), status_code=400)
 
     @action(detail=True, methods=['get'], url_path='overlay')
@@ -1050,6 +809,10 @@ class PredictionResultViewSet(viewsets.ModelViewSet, PermissionMixin, ResponseFo
             except json.JSONDecodeError:
                 edit_data = {'raw': edit_data}
         edit_data = edit_data if isinstance(edit_data, dict) else {}
+        rotation = edit_data.get('rotation_degrees', 0)
+        if type(rotation) is not int or rotation not in (0, 90, 180, 270):
+            return self.error_response('旋转角度仅支持0、90、180、270度', status_code=400)
+        edit_data['rotation_degrees'] = rotation
         edit_data['segments'] = segment_measurements(prediction, cassava, rotten)
         stored_keys = []
         try:
@@ -1160,7 +923,7 @@ class PredictionResultViewSet(viewsets.ModelViewSet, PermissionMixin, ResponseFo
             message=response_message
         )
 
-class ProcessingTaskViewSet(viewsets.ModelViewSet, PermissionMixin, ResponseFormatMixin):
+class ProcessingTaskViewSet(RecyclingActions, viewsets.ModelViewSet, PermissionMixin, ResponseFormatMixin):
     """
     处理任务视图集
     """
@@ -1168,6 +931,7 @@ class ProcessingTaskViewSet(viewsets.ModelViewSet, PermissionMixin, ResponseForm
     serializer_class = ProcessingTaskSerializer
     permission_classes = [HasPermission]  # 移除 IsAuthenticated，允许访客通过 HasPermission 控制
     permission_codename = 'view_task'
+    pagination_class = StandardResultsSetPagination
     allow_guest = True  # 允许访客访问（具体限制在 HasPermission 中实现）
     perms_map = {
         'list': 'view_task',
@@ -1179,13 +943,25 @@ class ProcessingTaskViewSet(viewsets.ModelViewSet, PermissionMixin, ResponseForm
         'cancel': 'cancel_task',
     }
 
+    def perform_destroy(self, instance):
+        recycle(instance, self.request.user)
+
     def get_queryset(self):
         # 访客只能看到自己的任务 (根据 Cookie 中的 guest_token 过滤)
-        queryset = super().get_queryset()
+        queryset = (self.queryset.model.all_objects.filter(deleted_at__isnull=False) if self.request.user.is_authenticated and (self.request.query_params.get('trash') == '1' or self.action in ('restore', 'purge', 'deletion_impact')) else super().get_queryset())
+        if self.action == 'retrieve' and self.request.user.is_authenticated:
+            queryset = self.queryset.model.all_objects.all()
 
         # 预先标注结果条数，避免列表页对每个任务再发一次 count 查询
         from django.db.models import Count
-        queryset = queryset.annotate(_result_count=Count('prediction_results', distinct=True))
+        queryset = queryset.annotate(_result_count=Count('prediction_results', distinct=True)).order_by('-created_time', '-pk')
+        if self.action in ('list', 'summary'):
+            search = self.request.query_params.get('search', '').strip()
+            state = self.request.query_params.get('status', '')
+            if search:
+                queryset = queryset.filter(name__icontains=search)
+            if state:
+                queryset = queryset.filter(status=state)
 
         if not self.request.user.is_authenticated:
             # 获取 guest_token
@@ -1202,6 +978,12 @@ class ProcessingTaskViewSet(viewsets.ModelViewSet, PermissionMixin, ResponseForm
         if hasattr(self, 'filter_queryset_by_permission'):
             return self.filter_queryset_by_permission(queryset)
         return queryset
+
+    @action(detail=False, methods=['get'])
+    def summary(self, request):
+        from django.db.models import Count
+        counts = dict(self.get_queryset().order_by().values('status').annotate(n=Count('pk')).values_list('status', 'n'))
+        return Response({'total': sum(counts.values()), **{key: counts.get(key, 0) for key in ('completed', 'running', 'failed', 'pending', 'cancelled')}})
 
     def create(self, request, *args, **kwargs):
         # 如果是访客创建预测任务，增加使用计数并设置Cookie
@@ -1299,9 +1081,32 @@ class ShareViewSet(viewsets.ModelViewSet, PermissionMixin, ResponseFormatMixin):
     """
     资源共享视图集
     """
-    queryset = ResourceShare.objects.all()
     serializer_class = ResourceShareSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if not user or not user.is_authenticated:
+            return ResourceShare.objects.none()
+        if getattr(user, 'is_staff', False) or getattr(user, 'is_superuser', False):
+            return ResourceShare.objects.all().order_by('-created_at')
+        return ResourceShare.objects.filter(Q(shared_by=user) | Q(shared_with=user)).order_by('-created_at')
+
+    def create(self, request, *args, **kwargs):
+        return self.share(request)
+
+    def destroy(self, request, *args, **kwargs):
+        share_id = kwargs.get('pk')
+        ok, err = ShareService.revoke_share(request.user, share_id)
+        if not ok:
+            return self.error_response(err or "操作失败", status_code=status.HTTP_400_BAD_REQUEST)
+        return self.success_response({'revoked': True}, status_code=status.HTTP_200_OK)
+
+    def update(self, request, *args, **kwargs):
+        return self.error_response("不允许直接修改共享记录", status_code=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def partial_update(self, request, *args, **kwargs):
+        return self.error_response("不允许直接修改共享记录", status_code=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     @action(detail=False, methods=['get'])
     def my_shares(self, request):
@@ -1320,6 +1125,16 @@ class ShareViewSet(viewsets.ModelViewSet, PermissionMixin, ResponseFormatMixin):
         resource_type = request.data.get('resource_type')
         resource_id = request.data.get('resource_id')
         shared_with_username = request.data.get('shared_with_username')
+        if not shared_with_username and request.data.get('shared_with'):
+            sw = request.data.get('shared_with')
+            if isinstance(sw, int) or (isinstance(sw, str) and sw.isdigit()):
+                from django.contrib.auth.models import User
+                try:
+                    shared_with_username = User.objects.get(id=int(sw)).username
+                except User.DoesNotExist:
+                    shared_with_username = str(sw)
+            else:
+                shared_with_username = str(sw)
         permission = request.data.get('permission') or 'view'
         expires_at_raw = request.data.get('expires_at')
 

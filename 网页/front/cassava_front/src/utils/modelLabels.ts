@@ -2,6 +2,10 @@
 // 对用户统一显示为有监督、半监督、投票三类。
 // legacy 旧标签（V1.0 / V1.1 / 投票字样）来自历史数据库记录，同样映射到新名称。
 const DISPLAY: Record<string, string> = {
+  pbt_c512: 'PBT SegFormer-B2 · c512 五种子',
+  pbt_c384: 'PBT SegFormer-B2 · c384 五种子',
+  hrnet_w48: 'HRNet-W48 · seed101',
+  mask2former_swin_t: 'Mask2Former Swin-T · seed42',
   resnet101: '有监督模型',
   m6_best: '半监督模型',
   ensemble: '投票模型',
@@ -14,3 +18,6 @@ const DISPLAY: Record<string, string> = {
 };
 
 export const modelLabel = (name?: string | null): string => DISPLAY[name || ''] || name || '--';
+
+const SHORT: Record<string, string> = { pbt_c512: 'PBT · 512 ×5', pbt_c384: 'PBT · 384 ×5', hrnet_w48: 'HRNet-W48', mask2former_swin_t: 'Mask2Former', m6_best: 'M6' };
+export const shortModelLabel = (name?: string | null): string => SHORT[name || ''] || SHORT[Object.keys(DISPLAY).find(key => DISPLAY[key] === name) || ''] || modelLabel(name);

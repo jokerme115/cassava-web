@@ -5,6 +5,7 @@ import type { PredictionResult } from '../../types';
 
 // === Predictions API ===
 export const predictionsApi = {
+  completeReview: (id: string, version: number) => api.post(`/predictions/${id}/review/`, { version }),
   getAll: (params?: any): Promise<PaginatedResponse<PredictionResult>> =>
     api.get('/predictions/', { params }).then(res => {
       const parsed = toPaginatedResult<any>(res.data);
@@ -29,7 +30,7 @@ export const predictionsApi = {
         results: parsed.results.map(normalizePredictionResult),
       };
     }),
-  export: (params: { file_type: 'csv' | 'xlsx' | 'zip'; task_id?: string; search?: string; status?: string }) =>
+  export: (params: { file_type: 'csv' | 'xlsx' | 'zip'; task_id?: string; search?: string; status?: string; review_status?: string; style?: string; version?: string; result_ids?: string }) =>
     api.get('/predictions/export/', { params, responseType: 'blob', timeout: 300000 }),
   getOverlay: (id: string, version: number): Promise<Blob> =>
     api.get(`/predictions/${id}/overlay/`, { params: { version }, responseType: 'blob' }).then(res => res.data),

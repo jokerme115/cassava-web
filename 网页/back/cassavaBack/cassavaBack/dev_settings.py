@@ -30,6 +30,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        'OPTIONS': {'timeout': 60},
     }
 }
 
@@ -55,3 +56,11 @@ OSS_ACCESS_KEY_SECRET = ''
 
 # 单元测试与纯前端联调默认不起预测 worker。
 PREDICTION_TASKS_DISABLED = True
+
+# Windows cannot rotate one log file while the import worker also holds it open.
+from copy import deepcopy
+LOGGING = deepcopy(LOGGING)
+for handler in LOGGING.get('handlers', {}).values():
+    if handler.get('filename'):
+        log_file = Path(handler['filename'])
+        handler['filename'] = str(log_file.with_name(f'{log_file.stem}.local-{os.getpid()}{log_file.suffix}'))

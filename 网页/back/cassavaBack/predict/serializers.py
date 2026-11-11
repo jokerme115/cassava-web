@@ -19,6 +19,7 @@ class ResourceShareSerializer(serializers.ModelSerializer):
         model = ResourceShare
         fields = ['id', 'resource_type', 'resource_id', 'shared_by', 'shared_by_username', 
                   'shared_with', 'shared_with_username', 'permission', 'expires_at', 'created_at', 'resource_details']
+        read_only_fields = ['shared_by', 'created_at']
     
     def get_resource_details(self, obj):
         if obj.resource_type == 'image':
@@ -46,7 +47,9 @@ class CassavaImageListSerializer(serializers.ModelSerializer):
             'id', 'name', 'folder', 'owner', 'size', 'days', 'type',
             'description', 'capture_time', 'created_at', 'updated_at',
             'preview_url', 'pixel_width', 'pixel_height', 'resolution',
+            'capture_time_source', 'capture_time_history', 'content_sha256', 'deleted_at',
         ]
+        read_only_fields = ['capture_time_source', 'capture_time_history', 'content_sha256', 'deleted_at']
 
     # Dimensions come from decoded original files, never client edits or previews.
     pixel_width = serializers.IntegerField(read_only=True)
@@ -73,6 +76,21 @@ class CassavaImageSerializer(CassavaImageListSerializer):
     
     class Meta(CassavaImageListSerializer.Meta):
         fields = CassavaImageListSerializer.Meta.fields + ['image_url']
+
+    def update(self, instance, validated_data):
+        if 'capture_time' in validated_data and validated_data['capture_time'] != instance.capture_time:
+            history = list(instance.capture_time_history or [])
+            user = getattr(self.context.get('request'), 'user', None)
+            history.append({'before': instance.capture_time.isoformat() if instance.capture_time else None,
+                            'after': validated_data['capture_time'].isoformat() if validated_data['capture_time'] else None,
+                            'at': timezone.now().isoformat(), 'by': getattr(user, 'pk', None)})
+            validated_data['capture_time_history'] = history
+            validated_data['capture_time_source'] = 'manual' if validated_data['capture_time'] else 'unknown'
+        if 'folder' in validated_data or 'name' in validated_data:
+            from .recycling import unique_name
+            validated_data['name'] = unique_name(CassavaImage.objects.filter(owner=instance.owner,
+                folder=validated_data.get('folder', instance.folder)), validated_data.get('name', instance.name), instance.pk)
+        return super().update(instance, validated_data)
 
     def get_image_url(self, obj):
         # 生成OSS文件的访问URL
@@ -275,40 +293,7 @@ class PredictionCorrectionSerializer(serializers.ModelSerializer):
         return self._url(obj.rotten_mask_key)
 
 
-_PREDICTION_MODEL_LABELS = {
-    'resnet50': 'DeepLabV3+ ResNet-50',
-    'resnet101': 'DeepLabV3+ ResNet-101',
-    'mobilenet': 'DeepLabV3+ MobileNet',
-    'm6_best': '半监督模型（M6）',
-    'ensemble': '投票模型（ResNet-101 + M6）',
-}
-
-
-def _missing_model_weight(model_key):
-    """返回缺失的权重文件名；权重齐备时返回 None。
-
-    创建任务时先校验，避免出现「202 创建成功、几秒后异步失败」这种把错误
-    推到后台队列里的体验——那时的报错既看不到原因也不好重试。
-    """
-    from django.conf import settings as dj_settings
-
-    if model_key == 'ensemble':
-        from .ensemble import MEMBERS
-        for member in MEMBERS:
-            missing = _missing_model_weight(member)
-            if missing:
-                return missing
-        return None
-    if model_key == 'm6_best':
-        path = getattr(dj_settings, 'M6_BEST_MODEL_PATH', None)
-        if path and os.path.exists(path):
-            return None
-        return os.path.basename(path) if path else 'm6_best_fold1.pth'
-    config = (getattr(dj_settings, 'DEEPLAB_MODEL_CONFIGS', {}) or {}).get(model_key) or {}
-    path = config.get('path')
-    if path and os.path.exists(path):
-        return None
-    return os.path.basename(path) if path else f'{model_key}.pth'
+from .model_registry import LABELS as _PREDICTION_MODEL_LABELS, unavailable_reason as _missing_model_weight
 
 
 class ProcessingTaskSerializer(serializers.ModelSerializer):
@@ -348,9 +333,20 @@ class ProcessingTaskSerializer(serializers.ModelSerializer):
         task_type = attrs.get('type', getattr(self.instance, 'type', 'prediction'))
         if task_type != 'prediction':
             return attrs
+        if not self.instance and not attrs.get('single_model_type') and not attrs.get('algorithm'):
+            attrs.update(single_model_type='pbt_c512', algorithm='pbt_c512')
         for field in ('algorithm', 'single_model_type'):
             if field in attrs:
                 attrs[field] = self._validate_model_key(field, attrs[field])
+        from .model_registry import MODERN_KEYS, members
+        key = attrs.get('single_model_type') or attrs.get('algorithm')
+        if key in MODERN_KEYS:
+            params = dict(attrs.get('parameters') or {})
+            params.update(confidenceThreshold=.5, minArea=0, usePostProcessing=False, useTTA=False,
+                stage1Confidence=.5, stage2Confidence=.5, morphKernelSize=0, morphIterations=0,
+                model_version={'id': key, 'device': 'cpu', 'members': members(key),
+                    'protocol': 'two-yolo-0.5/roi-black/native-pad16/argmax/no-postprocess'})
+            attrs.update(parameters=params, threshold=.5, min_size=0, method='')
         return attrs
 
     @staticmethod
@@ -371,6 +367,8 @@ class ProcessingTaskSerializer(serializers.ModelSerializer):
         return key
 
     def get_image_count(self, obj):
+        if obj.type == 'upload':
+            return (obj.parameters or {}).get('total', 0)
         # 文件夹任务提交时 image_ids 为空列表，此时应按 folder_ids 现算，
         # 否则任务中心会把「100 张的文件夹任务」显示成 0 张。
         if isinstance(obj.image_ids, list) and obj.image_ids:
@@ -424,6 +422,13 @@ class FolderSerializer(serializers.ModelSerializer):
         name = attrs.get('name', getattr(self.instance, 'name', None))
         parent = attrs.get('parent', getattr(self.instance, 'parent', None))
 
+        cursor, seen = parent, set()
+        while cursor:
+            if cursor.pk in seen or (self.instance and cursor.pk == self.instance.pk):
+                raise serializers.ValidationError({'parent': '不能将文件夹移入自身或其子目录'})
+            seen.add(cursor.pk)
+            cursor = cursor.parent
+
         if owner and name:
             qs = Folder.objects.filter(owner=owner, parent=parent, name=name)
             if self.instance:
@@ -468,9 +473,15 @@ class FolderSerializer(serializers.ModelSerializer):
 
 # 权限管理序列化器
 class PermissionSerializer(serializers.ModelSerializer):
+    is_bound = serializers.SerializerMethodField()
+
+    def get_is_bound(self, obj):
+        from .permission_catalog import bound_permission_codes
+        return obj.codename in bound_permission_codes()
+
     class Meta:
         model = Permission
-        fields = ['id', 'name', 'codename', 'category', 'description', 'created_at', 'updated_at']
+        fields = ['id', 'name', 'codename', 'category', 'description', 'is_bound', 'created_at', 'updated_at']
 
 
 class PermissionTemplateSerializer(serializers.ModelSerializer):
@@ -491,15 +502,26 @@ class PermissionTemplateSerializer(serializers.ModelSerializer):
 
 class RoleSerializer(serializers.ModelSerializer):
     permissions_count = serializers.SerializerMethodField()
-    permission_ids = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    permission_ids = serializers.PrimaryKeyRelatedField(source='permissions', many=True, queryset=Permission.objects.all(), required=False)
+    user_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Role
         fields = ['id', 'name', 'description', 'is_active', 'permissions_count', 
-                  'permission_ids', 'created_at', 'updated_at']
+                  'permission_ids', 'user_count', 'created_at', 'updated_at']
 
     def get_permissions_count(self, obj):
         return obj.permissions.count()
+
+    def get_user_count(self, obj):
+        return obj.user_roles.count()
+
+    def validate_permission_ids(self, value):
+        from .permissions import user_has_permission
+        request = self.context.get('request')
+        if request and not request.user.is_superuser and not user_has_permission(request.user, 'assign_role_permissions'):
+            raise serializers.ValidationError('需要分配角色权限的授权')
+        return value
 
 
 class UserRoleSerializer(serializers.ModelSerializer):
@@ -528,11 +550,21 @@ class UserProfileSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = UserProfile
-        fields = ['avatar', 'avatar_url', 'employee_id', 'department', 'phone', 'bio', 'two_factor_enabled', 'theme', 'notification_settings']
+        fields = ['avatar', 'avatar_url', 'employee_id', 'department', 'phone', 'bio', 'two_factor_enabled', 'theme', 'notification_settings', 'preferences', 'preferences_etag']
         extra_kwargs = {
             'avatar': {'write_only': True},
             'two_factor_enabled': {'read_only': True}
         }
+
+    preferences_etag = serializers.SerializerMethodField()
+
+    def get_preferences_etag(self, obj):
+        from .user_preferences import preferences_etag
+        return preferences_etag(obj.preferences)
+
+    def validate_preferences(self, value):
+        from .user_preferences import validate_preferences
+        return validate_preferences(value)
 
     def get_avatar_url(self, obj):
         if obj.avatar:
@@ -593,6 +625,25 @@ class UserSerializer(serializers.ModelSerializer):
         except DjangoValidationError as e:
             raise serializers.ValidationError(list(e.messages))
         return value
+
+    def validate_role_ids(self, value):
+        from .permissions import user_has_permission
+        if len(set(value)) != Role.objects.filter(pk__in=value).count():
+            raise serializers.ValidationError('包含不存在的角色')
+        request = self.context.get('request')
+        if request and not request.user.is_superuser and not user_has_permission(request.user, 'assign_user_roles'):
+            raise serializers.ValidationError('需要分配用户角色的授权')
+        return list(dict.fromkeys(value))
+
+    def validate(self, attrs):
+        request = self.context.get('request')
+        if request:
+            if not request.user.is_superuser and ('is_superuser' in attrs or (self.instance and self.instance.is_superuser)):
+                raise serializers.ValidationError('仅超级管理员可管理超级管理员账号')
+            if self.instance and self.instance.pk == request.user.pk:
+                if attrs.get('is_active') is False or attrs.get('is_superuser') is False and self.instance.is_superuser:
+                    raise serializers.ValidationError('不能停用自己或移除自己的超级管理员身份')
+        return attrs
 
     def create(self, validated_data):
         password = validated_data.pop('password')

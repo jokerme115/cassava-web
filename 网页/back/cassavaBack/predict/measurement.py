@@ -16,13 +16,19 @@ def latest_correction(prediction):
     return prediction.corrections.order_by('-version').first()
 
 
-def measurement_info(prediction):
-    correction = latest_correction(prediction)
+_LATEST = object()
+
+def measurement_info(prediction, correction=_LATEST):
+    correction = latest_correction(prediction) if correction is _LATEST else correction
     value = correction.ppd_percent if correction else prediction.ppd_value
     if not correction and prediction.ppd_unit == 'ratio':
         value *= 100
     valid = bool(correction) or (prediction.ppd_unit in ('percent', 'ratio') and not prediction.error_code)
+    legacy = (prediction.ensemble_details or {}).get('legacy_measurement', {})
     return {
+        'protocol': 'area_weighted' if correction or not legacy else legacy.get('protocol'),
+        'legacy_raw_value': legacy.get('raw_value'),
+        'legacy_unit': legacy.get('unit'),
         'final_ppd': value if valid else None,
         'measurement_status': 'manual-corrected' if correction else ('model-only' if valid else 'needs-review'),
         'measurement_source': 'manual' if correction else 'model',
@@ -30,11 +36,24 @@ def measurement_info(prediction):
         'corrected_by': correction.owner.username if correction and correction.owner else None,
         'corrected_at': correction.created_at.isoformat() if correction else None,
         'correction_note': correction.note if correction else '',
-        'review_status': 'unreviewed',
+        'review_status': 'reviewed' if prediction.reviewed_version == (correction.version if correction else 0) else 'unreviewed',
+        'reviewed_by': prediction.reviewed_by.username if prediction.reviewed_by else None,
+        'reviewed_at': prediction.reviewed_at.isoformat() if prediction.reviewed_at else None,
         'execution_warning': ('历史任务选择与结果模型记录不一致，建议重新预测'
             if prediction.processing_task and prediction.processing_task.single_model_type
             and prediction.processing_task.single_model_type != prediction.single_model_type else None),
     }
+
+
+def selected_correction(prediction, version='latest'):
+    if version in ('latest', None, ''):
+        return latest_correction(prediction)
+    if str(version) in ('0', 'model'):
+        return None
+    try:
+        return prediction.corrections.get(version=int(version))
+    except (ValueError, TypeError, prediction.corrections.model.DoesNotExist) as exc:
+        raise ValueError(f'结果{prediction.pk}不存在所选人工修订版本') from exc
 
 
 def measurement_masks(prediction, correction=None):
@@ -69,6 +88,12 @@ def segment_measurements(prediction, cassava, rotten):
     return output
 
 
+def saved_rotation(correction):
+    data = getattr(correction, 'edit_data', None) or {}
+    value = data.get('rotation_degrees', 0)
+    return value if type(value) is int and value in (0, 90, 180, 270) else 0
+
+
 def overlay_png(prediction, correction=None):
     if not prediction.original_image or not prediction.original_image.oss_key:
         raise ValueError('原图不可用，无法生成校正叠加图')
@@ -80,6 +105,7 @@ def overlay_png(prediction, correction=None):
     colors[cassava] = [20, 184, 166, 55]
     colors[rotten] = [244, 63, 94, 150]
     image = Image.alpha_composite(original.convert('RGBA'), Image.fromarray(colors)).convert('RGB')
+    image = image.rotate(-saved_rotation(correction), expand=True)
     buffer = BytesIO()
     image.save(buffer, format='PNG')
     return buffer.getvalue()

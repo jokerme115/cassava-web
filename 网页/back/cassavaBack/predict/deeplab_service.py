@@ -61,6 +61,24 @@ def describe_prediction_failure(exc):
 
 
 def prediction_provenance(model_name):
+    from .model_registry import MODERN_KEYS, members, assets_root
+    if model_name in MODERN_KEYS:
+        entries = members(model_name)
+        if len(entries) != (5 if model_name.startswith('pbt_') else 1):
+            raise ValueError('冻结模型成员不完整')
+        files = []
+        for entry in entries:
+            path = assets_root() / entry['file']
+            actual = _weight_digest(str(path), path.stat().st_size, path.stat().st_mtime_ns)
+            if actual != entry['sha256']:
+                raise ValueError('冻结权重哈希不一致')
+            files.append({'file': path.name, 'sha256': actual, 'seed': entry['seed']})
+        for name in ('yolov11(1).pt', 'yolov11(2).pt'):
+            path = settings.BASE_DIR.parent / 'model' / name
+            if not path.is_file():
+                raise ValueError('定位权重缺失')
+            files.append({'file': name, 'sha256': _weight_digest(str(path), path.stat().st_size, path.stat().st_mtime_ns)})
+        return files
     if model_name == 'ensemble':
         files = [item for member in MEMBERS for item in prediction_provenance(member)]
         return list({item['file']: item for item in files}.values())

@@ -717,7 +717,13 @@
     },
     "prev_image": "← Previous",
     "next_image": "Next →",
-    "distribution" : "Distribution"
+    "distribution": "Distribution",
+    "all_review_status": "All Review Statuses",
+    "review_status_filter": "Review Status",
+    "clear_filters": "Clear filters",
+    "go_predict": "Select images and predict →",
+    "statistics": "Results Statistics",
+    "guest_no_results": "Public and trial results are displayed here; no items to display yet."
   },
   "connection": {
     "description": "Test connectivity between frontend and backend API",

@@ -1,6 +1,10 @@
 import { ConfigProvider, App as AntdApp } from 'antd';
-import type { ReactNode } from 'react';
-import { colors, overlays, radius, shadows, fontFamily } from './tokens';
+import zhCN from 'antd/locale/zh_CN';
+import enUS from 'antd/locale/en_US';
+import { useTranslation } from 'react-i18next';
+import { useLayoutEffect, type ReactNode } from 'react';
+import { bindFeedback } from '../utils/feedback';
+import { colors, overlays, radius, shadows, fontFamily, typography } from './tokens';
 
 /**
  * antd 主题：与站内卡片体系一致（HeroUI 口径）。
@@ -34,14 +38,26 @@ export const heroTheme = {
     borderRadiusSM: radius.sm,
     controlHeight: 38,
     fontFamily,
+    fontSize: typography.sizes.control,
+    fontSizeSM: typography.sizes.caption,
+    fontSizeLG: typography.sizes.body,
+    fontSizeHeading1: typography.sizes.page,
+    fontSizeHeading2: typography.sizes.page,
+    fontSizeHeading3: typography.sizes.panel,
+    fontSizeHeading4: typography.sizes.panel,
+    fontSizeHeading5: typography.sizes.body,
+    lineHeight: typography.lineHeights.control / typography.sizes.control,
+    controlHeightSM: 30,
     boxShadow: shadows.card,
     boxShadowSecondary: shadows.float,
   },
   components: {
+    Drawer: { fontSizeLG: typography.sizes.panel },
+    Card: { headerFontSize: typography.sizes.panel, headerFontSizeSM: typography.sizes.panel },
     Modal: {
       contentBg: colors.surface,
       headerBg: 'transparent',
-      titleFontSize: 17,
+      titleFontSize: typography.sizes.panel,
     },
     Table: {
       headerBg: colors.surfaceMuted,
@@ -51,7 +67,7 @@ export const heroTheme = {
     },
     Dropdown: { colorBgElevated: colors.surface },
     Select: { selectorBg: colors.surface, optionSelectedBg: overlays.accent10 },
-    Button: { primaryShadow: 'none', defaultShadow: 'none', fontWeight: 500 },
+    Button: { primaryShadow: 'none', defaultShadow: 'none', fontWeight: 500, contentFontSize: typography.sizes.control, contentFontSizeSM: typography.sizes.control },
     Input: { activeShadow: `0 0 0 3px ${overlays.accent10}` },
     Tooltip: { colorBgSpotlight: colors.ink },
     Message: { contentBg: colors.surface },
@@ -60,9 +76,16 @@ export const heroTheme = {
 };
 
 export default function AntdThemeProvider({ children }: { children: ReactNode }) {
+  const { i18n } = useTranslation();
   return (
-    <ConfigProvider theme={heroTheme}>
-      <AntdApp>{children}</AntdApp>
+    <ConfigProvider theme={heroTheme} locale={i18n.language.startsWith('zh') ? zhCN : enUS}>
+      <AntdApp><FeedbackBridge />{children}</AntdApp>
     </ConfigProvider>
   );
+}
+
+function FeedbackBridge() {
+  const api = AntdApp.useApp();
+  useLayoutEffect(() => bindFeedback(api), [api]);
+  return null;
 }

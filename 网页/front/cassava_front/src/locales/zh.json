@@ -888,7 +888,13 @@
     "reviewed": "已复核",
     "open_editor": "人工复核",
     "vote_detail": "投票明细",
-    "ppd_threshold_note": "阈值口径：严重 ≥ 7%，轻微 4–7%，健康 < 4%（按腐烂面积占切面面积的比例）"
+    "ppd_threshold_note": "阈值口径：严重 ≥ 7%，轻微 4–7%，健康 < 4%（按腐烂面积占切面面积的比例）",
+    "all_review_status": "全部复检状态",
+    "review_status_filter": "复检状态",
+    "clear_filters": "清除筛选",
+    "go_predict": "去选择图片并预测 →",
+    "statistics": "结果统计",
+    "guest_no_results": "这里显示公开结果与本次试用结果，暂无可展示内容。"
   },
   "connection": {
     "description": "测试前端与后端API的连通性",
@@ -1237,7 +1243,8 @@
       "converted": "已转换 {{count}} 段病害边界（共 {{points}} 个顶点），拖动顶点微调后点「应用多边形」写回掩码",
       "convert_empty_cassava": "当前图层没有可转换的区域",
       "convert_empty_rotten": "当前腐烂范围为空，请先涂抹或使用智能点选",
-      "convert_too_fine": "轮廓过于细碎，无法转换为可拖动的多边形"
+      "convert_too_fine": "轮廓过于细碎，无法转换为可拖动的多边形",
+      "needs_confidence_disabled": "当前模型未生成置信度概率图，推荐使用画笔/钢笔标注"
     },
     "inspector": {
       "title": "测量检查器",

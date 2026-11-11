@@ -53,6 +53,9 @@ cassava-desktop/src-tauri/target/
 logs/
 *.log
 output/
+网页/back/cassavaBack/import_staging/
+网页/back/cassavaBack/model_assets/
+网页/back/cassavaBack/runtime/
 
 # ---------- 编辑器 / 系统 ----------
 .DS_Store
@@ -60,3 +63,4 @@ Thumbs.db
 desktop.ini
 *.swp
 *.swo
+.playwright-cli/

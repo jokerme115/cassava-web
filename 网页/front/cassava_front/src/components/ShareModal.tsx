@@ -1,5 +1,6 @@
+import { message } from '../utils/feedback';
 import React, { useState, useEffect } from 'react';
-import { Modal, Select, DatePicker, Radio, message } from 'antd';
+import { Modal, Select, DatePicker, Radio } from 'antd';
 import { sharesApi, permissionsApi } from '../services/api';
 import { useTranslation } from 'react-i18next';
 import { User } from 'lucide-react';

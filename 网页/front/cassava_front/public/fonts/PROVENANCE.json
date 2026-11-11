@@ -1,0 +1,21 @@
+{
+  "sources": {
+    "SourceHanSansCN-VF.ttf": "https://raw.githubusercontent.com/adobe-fonts/source-han-sans/release/Variable/TTF/Subset/SourceHanSansCN-VF.ttf",
+    "InterVariable.woff2": "https://raw.githubusercontent.com/rsms/inter/master/docs/font-files/InterVariable.woff2",
+    "SOURCE_HAN_SANS_LICENSE.txt": "https://raw.githubusercontent.com/adobe-fonts/source-han-sans/release/LICENSE.txt",
+    "INTER_LICENSE.txt": "https://raw.githubusercontent.com/rsms/inter/master/LICENSE.txt"
+  },
+  "subsets": {
+    "core": {
+      "glyphs": 3776,
+      "bytes": 920336,
+      "sha256": "887f15a1f807a6f5b5987365f4f0f1eb7e4bb1ed92636bf30b3a0853dd9b77ae"
+    },
+    "extended": {
+      "glyphs": 25671,
+      "bytes": 6427344,
+      "sha256": "d238000c60b755e7a1e5149d0defe1c5190e98d58c45d29341c30eea75ad50f6"
+    }
+  },
+  "family": "Cassava Han Sans, derived from Source Han Sans CN; Latin uses original Inter"
+}

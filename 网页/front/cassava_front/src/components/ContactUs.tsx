@@ -98,7 +98,7 @@ const profiles: ContactProfile[] = [
   },
   {
     badge: "CATAS Cassava Center",
-    title: "科研合作与数据共享（陈松笔 研究员）",
+    title: "木薯研究中心合作窗口",
     institution: "中国热带农业科学院热带作物品种资源研究所木薯研究中心",
     address: "海南省儋州市宝岛新村中国热带农业科学院热带作物品种资源研究所",
     email: "aff85110@163.com",
@@ -151,27 +151,25 @@ const profiles: ContactProfile[] = [
 
 export default function ContactPage() {
   return (
-    <div className="bg-surface-muted px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-[1440px] space-y-6">
-        <section className="rounded-[24px] bg-brand-fill px-6 py-8 text-white shadow-[0_4px_16px_rgba(17,24,28,0.05)] sm:px-8 sm:py-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-white">
+    <div className="research-contact px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
+      <div className="mx-auto max-w-[1240px] space-y-8">
+        <section className="contact-hero relative overflow-hidden rounded-[24px] bg-brand-fill px-6 py-8 text-white shadow-[0_4px_16px_rgba(17,24,28,0.05)] sm:px-8 sm:py-10">
+          <img src="/cases/cassava-lab.jpg" alt="" className="pointer-events-none absolute right-0 top-0 h-full w-2/3 object-cover opacity-20" />
+          <p className="relative text-xs font-semibold uppercase tracking-[0.12em] text-white">
             Contact & Collaboration
           </p>
-          <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">
+          <h1 className="page-title relative mt-4 max-w-3xl text-white ">
             联系我们
           </h1>
-          <p className="mt-5 max-w-4xl text-base leading-8 text-white">
-            页面聚焦海南师范大学龙海侠教授团队与中国热带农业科学院木薯研究中心合作窗口，
-            直接呈现两位核心负责人信息，方便科研合作、数据共享与平台交流快速对接。
-          </p>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+
+          <div className="relative mt-8 grid gap-4 sm:grid-cols-3">
             {[
               { label: "Research", value: "人工智能、网络空间安全、木薯生物育种" },
               { label: "Collaboration", value: "数据共享、平台共建、科研协同与招生交流" },
               { label: "Coverage", value: "高校实验室与国家级科研院所双线联动" }
             ].map((item) => (
-              <div key={item.label} className="rounded-[12px] border border-white/20 bg-[#005cb8] p-4">
+              <div key={item.label} className="rounded-[12px] border border-white/20 bg-white/10 p-4">
                 <p className="text-xs uppercase tracking-[0.12em] text-white">{item.label}</p>
                 <p className="mt-3 text-sm leading-6 text-white">{item.value}</p>
               </div>
@@ -193,7 +191,7 @@ export default function ContactPage() {
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-text">
                     {profile.badge}
                   </p>
-                  <h2 className="mt-2 text-2xl font-semibold text-ink sm:text-3xl">
+                  <h2 className="section-title mt-2 ">
                     {profile.title}
                   </h2>
                   <p className="mt-3 text-sm leading-7 text-ink-secondary">{profile.institution}</p>
@@ -215,7 +213,7 @@ export default function ContactPage() {
                       <Phone className="h-4 w-4" />
                       电话
                     </div>
-                    <p className="mt-3 text-sm font-medium text-ink">{profile.phone}</p>
+                    <p className="mt-3 text-sm font-medium text-ink"><a href={`tel:${profile.phone}`} className="underline decoration-current/30 underline-offset-4">{profile.phone}</a></p>
                   </div>
                 )}
 
@@ -225,7 +223,7 @@ export default function ContactPage() {
                       <Mail className="h-4 w-4" />
                       邮箱
                     </div>
-                    <p className="mt-3 break-all text-sm font-medium text-ink">{profile.email}</p>
+                    <p className="mt-3 break-all text-sm font-medium text-ink"><a href={`mailto:${profile.email}`} className="underline decoration-current/30 underline-offset-4">{profile.email}</a></p>
                   </div>
                 )}
 
@@ -240,6 +238,8 @@ export default function ContactPage() {
                 )}
               </div>
 
+              <p className="mt-5 text-sm leading-7 text-ink-secondary">{profile.badge === 'CATAS Cassava Center' ? '团队负责人：陈松笔 研究员 · 联系人：安飞飞 研究员' : '团队负责人及联系人：龙海侠 教授'}</p>
+              <details className="mt-6 border-t border-hairline pt-5"><summary>查看团队与联系人完整资料</summary>
               <div className="mt-6 space-y-3">
                 {profile.summary.map((paragraph, index) => (
                   <p key={`${profile.title}-summary-${index}`} className="text-sm leading-8 text-ink-secondary">
@@ -276,6 +276,7 @@ export default function ContactPage() {
                   </section>
                 ))}
               </div>
+              </details>
             </article>
           ))}
         </section>

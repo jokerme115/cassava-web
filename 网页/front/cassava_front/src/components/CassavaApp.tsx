@@ -1,3 +1,5 @@
+import { setWorkspaceUser } from '../utils/workspaceContext';
+import { cacheUserPreferences } from '../utils/userPreferences';
 import React, { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import TopNavigation from './TopNavigation';
@@ -49,7 +51,19 @@ const CassavaApp: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [systemSettings, setSystemSettings] = useState<Partial<SystemSetting>>({});
   const [pendingSection, setPendingSection] = useState<string | null>(null);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  useEffect(() => {
+    if (currentUser?.id) {
+      cacheUserPreferences(currentUser.profile?.preferences || {}, currentUser.profile?.preferences_etag);
+      const language = currentUser.profile?.preferences?.language;
+      if (language && language !== i18n.language) void i18n.changeLanguage(language);
+    }
+  }, [currentUser, i18n]);
+  useEffect(() => {
+    const changed = (event: Event) => setCurrentUser((event as CustomEvent).detail);
+    window.addEventListener('preferences:updated', changed);
+    return () => window.removeEventListener('preferences:updated', changed);
+  }, []);
   const activeSectionRef = useRef(activeSection);
   // 标记“刚刚完成登录”的时间戳，避免登录后回跳原页面的动作被“已登录不该停在 /login”的守卫覆盖
   const justLoggedInRef = useRef(0);
@@ -101,7 +115,7 @@ const CassavaApp: React.FC = () => {
     if (loading || !currentUser?.is_guest) return;
     if (systemSettings.enable_guest_access !== false) return;
     clearGuestSession();
-    setCurrentUser(null);
+    setWorkspaceUser(); setCurrentUser(null);
     setPendingSection(null);
     navigate('/login', { replace: true });
   }, [loading, currentUser, systemSettings.enable_guest_access, navigate]);
@@ -109,7 +123,7 @@ const CassavaApp: React.FC = () => {
   // 已登录用户访问登录页时回到首页，避免出现“已登录却停在登录页”
   // 刚完成登录（handleLogin）时不介入，否则会盖掉“登录后回到原页面”的跳转
   useEffect(() => {
-    if (loading || !currentUser || activeSection !== 'login') return;
+    if (loading || !currentUser || currentUser.is_guest || activeSection !== 'login') return;
     // 刚完成登录（2 秒内）时让 handleLogin 自己的跳转生效，不抢去首页
     if (Date.now() - justLoggedInRef.current < 2000) return;
     navigate('/', { replace: true });
@@ -158,15 +172,15 @@ const CassavaApp: React.FC = () => {
 
         if (response.status === 401) {
           clearAuthToken();
-          setCurrentUser(null);
+          setWorkspaceUser(); setCurrentUser(null);
           return;
         }
 
         const data = await response.json();
         if (data.id) {
-          setCurrentUser(data);
+          setWorkspaceUser(data?.id); setCurrentUser(data);
         } else {
-          setCurrentUser(null);
+          setWorkspaceUser(); setCurrentUser(null);
         }
       } catch (error) {
         console.error('Failed to check login status:', error);
@@ -180,7 +194,7 @@ const CassavaApp: React.FC = () => {
     const handleAuthExpired = () => {
       // 会话过期后记住当前页面，重新登录后回到原页
       const current = activeSectionRef.current;
-      setCurrentUser(null);
+      setWorkspaceUser(); setCurrentUser(null);
       setPendingSection(!publicSections.has(current) ? current : null);
       navigate('/login');
     };
@@ -194,7 +208,7 @@ const CassavaApp: React.FC = () => {
 
   const handleLogin = (user: any) => {
     justLoggedInRef.current = Date.now();
-    setCurrentUser(user);
+    setWorkspaceUser(user?.id); setCurrentUser(user);
     const targetSection =
       pendingSection && !publicSections.has(pendingSection) ? pendingSection : 'home';
     setPendingSection(null);
@@ -203,11 +217,14 @@ const CassavaApp: React.FC = () => {
 
   const handleLogout = async () => {
     try {
+      const token = getAuthToken();
       await fetch('/api/auth/logout/', {
         method: 'POST',
         credentials: 'include',
         headers: {
-          'X-CSRFToken': getCookie('csrftoken') || ''
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken') || '',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         }
       });
     } catch (error) {
@@ -215,7 +232,7 @@ const CassavaApp: React.FC = () => {
     } finally {
       clearAuthToken();
       clearGuestSession();
-      setCurrentUser(null);
+      setWorkspaceUser(); setCurrentUser(null);
       setPendingSection(null);
       navigate('/');
     }
@@ -243,7 +260,7 @@ const CassavaApp: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <h2 className="mb-3 text-3xl font-semibold tracking-tight text-ink">
+            <h2 className="mb-3 text-2xl font-semibold tracking-normal text-ink">
               {t('system.maintenance_mode')}
             </h2>
             <p className="mb-8 max-w-xl text-base leading-7 text-ink-secondary">
@@ -285,7 +302,7 @@ const CassavaApp: React.FC = () => {
   const renderNotFound = (pathname: string) => (
     <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6">
       <div className="rounded-[16px] card p-10 text-center shadow-[0_10px_30px_rgba(17,17,26,0.045)]">
-        <p className="text-5xl font-semibold tracking-tight text-muted">404</p>
+        <p className="text-5xl font-semibold tracking-normal text-muted">404</p>
         <h3 className="mt-4 text-xl font-semibold text-ink">{t('not_found.title')}</h3>
         <p className="mt-3 text-sm leading-7 text-ink-secondary">{t('not_found.desc')}</p>
         <p className="mt-2 break-all text-xs text-muted">{pathname}</p>
@@ -318,6 +335,7 @@ const CassavaApp: React.FC = () => {
           onLogin={handleLogin}
           onNavigate={handleSectionChange}
           systemSettings={systemSettings}
+          accessRequired={!!pendingSection}
         />
       );
     }
@@ -393,11 +411,12 @@ const CassavaApp: React.FC = () => {
   const needsAntd = !['home', 'contact', 'login', 'register'].includes(activeSection);
   const pageShell = (
     <div
-      className="flex h-[calc(100vh-95px)] min-h-0 flex-col overflow-x-hidden"
+      className="flex h-[calc(100vh-73px)] min-h-0 flex-col overflow-x-hidden"
       role="region"
       aria-label={t('a11y.main_region')}
       tabIndex={0}
     >
+      {currentUser?.is_guest && ['images','prediction','tasks','results'].includes(activeSection) && <div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 border-b border-hairline bg-surface-muted px-4 py-3 text-sm" role="status"><span className="font-semibold text-brand-text">游客试用</span><span className="min-w-0 flex-1 text-ink-secondary">可浏览公开示例、每天创建最多 10 次预测任务；上传、修改和人工复检需登录账号。{activeSection === 'tasks' ? '这里仅显示本次游客身份创建的任务。' : ''}</span><button className="font-medium text-accent-text" onClick={() => { clearGuestSession(); setWorkspaceUser(); setCurrentUser(null); setPendingSection(activeSection); navigate('/login'); }}>登录完整使用 →</button></div>}
       {renderContent()}
     </div>
   );
@@ -407,7 +426,7 @@ const CassavaApp: React.FC = () => {
       <TopNavigation
         activeSection={activeSection}
         onSectionChange={handleSectionChange}
-        currentUser={currentUser}
+        currentUser={activeSection === 'login' ? null : currentUser}
         onLogout={handleLogout}
         siteTitle={systemSettings.site_title}
       />

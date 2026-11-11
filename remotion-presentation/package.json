@@ -1,0 +1,16 @@
+{
+  "name": "cassava-remotion-presentation",
+  "version": "1.0.0",
+  "description": "Remotion video project for Cassava Quantification Platform AI Competition",
+  "scripts": {
+    "start": "remotion studio",
+    "build": "remotion render CassavaPresentation out/video.mp4"
+  },
+  "dependencies": {
+    "@remotion/captions": "^4.0.0",
+    "@remotion/cli": "^4.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "remotion": "^4.0.0"
+  }
+}

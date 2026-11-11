@@ -29,7 +29,7 @@ export const normalizeTask = (task: any) => {
   return {
     ...task,
     id: String(task?.id ?? task?.pk ?? ''),
-    modelType: modelLabel(
+    modelType: task?.type === 'upload' ? '文件导入' : modelLabel(
       task?.modelType ??
       task?.model_type ??
       task?.algorithm ??
@@ -41,13 +41,14 @@ export const normalizeTask = (task: any) => {
       imageIds.length,
     createdDate: task?.createdDate ?? task?.created_time ?? task?.created_at,
     queuePosition: task?.queuePosition ?? task?.queue_position ?? null,
-    resultCount: task?.resultCount ?? task?.result_count ?? null,
+    resultCount: task?.type === 'upload' ? (parameters.finished ?? 0) : task?.resultCount ?? task?.result_count ?? null,
     completedDate:
       task?.completedDate ??
       task?.completed_time ??
       task?.updated_time ??
       task?.updated_at,
     parameters: {
+      ...parameters,
       confidenceThreshold:
         parameters?.confidenceThreshold ??
         task?.threshold ??
@@ -146,7 +147,7 @@ export const normalizePredictionResult = (result: any): PredictionResult => {
 export const normalizeRole = (role: any) => ({
   ...role,
   id: Number(role?.id ?? role?.pk ?? 0),
-  permissions: Array.isArray(role?.permissions) ? role.permissions : [],
+  permissions: Array.isArray(role?.permission_ids) ? role.permission_ids.map(Number) : Array.isArray(role?.permissions) ? role.permissions.map(Number) : [],
   permissions_count: Number(role?.permissions_count ?? role?.permission_count ?? 0),
   user_count: Number(role?.user_count ?? role?.userCount ?? 0),
 });

@@ -25,8 +25,8 @@ export const permissionsApi = {
     };
   }),
   getRoleById: (id: string): Promise<any> => api.get(`/permissions/roles/${id}/`).then(res => res.data),
-  createRole: (data: any): Promise<any> => api.post('/permissions/roles/', data).then(res => res.data),
-  updateRole: (id: string, data: any): Promise<any> => api.put(`/permissions/roles/${id}/`, data).then(res => res.data),
+  createRole: (data: any): Promise<any> => api.post('/permissions/roles/', data).then(res => normalizeRole(res.data)),
+  updateRole: (id: string, data: any): Promise<any> => api.patch(`/permissions/roles/${id}/`, data).then(res => normalizeRole(res.data)),
   deleteRole: (id: string): Promise<void> => api.delete(`/permissions/roles/${id}/`),
   assignPermissionsToRole: (roleId: string, permissionIds: string[]): Promise<any> => 
     api.post(`/permissions/roles/${roleId}/assign_permissions/`, { permission_ids: permissionIds }).then(res => res.data),
@@ -53,7 +53,7 @@ export const permissionsApi = {
   searchShareUsers: (query: string): Promise<any[]> => api.get('/permissions/users/search_share_users/', { params: { q: query } }).then(res => res.data),
   getUserById: (id: string): Promise<any> => api.get(`/permissions/users/${id}/`).then(res => res.data),
   createUser: (data: any): Promise<any> => api.post('/permissions/users/', data).then(res => res.data),
-  updateUser: (id: string, data: any): Promise<any> => api.put(`/permissions/users/${id}/`, data).then(res => res.data),
+  updateUser: (id: string, data: any): Promise<any> => api.patch(`/permissions/users/${id}/`, data).then(res => normalizeUser(res.data)),
   deleteUser: (id: string): Promise<void> => api.delete(`/permissions/users/${id}/`),
   getGuestStats: (): Promise<{today_count: number, total_count: number}> => api.get('/permissions/users/guest_stats/').then(res => res.data),
   getUserPermissions: (userId: string): Promise<any[]> => api.get(`/permissions/users/${userId}/permissions/`).then(res => res.data),
@@ -94,11 +94,11 @@ export const permissionsApi = {
   deletePermissionTemplate: (id: string): Promise<void> => api.delete(`/permissions/permission-templates/${id}/`),
 
   // Advanced User Permission Management
-  getUserDetailedPermissions: (userId: string): Promise<{all_permissions: string[], direct_permission_ids: number[]}> => 
+  getUserDetailedPermissions: (userId: string): Promise<{all_permissions: string[], direct_permission_ids: number[], revoked_permission_ids: number[], inherited_permission_ids: number[]}> =>
     api.get('/permissions/user-permissions/get_permissions/', { params: { user_id: userId } }).then(res => res.data),
   
-  updateUserPermissions: (userId: string, permissionIds: number[]): Promise<any> => 
-    api.post('/permissions/user-permissions/update_permissions/', { user_id: userId, permission_ids: permissionIds }).then(res => res.data),
+  updateUserPermissions: (userId: string, permissionIds: number[], revokedPermissionIds: number[] = []): Promise<any> =>
+    api.post('/permissions/user-permissions/update_permissions/', { user_id: userId, permission_ids: permissionIds, revoked_permission_ids: revokedPermissionIds }).then(res => res.data),
 };
 
 // === Shares API ===

@@ -18,7 +18,7 @@ export default function PageHeader({ title, subtitle, actions, leading, classNam
       <div className="flex min-w-0 items-center gap-3">
         {leading}
         <div className="min-w-0">
-          <h2 className="truncate text-xl font-semibold text-ink">{title}</h2>
+          <h2 className="page-title truncate">{title}</h2>
           {subtitle ? <p className="mt-0.5 text-sm text-muted">{subtitle}</p> : null}
         </div>
       </div>

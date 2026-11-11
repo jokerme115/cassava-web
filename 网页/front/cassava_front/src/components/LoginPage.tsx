@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, Lock, Sparkles, User2 } from 'lucide-react';
+import { ArrowRight, Lock, User2 } from 'lucide-react';
 import { SystemSetting, User } from '../types';
 import { setAuthToken } from '../utils/authToken';
 import { saveGuestSession, clearGuestSession } from '../utils/guestSession';
@@ -10,9 +10,10 @@ interface LoginPageProps {
   onLogin: (user: any) => void;
   onNavigate: (section: string) => void;
   systemSettings?: Partial<SystemSetting>;
+  accessRequired?: boolean;
 }
 
-const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate, systemSettings = {} }) => {
+const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate, systemSettings = {}, accessRequired = false }) => {
   const { t } = useTranslation();
   const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
@@ -54,7 +55,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate, systemSettin
           'X-CSRFToken': getCookie('csrftoken') || ''
         },
         credentials: 'include',
-        body: JSON.stringify({ username: loginId, password })
+        body: JSON.stringify({ username: loginId, password, remember_me: rememberMe })
       });
 
       const data = await response.json();
@@ -102,48 +103,24 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate, systemSettin
   };
 
   return (
-    <div className="min-h-[calc(100vh-92px)] bg-surface-muted px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto grid max-w-6xl items-start gap-6 lg:grid-cols-[1.08fr_0.92fr]">
-        <section className="relative overflow-hidden rounded-[24px] border border-hairline bg-white px-6 py-8 text-ink shadow-[0_10px_30px_rgba(17,17,26,0.045)] sm:px-8 sm:py-10 lg:px-10">
-          <div className="absolute inset-x-0 top-0 h-40 bg-[radial-gradient(120%_100%_at_50%_0%,rgba(10,132,255,0.10),transparent_70%)]" />
-          <div className="relative flex h-full flex-col">
-            <div>
-              <div className="inline-flex items-center gap-2.5 rounded-full border border-hairline bg-surface-muted px-3.5 py-1.5 text-[13px] text-ink-secondary">
-                <Sparkles className="h-4 w-4 text-accent-text" />
-                {t('system.subtitle')}
-              </div>
-              <div className="mt-8 flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-3xl border border-hairline bg-white shadow-lg">
-                  <img src="/assets/logo-128.webp" alt={t('system.title')} className="h-full w-full object-cover" />
-                </div>
-                <div>
-                  <h1 className="mt-2 text-3xl font-semibold leading-tight sm:text-4xl">
-                    {t('system.title')}
-                  </h1>
-                </div>
-              </div>
-              <p className="mt-6 max-w-xl text-[15px] leading-7 text-muted">
-                {t('homepage.hero.description')}
-              </p>
-            </div>
-
-          </div>
+    <div className="login-page flex min-h-full items-center justify-center bg-surface-muted px-4 py-6 sm:px-8">
+      <div className="login-shell grid w-full max-w-[1040px] overflow-hidden rounded-[28px] border border-hairline bg-white shadow-[0_16px_60px_rgba(27,60,43,0.07)] lg:grid-cols-[1fr_1fr]">
+        <section aria-label="木薯研究工作台" className="login-visual relative hidden min-h-[580px] overflow-hidden bg-brand-fill text-white lg:flex lg:flex-col lg:justify-between">
+          <img src="/cases/ppd-example.png" alt="木薯切面轮廓图" className="absolute inset-0 h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,46,34,.35),rgba(15,46,34,.05)_40%,rgba(15,46,34,.95))]" />
+          <div className="relative flex items-center gap-3 p-8"><img src="/assets/logo-128.webp" alt="" className="h-10 w-10 rounded-full bg-white" /><span className="text-xs font-medium tracking-[.2em]">CASSAVA LAB</span></div>
+          <div className="relative p-9"><p className="text-xs tracking-[.2em] text-white/70">CASSAVA · PPD</p><h1 className="mt-4 text-3xl font-semibold">木薯图像<br />研究工作台</h1><div className="mt-7 h-px w-12 bg-white/40" /><p className="mt-5 text-xs leading-6 text-white/75">中国热带农业科学院<br />海南师范大学</p></div>
         </section>
-
-        <section className="rounded-[24px] border border-hairline bg-white p-6 shadow-[0_10px_30px_rgba(17,17,26,0.045)] sm:p-8">
-          <div className="flex h-full flex-col">
-            <div className="mb-8">
-              <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">
-                {t('login.title')}
-              </h2>
-            </div>
-
+        <section className="flex flex-col justify-center px-6 py-8 sm:px-10 lg:px-12 lg:py-10">
+          <div className="flex h-full flex-col justify-center">
+            <div className="mb-7"><p className="mb-2 text-xs font-medium tracking-[.2em] text-accent-text lg:hidden">CASSAVA LAB</p><h2 className="text-2xl font-semibold tracking-normal text-ink">{t('login.sign_in')}</h2></div>
             {loginError && (
               <div className="mb-6 rounded-3xl border border-[rgba(243,18,96,0.24)] bg-[rgba(243,18,96,0.08)] px-4 py-3 text-sm text-danger-text">
                 {loginError}
               </div>
             )}
 
+            {accessRequired && <p role="status" className="mb-4 rounded-lg bg-surface-muted px-3 py-2 text-sm text-ink-secondary">此功能需要登录。登录后将返回刚才的页面。{systemSettings.enable_guest_access !== false && '也可选择游客试用。'}</p>}
             <form className="space-y-5" onSubmit={handlePasswordLogin}>
               <div>
                 <label htmlFor="loginId" className="mb-2 block text-sm font-medium text-ink-secondary">
@@ -159,7 +136,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate, systemSettin
                     autoComplete="username"
                     value={loginId}
                     onChange={(e) => setLoginId(e.target.value)}
-                    className="h-12 w-full rounded-2xl border border-hairline bg-white pl-11 pr-4 text-sm text-ink outline-none transition placeholder:text-muted focus:border-accent-line focus:bg-white focus:ring-4 focus:ring-accent-line/15"
+                    className="h-12 w-full rounded-xl border border-hairline bg-white pl-11 pr-4 text-sm text-ink outline-none transition placeholder:text-muted focus:border-accent-line focus:bg-white focus:ring-4 focus:ring-accent-line/15"
                     placeholder={t('login.username_or_email_placeholder')}
                   />
                 </div>
@@ -179,7 +156,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate, systemSettin
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="h-12 w-full rounded-2xl border border-hairline bg-white pl-11 pr-4 text-sm text-ink outline-none transition placeholder:text-muted focus:border-accent-line focus:bg-white focus:ring-4 focus:ring-accent-line/15"
+                    className="h-12 w-full rounded-xl border border-hairline bg-white pl-11 pr-4 text-sm text-ink outline-none transition placeholder:text-muted focus:border-accent-line focus:bg-white focus:ring-4 focus:ring-accent-line/15"
                     placeholder={t('login.password_placeholder')}
                   />
                 </div>
@@ -197,7 +174,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate, systemSettin
                   />
                   {t('login.remember_me')}
                 </label>
-                <button type="button" className="font-medium text-accent-text transition hover:text-brand-fill-hover">
+                <button type="button" onClick={() => onNavigate('contact')} className="font-medium text-accent-text transition hover:text-brand-fill-hover">
                   {t('login.forgot_password')}
                 </button>
               </div>
@@ -205,7 +182,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate, systemSettin
               <button
                 type="submit"
                 disabled={isLoading}
-                className="inline-flex h-12 w-full items-center justify-center rounded-full bg-brand-fill px-5 text-sm font-medium text-white transition hover:bg-brand-fill-hover disabled:cursor-not-allowed disabled:bg-slate-400"
+                className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-brand-fill px-5 text-sm font-medium text-white transition hover:bg-brand-fill-hover disabled:cursor-not-allowed disabled:bg-slate-400"
               >
                 {isLoading ? (
                   <div className="h-5 w-5 animate-spin rounded-full border-2 border-hairline border-t-white" />
@@ -218,17 +195,18 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin, onNavigate, systemSettin
               </button>
             </form>
 
-            <div className="my-8 flex items-center gap-4">
+            <div className="my-5 flex items-center gap-4">
               <div className="h-px flex-1 bg-hairline" />
               <span className="text-xs uppercase tracking-[0.22em] text-muted">{t('login.or')}</span>
               <div className="h-px flex-1 bg-hairline" />
             </div>
 
             <div className="space-y-3">
+              {systemSettings.enable_guest_access !== false && <p className="text-xs leading-5 text-muted">游客可使用公开示例体验预测，每天最多 10 次；上传与人工复检需登录。</p>}
               {systemSettings.enable_guest_access !== false && (
                 <button
                   onClick={handleGuestLogin}
-                  className="inline-flex h-12 w-full items-center justify-center rounded-full card px-5 text-sm font-medium text-ink-secondary transition hover:border-hairline-strong hover:bg-white"
+                  className="inline-flex h-12 w-full items-center justify-center rounded-xl border border-hairline bg-white px-5 text-sm font-medium text-ink-secondary transition hover:border-hairline-strong hover:bg-white"
                 >
                   {t('login.guest_login')}
                 </button>

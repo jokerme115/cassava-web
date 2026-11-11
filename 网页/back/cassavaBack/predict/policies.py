@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from django.utils import timezone
+from django.db.models import Q
 from .models import ResourceShare, SystemSetting
 
 class BasePolicy(ABC):
@@ -62,11 +63,11 @@ class SharedResourcePolicy(BasePolicy):
             valid_levels.extend(['edit', 'view'])
             
         return ResourceShare.objects.filter(
-            shared_with=request.user,
-            resource_type=resource_type,
-            resource_id=obj.id,
-            permission__in=valid_levels,
-            expires_at__gt=timezone.now()
+            Q(shared_with=request.user),
+            Q(resource_type=resource_type),
+            Q(resource_id=obj.id),
+            Q(permission__in=valid_levels),
+            Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
         ).exists()
 
 class GuestPolicy(BasePolicy):

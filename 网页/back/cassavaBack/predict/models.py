@@ -30,7 +30,12 @@ def get_image_upload_path(instance, filename):
 
 
 # 自定义管理器
-class FolderManager(models.Manager):
+class ActiveResourceManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(deleted_at__isnull=True)
+
+
+class FolderManager(ActiveResourceManager):
     """
     文件夹自定义管理器
     """
@@ -42,7 +47,7 @@ class FolderManager(models.Manager):
         """获取指定文件夹及其包含的图像数量"""
         return self.select_related().prefetch_related('images').get(id=folder_id)
 
-class CassavaImageManager(models.Manager):
+class CassavaImageManager(ActiveResourceManager):
     """
     木薯图像自定义管理器
     """
@@ -74,7 +79,7 @@ class SegmentationResultManager(models.Manager):
         """获取指定图像的所有分割结果"""
         return self.filter(original_image_id=image_id).order_by('-created_at')
 
-class ProcessingTaskManager(models.Manager):
+class ProcessingTaskManager(ActiveResourceManager):
     """
     处理任务自定义管理器
     """
@@ -137,7 +142,18 @@ class ResourceShare(BaseModel):
         return f"{self.shared_by.username} shared {self.resource_type} {self.resource_id} with {self.shared_with.username}"
 
 
-class Folder(BaseModel):
+class RecyclableModel(BaseModel):
+    deleted_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    deleted_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL,
+                                  related_name='%(class)s_recycled')
+    deletion_batch = models.UUIDField(null=True, blank=True, db_index=True)
+    all_objects = models.Manager()
+
+    class Meta:
+        abstract = True
+
+
+class Folder(RecyclableModel):
     """
     文件夹数据模型
 
@@ -162,7 +178,8 @@ class Folder(BaseModel):
         verbose_name_plural = "文件夹"
         ordering = ['-created_at']
         # 确保同一父文件夹下的子文件夹名称唯一
-        unique_together = [['parent', 'name']]
+        constraints = [models.UniqueConstraint(fields=['owner', 'parent', 'name'],
+            condition=models.Q(deleted_at__isnull=True), name='active_folder_name')]
 
     def __str__(self):
         return str(self.name)
@@ -175,7 +192,7 @@ class Folder(BaseModel):
 
 
 
-class CassavaImage(BaseModel):
+class CassavaImage(RecyclableModel):
     """
     木薯图像数据模型
 
@@ -191,6 +208,9 @@ class CassavaImage(BaseModel):
     type = models.CharField(max_length=100, blank=True, verbose_name="种类")
     description = models.TextField(blank=True, verbose_name="描述")
     capture_time = models.DateTimeField(null=True, blank=True, verbose_name="拍摄时间")
+    capture_time_source = models.CharField(max_length=16, default='unknown')
+    capture_time_history = models.JSONField(default=list, blank=True)
+    content_sha256 = models.CharField(max_length=64, blank=True, db_index=True)
     
     objects = CassavaImageManager()  # 使用自定义管理器
     folder = models.ForeignKey(
@@ -301,6 +321,10 @@ class PredictionResult(BaseModel):
     split_count = models.IntegerField(default=1, verbose_name="图像分割数量")
     algorithm = models.CharField(max_length=50, blank=True, null=True, verbose_name="算法类型")
     overlap = models.FloatField(default=0.2, verbose_name="重叠度")
+    reviewed_version = models.PositiveIntegerField(null=True, blank=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL,
+                                   related_name='reviewed_predictions')
     
     processing_task = models.ForeignKey(
         'ProcessingTask',
@@ -382,7 +406,7 @@ class PermissionTemplate(BaseModel):
         return self.name
 
 
-class ProcessingTask(BaseModel):
+class ProcessingTask(RecyclableModel):
     """
     处理任务数据模型
 
@@ -669,6 +693,7 @@ class UserProfile(BaseModel):
     # 偏好设置
     theme = models.CharField(max_length=20, default='light', verbose_name="主题")
     notification_settings = models.JSONField(default=dict, verbose_name="通知设置")
+    preferences = models.JSONField(default=dict, blank=True, verbose_name="工作区偏好")
 
     # 状态追踪
     last_activity = models.DateTimeField(null=True, blank=True, verbose_name="最后活跃时间")
@@ -833,6 +858,7 @@ class LoginSession(models.Model):
     )
     created = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
     last_seen = models.DateTimeField(null=True, blank=True, verbose_name='最近活跃')
+    expires_at = models.DateTimeField(null=True, blank=True, verbose_name='记住登录到期时间')
 
     class Meta:
         db_table = 'predict_login_session'
@@ -848,3 +874,7 @@ class LoginSession(models.Model):
         if not self.key:
             self.key = secrets.token_hex(20)
         return super().save(*args, **kwargs)
+
+
+# Register durable import models after shared resource classes are defined.
+from .import_models import ImportJob, ImportItem  # noqa: E402,F401

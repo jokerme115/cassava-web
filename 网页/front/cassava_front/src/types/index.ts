@@ -18,6 +18,7 @@ export interface Image {
   owner?: number; // Owner ID
   description?: string;
   capture_time?: string;
+  capture_time_source?: string;
 }
 
 export interface Folder {
@@ -30,6 +31,7 @@ export interface Folder {
 }
 
 export interface PredictionTask {
+  type?: string;
   id: string;
   name: string;
   status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
@@ -120,6 +122,9 @@ export interface PredictionResult {
   latest_correction_ppd?: number | null;
   latest_correction?: PredictionCorrection | null;
   measurement?: {
+    protocol?: string;
+    legacy_raw_value?: number | null;
+    legacy_unit?: string;
     final_ppd: number | null;
     measurement_source: 'manual' | 'model';
     measurement_status: string;
@@ -199,6 +204,11 @@ export interface User {
   avatar?: string;
   profile?: {
     avatar_url?: string;
+    department?: string;
+    phone?: string;
+    bio?: string;
+    preferences?: Partial<import('../utils/userPreferences').UserPreferences>;
+    preferences_etag?: string;
   };
 }
 

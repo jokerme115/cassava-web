@@ -3,7 +3,6 @@ import {
   ArrowRight,
   BarChart3,
   Brain,
-  CheckCircle2,
   ChevronRight,
   Globe2,
   Leaf,
@@ -18,6 +17,13 @@ interface HomePageProps {
   onSectionChange: (section: string) => void;
 }
 
+/**
+ * 首页布局口径（企业版）：
+ * - 垂直节奏统一为 16px（gap-4），区块内留白 20–24px，避免大块空白；
+ * - 所有卡片等高：网格用 auto-rows-fr + 卡片 h-full flex flex-col，正文 line-clamp 兜底，
+ *   内容长短不再把卡片撑成高低不齐；
+ * - 字号固定阶梯：标题 40/24/18，正文 14，辅助 12/11，不再混用 56px 营销字号。
+ */
 const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
   const { t } = useTranslation();
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -28,12 +34,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
     prediction_usage: 0,
     images_predicted: 0
   });
-  const [animatedNumbers, setAnimatedNumbers] = useState({
-    visits: 0,
-    accuracy: 0,
-    prediction_usage: 0,
-    images_predicted: 0
-  });
+  const [statsReady, setStatsReady] = useState(false);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -54,6 +55,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
     const fetchStats = async () => {
       try {
         const data = await analyticsApi.getPublicStats();
+        setStatsReady(true);
         setStatsValues((prev) => ({
           ...prev,
           prediction_usage: data.prediction_usage_count,
@@ -73,16 +75,13 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
       {
         title: t('homepage.hero.title'),
         subtitle: t('homepage.hero.subtitle'),
-        description: '上传木薯切面图像，进行病变区域分割、人工校正与面积比例量化。',
+        description: '',
         key: 'prediction',
-        image: '/banners/segmentation.png',
-        imageWebp: '/banners/segmentation.webp',
-        imageWebpSm: '/banners/segmentation-sm.webp',
+        image: '/cases/ppd-example.png',
+        imageWebp: '',
+        imageWebpSm: '',
         imageAlt: '木薯横截面智能分割示意',
         icon: Brain,
-        eyebrow: 'AI Segmentation',
-        panelClass: 'from-brand-fill via-[#3b9cf0] to-[#30b0c7]',
-        chipClass: 'bg-white/18 text-white',
         action: 'prediction'
       },
       {
@@ -95,9 +94,6 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
         imageWebpSm: '/banners/archive-sm.webp',
         imageAlt: '木薯科研样本图像管理示意',
         icon: BarChart3,
-        eyebrow: 'Image Archive',
-        panelClass: 'from-[#11181c] via-[#1f2933] to-brand-fill-hover',
-        chipClass: 'bg-surface-muted text-ink',
         action: 'images'
       },
       {
@@ -110,78 +106,25 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
         imageWebpSm: '/banners/research-sm.webp',
         imageAlt: '木薯样本采集与实验室分析场景示意',
         icon: Microscope,
-        eyebrow: 'Research Delivery',
-        panelClass: 'from-[#f5a524] via-[#17c964] to-[#30b0c7]',
-        chipClass: 'bg-white/22 text-white',
         action: 'results'
       }
     ],
     [t]
   );
 
-  useEffect(() => {
-    const interval = window.setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 5200);
 
-    return () => window.clearInterval(interval);
-  }, [slides.length]);
-
-  useEffect(() => {
-    const timers: number[] = [];
-
-    Object.entries(statsValues).forEach(([key, value]) => {
-      let current = 0;
-      const increment = Math.max(1, value / 40);
-      const timer = window.setInterval(() => {
-        current += increment;
-        if (current >= value) {
-          current = value;
-          window.clearInterval(timer);
-        }
-
-        setAnimatedNumbers((prev) => ({
-          ...prev,
-          [key]: Math.floor(current)
-        }));
-      }, 35);
-
-      timers.push(timer);
-    });
-
-    return () => {
-      timers.forEach((timer) => window.clearInterval(timer));
-    };
-  }, [statsValues]);
 
   const stats = [
-    { label: t('homepage.stats.visits'), value: animatedNumbers.visits, suffix: '+' },
-    { label: t('homepage.stats.accuracy'), value: t('homepage.stats.accuracy_pending'), suffix: '', status: true },
-    { label: t('homepage.stats.prediction_usage'), value: animatedNumbers.prediction_usage, suffix: '+' },
-    { label: t('homepage.stats.images_predicted'), value: animatedNumbers.images_predicted, suffix: '+' }
+    { label: '访问会话数', value: statsReady ? statsValues.visits : '—', suffix: '' },
+    { label: t('homepage.stats.prediction_usage'), value: statsReady ? statsValues.prediction_usage : '—', suffix: '+' },
+    { label: t('homepage.stats.images_predicted'), value: statsReady ? statsValues.images_predicted : '—', suffix: '+' }
   ];
 
   const strengths = [
-    {
-      icon: Brain,
-      title: t('homepage.features.ai.title'),
-      description: '分割结果支持逐像素检查与人工校正；当前精度以独立样本评估为准。'
-    },
-    {
-      icon: BarChart3,
-      title: t('homepage.features.analytics.title'),
-      description: t('homepage.features.analytics.description')
-    },
-    {
-      icon: Shield,
-      title: t('homepage.features.security.title'),
-      description: t('homepage.features.security.description')
-    },
-    {
-      icon: Globe2,
-      title: t('homepage.features.cloud.title'),
-      description: t('homepage.features.cloud.description')
-    }
+    { icon: Brain, title: '资料归档', value: '原图与拍摄信息', tags: ['文件夹', 'ZIP / 7Z / RAR'], mark: '01' },
+    { icon: BarChart3, title: '批量分析', value: '模型队列', tags: ['批量预测', '后台处理'], mark: '02' },
+    { icon: Shield, title: '人工复检', value: '逐像素校正', tags: ['双层掩码', '修订留存'], mark: '03' },
+    { icon: Globe2, title: '成果导出', value: '图像与数值', tags: ['轮廓成图', 'CSV / Excel / ZIP'], mark: '04' },
   ];
 
   const researchBlocks = [
@@ -202,82 +145,72 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
   ];
 
   const currentHero = slides[currentSlide];
+  const cardClass = 'rounded-[20px] border border-hairline bg-white shadow-[0_6px_24px_rgba(28,56,39,0.035)]';
 
   return (
-    <div className="bg-surface-sunken text-ink">
+    <div className="research-home text-ink">
       {siteAnnouncement && (
-        <div className="border-b border-hairline bg-surface-muted px-4 py-3 text-center text-sm text-ink">
-          <div className="mx-auto flex max-w-6xl items-center justify-center gap-2">
-            <Sparkles className="h-4 w-4" />
+        <div className="border-b border-hairline bg-white px-4 py-2.5 text-center text-xs text-ink-secondary">
+          <div className="mx-auto flex max-w-[1440px] items-center justify-center gap-2">
+            <Sparkles className="h-3.5 w-3.5 text-accent-text" />
             <span>{siteAnnouncement}</span>
           </div>
         </div>
       )}
 
-      <section className="relative overflow-hidden px-4 pb-6 pt-5 sm:px-6 lg:px-8">
-        
-        <div className="relative mx-auto grid max-w-[1440px] items-start gap-5 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="flex flex-col gap-7 rounded-[24px] border border-hairline bg-white px-6 py-7 text-ink shadow-[0_10px_30px_rgba(17,17,26,0.045)] sm:px-8 sm:py-8 lg:px-9">
+      <div className="mx-auto flex w-full max-w-[1320px] flex-col gap-8 px-4 py-6 sm:px-8 lg:px-10 lg:py-10">
+        {/* Hero：左信息卡 / 右图 + 四特性卡，两列等高 */}
+        <section className="grid gap-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-stretch">
+          <div className={`research-hero-copy flex h-full flex-col p-5 sm:p-6 ${cardClass}`}>
             <div>
-              <div className="inline-flex items-center gap-3 rounded-full border border-hairline bg-surface-muted px-4 py-2 text-sm text-ink-secondary">
-                <Leaf className="h-4 w-4 text-accent-text" />
+              <div className="inline-flex items-center gap-2 rounded-pill border border-hairline bg-surface-muted px-3 py-1.5 text-xs font-medium text-ink-secondary">
+                <Leaf className="h-3.5 w-3.5 text-accent-text" />
                 {t('homepage.hero.tagline')}
               </div>
 
-              <h1 className="mt-6 max-w-3xl text-4xl font-semibold leading-[1.08] tracking-tight [word-break:keep-all] sm:text-5xl lg:text-[56px]">
-                {currentHero.title}
+              <h1 className="research-hero-title mt-7 max-w-2xl text-ink">
+                看见木薯的变化，<br />量化每一处 PPD。
               </h1>
-              <p className="mt-4 max-w-2xl text-lg leading-8 text-ink-secondary sm:text-xl">
-                {currentHero.subtitle}
-              </p>
-              <p className="mt-3 max-w-2xl text-base leading-8 text-muted">
-                {currentHero.description}
-              </p>
+              <p className="mt-3 text-base leading-7 text-ink-secondary">{currentHero.subtitle}</p>
 
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+
+              <div className="mt-5 flex flex-col gap-2.5 sm:flex-row">
                 <button
-                  onClick={() => onSectionChange(currentHero.action)}
-                  className="inline-flex h-12 items-center justify-center rounded-full bg-brand-fill px-6 text-sm font-semibold text-white transition hover:bg-brand-fill-hover"
+                  onClick={() => onSectionChange('prediction')}
+                  className="inline-flex h-10 items-center justify-center rounded-md bg-brand-fill px-4 text-sm font-semibold text-white transition hover:bg-brand-fill-hover"
                 >
                   {t('homepage.hero.action')}
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  <ArrowRight className="ml-1.5 h-4 w-4" />
                 </button>
                 <button
                   onClick={() => onSectionChange('contact')}
-                  className="inline-flex h-12 items-center justify-center rounded-full border border-hairline-strong bg-white px-6 text-sm font-medium text-ink-secondary transition hover:bg-surface-muted"
+                  className="inline-flex h-10 items-center justify-center rounded-md border border-hairline-strong bg-white px-4 text-sm font-medium text-ink-secondary transition hover:bg-surface-muted"
                 >
-                  {t('homepage.hero.demo')}
+                  了解团队
                 </button>
               </div>
             </div>
 
-            <div className="mt-8">
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="mt-5">
+              <div className="grid grid-cols-3 gap-2.5">
                 {stats.map((stat) => (
-                  <div key={stat.label} className="rounded-[12px] border border-hairline bg-surface-muted px-3.5 py-3.5">
-                    {stat.status ? (
-                      <div className="flex items-center gap-1.5 text-sm font-medium text-warn-text">
-                        <span className="h-1.5 w-1.5 rounded-full bg-warn-text" aria-hidden="true" />
-                        {stat.value}
-                      </div>
-                    ) : (
-                      <div className="text-xl font-semibold tabular-nums text-ink">
-                        {stat.value}
-                        {stat.suffix}
-                      </div>
-                    )}
-                    <div className="mt-1 text-xs text-muted">{stat.label}</div>
+                  <div
+                    key={stat.label}
+                    className="flex min-h-[72px] flex-col justify-center rounded-md border border-hairline bg-surface-muted px-3 py-2"
+                  >
+                    <div className="text-lg font-semibold leading-tight tabular-nums text-ink">{stat.value}{stat.suffix}</div>
+                    <div title={stat.label === '访问会话数' ? '同一浏览器会话刷新不重复计数，不代表独立用户人数' : stat.label} className="mt-0.5 whitespace-normal break-words text-xs leading-5 text-muted">{stat.label}</div>
                   </div>
                 ))}
               </div>
 
-              <div className="mt-4 flex gap-2">
+              <div className="mt-3 flex gap-1.5">
                 {slides.map((slide, index) => (
                   <button
                     key={slide.key}
                     onClick={() => setCurrentSlide(index)}
-                    className={`h-1.5 rounded-full transition-all ${
-                      currentSlide === index ? 'w-12 bg-brand-fill' : 'w-6 bg-hairline-strong'
+                    className={`h-1 rounded-full transition-all ${
+                      currentSlide === index ? 'w-8 bg-brand-fill' : 'w-4 bg-hairline-strong'
                     }`}
                     aria-label={slide.title}
                   />
@@ -286,8 +219,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
             </div>
           </div>
 
-          <div className="grid gap-5">
-            <div className="relative min-h-[320px] overflow-hidden rounded-[24px] border border-hairline bg-white shadow-[0_4px_16px_rgba(17,24,28,0.05)]">
+          <div className="research-hero-image relative h-[300px] overflow-hidden border border-hairline bg-surface-muted sm:h-[380px] lg:h-auto">
               {slides.map((slide, index) => (
                 <div
                   key={slide.key}
@@ -298,16 +230,16 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
                   }`}
                 >
                   <picture>
-                    <source
+                    {slide.imageWebp && <source
                       type="image/webp"
                       srcSet={`${slide.imageWebpSm} 900w, ${slide.imageWebp} 1586w`}
                       sizes="(min-width: 1024px) 46vw, 100vw"
-                    />
+                    />}
                     <img
                       src={slide.image}
                       alt={slide.imageAlt}
-                      className="absolute inset-0 h-full w-full object-cover"
-                      style={{ objectPosition: 'center top' }}
+                      className={`absolute inset-0 h-full w-full ${slide.image === '/cases/ppd-example.png' ? 'object-contain bg-white p-3' : 'object-cover'}`}
+                      style={{ objectPosition: slide.image === '/cases/ppd-example.png' ? 'center' : 'center top' }}
                       loading={index === 0 ? 'eager' : 'lazy'}
                       decoding="async"
                       {...(index === 0 ? { fetchpriority: 'high' } : {})}
@@ -317,115 +249,72 @@ const HomePage: React.FC<HomePageProps> = ({ onSectionChange }) => {
               ))}
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              {strengths.map((item) => (
-                <div
-                  key={item.title}
-                  className="rounded-[16px] border border-hairline bg-white p-4"
-                >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(10,132,255,0.08)] text-brand-fill-hover">
-                    <item.icon className="h-5 w-5" />
-                  </div>
-                  <h2 className="mt-3 text-base font-semibold text-ink">{item.title}</h2>
-                  <p className="mt-1.5 text-sm leading-6 text-ink-secondary">{item.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-[1440px] gap-5 lg:grid-cols-[0.82fr_1.18fr]">
-          <div className="rounded-[24px] border border-hairline bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.06)] sm:p-7">
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-accent-text">
-              {t('homepage.advantages.title')}
-            </p>
-            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-ink">
-              {t('homepage.advantages.subtitle')}
-            </h2>
-            <div className="mt-6 space-y-4">
-              {[
-                t('homepage.advantages.background_desc'),
-                t('homepage.advantages.highlights_desc'),
-                '模型精度与PPD误差需要通过独立样本验证；人工校正结果保留独立版本。'
-              ].map((text, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-accent-text" />
-                  <p className="text-sm leading-7 text-ink-secondary">{text}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+        <section className="grid gap-6 py-5 sm:grid-cols-2 lg:grid-cols-4" aria-label="分析流程">
+          {[
+            ['01', '资料有序归档', '图片、文件夹或压缩包直接导入，保留拍摄信息与目录层级。'],
+            ['02', '模型辅助量化', '选择可追溯的模型，逐切面查看主体、病斑与 PPD 面积比例。'],
+            ['03', '人工认真复检', '放大检查、精细修改，原预测和每次人工修订分别保留。'],
+            ['04', '按需导出成图', '轮廓、填色与版式自由调整，成图和数值表采用同一版本。'],
+          ].map(([number, title]) => <article key={number} className="research-step"><span className="research-step-number">{number}</span><h2 className="mt-4 text-lg font-semibold">{title}</h2></article>)}
+        </section>
+        <section className="overflow-hidden rounded-[24px] border border-hairline bg-white">
+          <div className="flex flex-wrap items-end justify-between gap-3 p-6 sm:p-8"><div><p className="text-xs tracking-[.2em] text-accent-text">FROM IMAGE TO MEASUREMENT</p><h2 className="mt-3 text-2xl font-semibold">切面上的细微变化，也能清楚呈现</h2><p className="mt-3 text-sm text-muted">PPD 结果示例</p></div><button onClick={() => onSectionChange('prediction')} className="text-sm font-semibold text-accent-text">开始分析 →</button></div>
+          <img src="/cases/ppd-example.png" alt="三个真实木薯切面的轮廓和PPD预测值示例" loading="lazy" decoding="async" className="h-auto w-full px-2 pb-5 sm:px-4 sm:pb-6" />
+        </section>
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            {researchBlocks.map((block) => (
-              <article
-                key={block.title}
-                className="rounded-[24px] border border-hairline bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.06)] sm:p-7"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-fill text-white">
-                  <block.icon className="h-5 w-5" />
-                </div>
-                <h3 className="mt-6 text-2xl font-semibold tracking-tight text-ink">
-                  {block.title}
-                </h3>
-                <div className="mt-6 space-y-5 text-sm leading-7 text-ink-secondary">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.22em] text-muted">
-                      {t('homepage.about.labels.leader')}
-                    </p>
-                    <p className="mt-2">{block.lead}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.22em] text-muted">
-                      {t('homepage.about.labels.platform')}
-                    </p>
-                    <p className="mt-2 whitespace-pre-line">{block.platform}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.22em] text-muted">
-                      {t('homepage.about.labels.project')}
-                    </p>
-                    <p className="mt-2 whitespace-pre-line">{block.details}</p>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
+        <section aria-label="平台功能" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {strengths.map(item => <article key={item.title} className="home-capability relative overflow-hidden rounded-[20px] border border-hairline bg-white p-5 sm:p-6">
+            <div className="flex items-center justify-between"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-muted text-brand-fill"><item.icon className="h-5 w-5" /></span><span className="font-sans text-sm text-muted/60">{item.mark}</span></div>
+            <p className="mt-5 text-xs font-medium tracking-widest text-muted">{item.title}</p>
+            <h2 className="mt-2 text-xl font-semibold tracking-normal text-ink">{item.value}</h2>
+            <div className="mt-5 flex flex-wrap gap-x-3 gap-y-2 border-t border-hairline pt-4 text-xs text-ink-secondary">{item.tags.map(tag => <span key={tag}>{tag}</span>)}</div>
+          </article>)}
+        </section>
 
-      <section className="px-4 pb-8 pt-1 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[1440px] rounded-[24px] bg-brand-fill px-6 py-7 text-white shadow-[0_4px_16px_rgba(17,24,28,0.05)] sm:px-8 sm:py-8">
-          <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
+        <section aria-label="联合研究团队">
+          <div className="mb-5 flex items-center justify-between"><h2 className="text-2xl font-semibold">联合研究团队</h2><button onClick={() => onSectionChange('contact')} className="inline-flex items-center gap-2 text-sm font-medium text-accent-text">了解团队<ArrowRight className="h-4 w-4" /></button></div>
+          <div className="grid gap-5 lg:grid-cols-2">
+            {researchBlocks.map((block, index) => <article key={block.title} className="grid overflow-hidden rounded-[22px] border border-hairline bg-white sm:grid-cols-[132px_minmax(0,1fr)]">
+              <div className="relative flex min-h-[150px] items-center justify-center overflow-hidden bg-surface-muted">
+                {index === 0 ? <img src="/cases/cassava-lab.jpg" alt="木薯切面实验照片" loading="lazy" className="h-full w-full object-cover" /> : <img src="/assets/logo-128.webp" alt="联合研究标识" loading="lazy" className="h-20 w-20 object-contain" />}
+              </div>
+              <div className="flex flex-col p-5 sm:p-6"><p className="text-xs font-medium tracking-wider text-accent-text">{index === 0 ? '中国热带农业科学院' : '海南师范大学'}</p><h3 className="mt-3 text-lg font-semibold leading-relaxed text-ink">{block.title}</h3><div className="mt-5 flex flex-wrap gap-2">{(index === 0 ? ['种质资源', '品种选育', '田间研究'] : ['计算机视觉', '人工智能', '科研协作']).map(tag => <span key={tag} className="rounded-md bg-surface-muted px-2 py-1 text-xs text-ink-secondary">{tag}</span>)}</div></div>
+            </article>)}
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section className="rounded-xl bg-brand-fill px-5 py-5 text-white sm:px-6 sm:py-6">
+          <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-white">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/80">
                 {t('homepage.cta.title')}
               </p>
-              <h2 className="mt-4 max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl">
-                {t('homepage.cta.subtitle')}
+              <h2 className="mt-2 text-2xl font-semibold tracking-normal">
+                从一批图片开始。
               </h2>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex flex-col gap-2.5 sm:flex-row">
               <button
                 onClick={() => onSectionChange('prediction')}
-                className="inline-flex h-12 items-center justify-center rounded-full bg-brand-fill px-6 text-sm font-semibold text-white transition hover:bg-brand-fill-hover"
+                className="inline-flex h-10 items-center justify-center rounded-md bg-white px-4 text-sm font-semibold text-brand-fill transition hover:bg-white/90"
               >
                 {t('homepage.cta.action')}
-                <ChevronRight className="ml-2 h-4 w-4" />
+                <ChevronRight className="ml-1.5 h-4 w-4" />
               </button>
               <button
                 onClick={() => onSectionChange('contact')}
-                className="inline-flex h-12 items-center justify-center rounded-full border border-white/16 bg-white/8 px-6 text-sm font-medium text-white transition hover:bg-white/14"
+                className="inline-flex h-10 items-center justify-center rounded-md border border-white/30 px-4 text-sm font-medium text-white transition hover:bg-white/10"
               >
                 {t('homepage.cta.contact')}
               </button>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
   );
 };

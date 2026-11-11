@@ -31,9 +31,7 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [analysisMenuOpen, setAnalysisMenuOpen] = useState(false);
 
-  const analysisRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
   const languageRef = useRef<HTMLDivElement>(null);
 
@@ -41,9 +39,6 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
 
-      if (analysisRef.current && !analysisRef.current.contains(target)) {
-        setAnalysisMenuOpen(false);
-      }
 
       if (userRef.current && !userRef.current.contains(target)) {
         setUserMenuOpen(false);
@@ -65,24 +60,23 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
   };
 
   const mainItems = useMemo(
-    () => [
+    () => ['login','register'].includes(activeSection) ? [] : [
       { id: 'home', label: t('navigation.home') },
-      { id: 'images', label: t('navigation.images') },
+      ...(currentUser && !['login', 'register'].includes(activeSection) ? [{ id: 'images', label: t('navigation.images') }] : []),
       { id: 'contact', label: t('navigation.contact') }
     ],
-    [t]
+    [t, currentUser, activeSection]
   );
 
   const analysisItems = useMemo(
-    () => [
+    () => currentUser && !['login', 'register'].includes(activeSection) ? [
       { id: 'prediction', label: t('navigation.prediction'), icon: Brain },
       { id: 'tasks', label: t('navigation.tasks'), icon: Activity },
       { id: 'results', label: t('navigation.results'), icon: BarChart3 }
-    ],
-    [t]
+    ] : [],
+    [t, currentUser, activeSection]
   );
 
-  const isAnalysisActive = analysisItems.some((item) => item.id === activeSection);
   const displayName = currentUser?.first_name || currentUser?.username || t('navigation.login');
   const accountLabel = currentUser?.is_guest ? t('login.guest_user') : displayName;
 
@@ -96,14 +90,13 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
   const handleNavigate = (section: string) => {
     onSectionChange(section);
     setMobileMenuOpen(false);
-    setAnalysisMenuOpen(false);
     setUserMenuOpen(false);
   };
 
   return (
     <nav className="sticky top-0 z-40 border-b border-hairline bg-white">
-      <div className="mx-auto max-w-[1440px] px-4 py-3 sm:px-6 lg:px-8">
-        <div className="card flex items-center justify-between gap-4 rounded-full px-4 py-3">
+      <div className="w-full px-4 sm:px-6">
+        <div className="flex h-[72px] items-center justify-between gap-4">
           <button
             onClick={() => handleNavigate('home')}
             aria-label={t('navigation.home')}
@@ -113,7 +106,7 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
               <img src="/assets/logo-128.webp" alt={t('system.title')} className="h-full w-full object-cover" />
             </div>
             <div className="hidden min-w-0 sm:block">
-              <p className="truncate text-sm font-semibold tracking-[0.18em] text-accent-text">
+              <p className="truncate text-xs font-semibold tracking-[0.18em] text-accent-text">
                 CASSAVA LAB
               </p>
               <h1 className="truncate text-base font-semibold text-ink">
@@ -133,47 +126,7 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
               </button>
             ))}
 
-            <div className="relative" ref={analysisRef}>
-              <button
-                onClick={() => {
-                  if (!isAnalysisActive) {
-                    onSectionChange('prediction');
-                  }
-                  setAnalysisMenuOpen((open) => !open);
-                }}
-                className={navButtonClass(isAnalysisActive || analysisMenuOpen)}
-              >
-                <Brain className="mr-2 h-4 w-4" />
-                {t('navigation.analysis')}
-                <ChevronDown
-                  className={`ml-2 h-4 w-4 transition-transform ${
-                    analysisMenuOpen ? 'rotate-180' : ''
-                  }`}
-                />
-              </button>
-
-              {analysisMenuOpen && (
-                <div className="absolute left-0 top-[calc(100%+12px)] w-64 rounded-3xl card p-2 shadow-[0_4px_16px_rgba(17,24,28,0.05)]">
-                  {analysisItems.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => handleNavigate(item.id)}
-                        className={`flex w-full items-center rounded-2xl px-4 py-3 text-left text-sm transition ${
-                          activeSection === item.id
-                            ? 'bg-brand-fill text-white'
-                            : 'text-ink-secondary hover:bg-white'
-                        }`}
-                      >
-                        <Icon className="mr-3 h-4 w-4" />
-                        {item.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            {analysisItems.map(item => <button key={item.id} onClick={() => handleNavigate(item.id)} className={navButtonClass(activeSection === item.id)}>{item.label}</button>)}
           </div>
 
           <div className="hidden items-center gap-2 lg:flex">
@@ -231,7 +184,7 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
                           className="mt-2 flex w-full items-center rounded-2xl px-4 py-3 text-left text-sm text-ink-secondary transition hover:bg-white"
                         >
                           <User className="mr-3 h-4 w-4" />
-                          {t('navigation.profile')}
+                          {i18n.language.startsWith('zh') ? '设置' : 'Settings'}
                         </button>
                       )}
                       <button
@@ -247,7 +200,7 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
                     </div>
                   )}
                 </>
-              ) : (
+              ) : activeSection !== 'login' ? (
                 <button
                   onClick={() => handleNavigate('login')}
                   className="inline-flex h-10 items-center rounded-full bg-brand-fill px-4 text-sm font-medium text-white transition hover:bg-slate-800"
@@ -255,11 +208,13 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
                   <User className="mr-2 h-4 w-4" />
                   {t('navigation.login')}
                 </button>
-              )}
+              ) : null}
             </div>
           </div>
 
           <div className="flex items-center gap-2 lg:hidden">
+            {!currentUser && activeSection !== 'login' && <button className="text-sm font-medium text-accent-text" onClick={() => handleNavigate('login')}>登录 / 试用</button>}
+            {currentUser && <><button className="text-sm text-ink-secondary" onClick={() => handleNavigate('images')}>图片</button><button className="text-sm text-ink-secondary" onClick={() => handleNavigate('prediction')}>预测</button></>}
             <button
               onClick={() => setLanguageMenuOpen((open) => !open)}
               aria-label={t('a11y.toggle_language')}
@@ -271,9 +226,9 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
               onClick={() => setMobileMenuOpen((open) => !open)}
               aria-label={t('a11y.toggle_menu')}
               aria-expanded={mobileMenuOpen}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-brand-fill text-white"
+              className={`${activeSection === 'login' ? 'hidden' : 'inline-flex'} h-10 items-center justify-center gap-2 rounded-full bg-brand-fill px-3 text-white`}
             >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}<span className="text-sm">{mobileMenuOpen ? '关闭' : '菜单'}</span>
             </button>
           </div>
         </div>
@@ -310,7 +265,7 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
               ))}
             </div>
 
-            <div className="mt-4 border-t border-hairline pt-4">
+            {analysisItems.length > 0 && <div className="mt-4 border-t border-hairline pt-4">
               <p className="px-2 text-xs font-semibold uppercase tracking-[0.22em] text-muted">
                 {t('navigation.analysis')}
               </p>
@@ -330,7 +285,7 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
                   </button>
                 ))}
               </div>
-            </div>
+            </div>}
 
             <div className="mt-4 border-t border-hairline pt-4">
               {currentUser ? (
@@ -345,7 +300,7 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
                       className="mt-2 flex w-full items-center rounded-2xl px-4 py-3 text-left text-sm font-medium text-ink-secondary transition hover:bg-white"
                     >
                       <User className="mr-3 h-4 w-4" />
-                      {t('navigation.profile')}
+                      {i18n.language.startsWith('zh') ? '设置' : 'Settings'}
                     </button>
                   )}
                   <button

@@ -85,7 +85,8 @@ class M6BestPredictor:
         raise FileNotFoundError(f"M6 checkpoint not found: {configured_path}")
 
     def _build_model(self, checkpoint_path: Path) -> torch.nn.Module:
-        cache_key = str(checkpoint_path.resolve())
+        stat = checkpoint_path.stat()
+        cache_key = (str(checkpoint_path.resolve()), stat.st_size, stat.st_mtime_ns)
         if cache_key in self._models:
             return self._models[cache_key]
 
@@ -109,6 +110,7 @@ class M6BestPredictor:
         model.load_state_dict(state_dict)
         model.to(self.device)
         model.eval()
+        self._models.clear()
         self._models[cache_key] = model
         return model
 

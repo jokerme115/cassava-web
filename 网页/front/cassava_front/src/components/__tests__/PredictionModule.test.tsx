@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router-dom';
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -6,12 +7,21 @@ import PredictionModule from '../PredictionModule';
 const createTask = vi.hoisted(() => vi.fn().mockResolvedValue({ id: 'new' }));
 const mockState = vi.hoisted(() => ({ folders: [] as any[] }));
 vi.mock('../../hooks/useTaskStore', () => ({ useTaskStore: () => ({ createTask }) }));
-vi.mock('../../hooks/useImageStore', () => ({ useImageStore: () => ({
+vi.mock('../../hooks/useImageStore', () => ({ useImageStore: () => { const [selectedFolder, setSelectedFolder] = React.useState<string | null>(null); return ({
+  selectedFolder, setSelectedFolder, setImageSearchQuery: vi.fn(), setImageOrdering: vi.fn(), goToImagesPage: vi.fn(), imagesPage: 1, imagesPageSize: 48, totalImages: 1,
   images: [{ id: '55', name: 'sample.png', url: '/sample.png', size: 10 }],
   folders: mockState.folders, loading: false, hasMoreImages: false, loadingMoreImages: false,
-}) }));
+}); } }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
+vi.mock('../../services/rest/client', () => ({ default: { get: vi.fn().mockResolvedValue({ data: [
+  { id: 'pbt_c512', label: 'PBT SegFormer-B2 · c512 五种子', available: true },
+  { id: 'ensemble', label: '投票', available: true, legacy: true },
+  { id: 'broken', label: '缺失模型', available: false, reason: '权重文件缺失' },
+  { id: 'm6_best', label: 'M6 半监督 · fold1（历史部署版）', available: true },
+] }) } }));
 vi.mock('antd', () => ({
+  Modal: ({ open, children }: any) => open ? React.createElement('div', { role: 'dialog' }, children) : null,
+  Pagination: () => null,
   message: { success: vi.fn(), error: vi.fn() },
   // 测试用树：点击按钮等价于在文件夹树中选中 f1
   Tree: (props: any) => React.createElement('button', { onClick: () => props.onSelect(['f1']) }, 'pick-folder'),
@@ -23,15 +33,23 @@ describe('prediction configuration', () => {
     mockState.folders = [];
   });
 
+  it('explains the disabled action and excludes unavailable models from choices', async () => {
+    render(<MemoryRouter><PredictionModule/></MemoryRouter>);
+    await waitFor(() => expect(screen.getByRole('option', { name: /推荐/ })).toBeInTheDocument());
+    expect(screen.queryByRole('option', { name: /缺失模型/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button',{name:'prediction.create_task'})).toBeDisabled();
+    expect(screen.getByRole('status')).toHaveTextContent('请先选择图片');
+    expect(screen.queryByRole('combobox',{name:'预测预设'})).not.toBeInTheDocument();
+  });
+
   it('shows plain model names and submits a real ensemble mode with both members', async () => {
-    render(<PredictionModule />);
-    expect(screen.getByRole('option', { name: '有监督模型' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: '半监督模型' })).toBeInTheDocument();
+    render(<MemoryRouter><PredictionModule /></MemoryRouter>);
+    await waitFor(() => expect(screen.getByRole('option', { name: /PBT SegFormer/ })).toBeInTheDocument());
+    expect(screen.getByRole('option', { name: /M6 半监督/ })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '投票模型' }));
     expect(screen.getByRole('combobox', { name: 'prediction.model' })).toBeDisabled();
     fireEvent.click(screen.getAllByRole('checkbox')[0]);
     fireEvent.click(screen.getByRole('button', { name: 'prediction.create_task' }));
-    fireEvent.click(screen.getByRole('button', { name: 'prediction.confirm' }));
     await waitFor(() => expect(createTask).toHaveBeenCalledWith(expect.objectContaining({
       modelType: 'ensemble', single_model_type: 'ensemble', predictionMode: 'ensemble',
       selectionType: 'images', selectedItems: ['55'],
@@ -41,12 +59,22 @@ describe('prediction configuration', () => {
 
   it('submits a whole selected folder in one click without selecting images', async () => {
     mockState.folders = [{ id: 'f1', name: '根文件夹', parent: null, imageCount: 3 }];
-    render(<PredictionModule />);
+    render(<MemoryRouter><PredictionModule /></MemoryRouter>);
     fireEvent.click(screen.getByRole('button', { name: 'pick-folder' }));
-    fireEvent.click(screen.getByRole('button', { name: 'prediction.submit_folder' }));
-    fireEvent.click(screen.getByRole('button', { name: 'prediction.confirm' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'prediction.create_task' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'prediction.create_task' }));
     await waitFor(() => expect(createTask).toHaveBeenCalledWith(expect.objectContaining({
       selectionType: 'folders', selectedItems: ['f1'], imageCount: 3,
     })));
+  });
+
+  it('requires a task name before direct submission', async () => {
+    render(<MemoryRouter><PredictionModule /></MemoryRouter>);
+    await waitFor(() => expect(screen.getByRole('option', { name: /PBT SegFormer/ })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('checkbox', { name: '选择 sample.png' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'prediction.task_name' }), { target: { value: ' ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'prediction.create_task' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('请输入任务名称');
+    expect(createTask).not.toHaveBeenCalled();
   });
 });

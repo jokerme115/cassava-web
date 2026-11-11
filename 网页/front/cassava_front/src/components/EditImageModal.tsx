@@ -104,7 +104,7 @@ export const EditImageModal: React.FC<EditImageModalProps> = ({ image, onClose, 
     <div className="fixed inset-0 bg-[rgba(15,23,42,0.28)] flex items-center justify-center p-4 z-50">
       <div className="card card-float rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
         <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-surface-muted">
-          <h3 className="text-xl font-bold text-ink flex items-center">
+          <h3 className="text-xl font-semibold text-ink flex items-center">
             <Edit className="w-5 h-5 mr-2 text-accent-text" />
             {t('images.edit_image')}
           </h3>

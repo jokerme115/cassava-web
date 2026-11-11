@@ -32,24 +32,13 @@ class ExpiringTokenAuthentication(TokenAuthentication):
         # 获取最后活跃时间
         # 多端会话下按「本会话」计时：优先取本次登录会话的 last_seen，
         # 这样手机闲置超时只失效该会话，不会顺带把正在使用的电脑踢下线。
-        last_activity = getattr(token, 'last_seen', None)
-        if not last_activity:
-            try:
-                if hasattr(token.user, 'profile'):
-                    last_activity = token.user.profile.last_activity
-            except Exception:
-                pass
+        last_activity = getattr(token, 'last_seen', None) or token.created
 
-        # 如果没有记录，则以Token创建时间为准（或者直接通过，视策略而定）
-        # 这里选择以Token创建时间作为兜底
-        if not last_activity:
-            # 如果是新Token，last_activity可能为空，暂时允许
-            # 或者将其视为当前时间
-            last_activity = token.created
-            
         # 检查是否过期
         now = timezone.now()
-        if (now - last_activity).total_seconds() > expire_seconds:
+        expired = (now >= token.expires_at if token.expires_at is not None
+                   else (now - last_activity).total_seconds() > expire_seconds)
+        if expired:
             token.delete()
             raise exceptions.AuthenticationFailed('会话已超时，请重新登录')
             

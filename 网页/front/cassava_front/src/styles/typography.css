@@ -1,0 +1,39 @@
+body {
+  font-family: var(--font-ui);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line);
+  font-weight: 400;
+  font-synthesis: none;
+  font-variant-numeric: tabular-nums;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body button[class], body input[class], body select[class], body textarea[class], body label[class] {
+  font-family: var(--font-ui);
+  font-size: var(--text-control-size);
+  line-height: var(--text-control-line);
+}
+body button[class] { font-weight: 500; }
+body b, body strong { font-weight: 600; }
+body code, body pre, body kbd, body samp { font-family: var(--font-ui); }
+.recharts-text { font-family: var(--font-ui); font-size: var(--text-caption-size); }
+
+.page-title {
+  font-size: var(--text-page-size);
+  line-height: var(--text-page-line);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.section-title, .card-title {
+  font-size: var(--text-panel-size);
+  line-height: var(--text-panel-line);
+  font-weight: 600;
+}
+.body-text { font-size: var(--text-body-size); line-height: var(--text-body-line); }
+.metric-value { font-size: var(--text-metric-size); line-height: var(--text-metric-line); font-weight: 600; }
+
+@media (max-width: 639px) {
+  body input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]),
+  body select, body textarea { font-size: var(--text-mobile-control-size); }
+}

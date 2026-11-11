@@ -1,3 +1,4 @@
+import { modal } from '../utils/feedback';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   Save, 
@@ -16,7 +17,7 @@ import {
   Key
 } from 'lucide-react';
 import { permissionsApi } from '../services/api';
-import { Modal } from 'antd';
+
 import { useTranslation } from 'react-i18next';
 
 interface Permission {
@@ -199,7 +200,7 @@ const UserPermissionEditor: React.FC = () => {
   const applyTemplate = (templateId: string) => {
     const template = templates.find(t => t.id === Number(templateId));
     if (!template) return;
-    Modal.confirm({
+    modal.confirm({
       title: t('user_permission_editor.apply_template_title', { defaultValue: '应用权限模板' }),
       content: t('user_permission_editor.apply_template_confirm', { name: template.name }),
       okText: t('common.confirm', { defaultValue: '确认' }),

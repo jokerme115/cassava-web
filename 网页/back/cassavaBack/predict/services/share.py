@@ -87,8 +87,8 @@ class ShareService(BaseService):
         ResourceShare = ShareService.get_model('ResourceShare')
         try:
             share = ResourceShare.objects.get(id=share_id)
-            # 只有资源所有者或分享者可以撤销
-            if share.shared_by != owner:
+            # 只有资源所有者或分享者或超级管理员可以撤销
+            if share.shared_by != owner and not getattr(owner, 'is_superuser', False):
                 return False, "无权撤销此分享"
             
             # 清除缓存

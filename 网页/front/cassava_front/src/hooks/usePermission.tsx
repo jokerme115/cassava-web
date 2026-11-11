@@ -2,6 +2,19 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { permissionsApi } from '../services/api';
 import { PERMISSIONS, ROLES, PERMISSION_GROUPS } from '../constants/permissions';
+import { getAuthToken } from '../utils/authToken';
+
+const pending = new Map<string, Promise<{ permissions: string[]; roles: string[] }>>();
+function readCurrentAccess() {
+  const key = getAuthToken() || 'guest';
+  const existing = pending.get(key);
+  if (existing) return existing;
+  const request = Promise.all([permissionsApi.getCurrentUserPermissionsList(), permissionsApi.getCurrentUserRolesList()])
+    .then(([p, r]) => ({ permissions: Array.isArray(p) ? p : p?.permissions || [], roles: Array.isArray(r) ? r.map((role: any) => role.name) : [] }))
+    .finally(() => { if (pending.get(key) === request) pending.delete(key); });
+  pending.set(key, request);
+  return request;
+}
 
 interface PermissionState {
   permissions: string[];
@@ -29,16 +42,7 @@ export const usePermission = () => {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       
       // Get user permissions
-      const permissionsResponse = await permissionsApi.getCurrentUserPermissionsList();
-      const permissions = Array.isArray(permissionsResponse)
-        ? permissionsResponse
-        : permissionsResponse?.permissions || [];
-      
-      // Get user roles
-      const rolesResponse = await permissionsApi.getCurrentUserRolesList();
-      const roles = Array.isArray(rolesResponse)
-        ? rolesResponse.map((role: any) => role.name)
-        : [];
+      const { permissions, roles } = await readCurrentAccess();
       
       setState({
         permissions,
@@ -109,6 +113,13 @@ export const usePermission = () => {
 
   useEffect(() => {
     loadPermissions();
+    const reload = () => { void loadPermissions(); };
+    window.addEventListener('permissions:updated', reload);
+    window.addEventListener('focus', reload);
+    return () => {
+      window.removeEventListener('permissions:updated', reload);
+      window.removeEventListener('focus', reload);
+    };
   }, [loadPermissions]);
 
   return {

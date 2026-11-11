@@ -32,12 +32,13 @@ class PublicStatsView(APIView):
             images_predicted_count = CassavaImage.objects.filter(prediction_results__isnull=False).distinct().count()
 
             # 3. Total Visit Count
-            visit_count = VisitorLog.objects.count()
+            visit_count = VisitorLog.objects.exclude(session_key__isnull=True).exclude(session_key='').values('session_key').distinct().count()
 
             return Response({
                 'prediction_usage_count': prediction_usage_count,
                 'images_predicted_count': images_predicted_count,
-                'visit_count': visit_count
+                'visit_count': visit_count,
+                'visit_count_type': 'browser_sessions',
             })
         except (DatabaseError, OperationalError) as e:
             logger.error(f"Database error in PublicStatsView: {e}")

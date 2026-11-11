@@ -10,14 +10,14 @@ from zipfile import ZipFile, ZIP_DEFLATED
 from django.http import FileResponse
 from django.utils import timezone
 
-from .ensemble import LABELS
+from .model_registry import LABELS
 from .measurement import latest_correction, measurement_info, measurement_masks, overlay_png, segment_measurements
 from .storage_utils import read_storage_bytes
 
 
 HEADERS = ['结果ID', '任务ID', '图片ID', '图片名称', '文件夹', '模型', '模型PPD(%)', '最终PPD(%)',
            '单位', '结果来源', '校正版本', '复核状态', '木薯面积(px)', '病变面积(px)', '预测时间',
-           '校正者', '校正时间', '校正备注', '预测参数', '数据状态', '有监督模型 PPD(%)', '半监督模型 PPD(%)', '模型一致率(非准确率%)', '投票明细']
+           '校正者', '校正时间', '校正备注', '预测参数', '数据状态', '有监督模型 PPD(%)', '半监督模型 PPD(%)', '模型一致率(非准确率%)', '投票明细', '计量协议', '历史原始数值', '历史单位']
 SEGMENT_HEADERS = ['结果ID', '切面', '校正版本', '木薯面积(px)', '病变面积(px)', 'PPD(%)', '原图坐标']
 
 
@@ -64,15 +64,22 @@ def xlsx_bytes(sheets):
     return stream.getvalue()
 
 
-def export_response(queryset, file_type):
+def export_response(queryset, file_type, style=None, version='latest'):
+    from .contour_export import export_style, figure_png, panels, compose, compose_blocks
+    from .measurement import selected_correction, saved_rotation
+    from django.db import transaction
+    style = export_style(style)
+    # Corrections are append-only. Materialize every version before streaming any artifact.
+    with transaction.atomic():
+        snapshots = [(prediction, selected_correction(prediction, version)) for prediction in queryset]
+    collage_panels, collage_figures = [], []
     rows, segment_rows, manifest = [HEADERS], [SEGMENT_HEADERS], []
     package = tempfile.SpooledTemporaryFile(max_size=16 * 1024 * 1024, mode='w+b') if file_type == 'zip' else None
     archive = ZipFile(package, 'w', ZIP_DEFLATED) if package else None
     try:
-        for prediction in queryset.iterator(chunk_size=100):
-            correction = latest_correction(prediction)
-            info = measurement_info(prediction)
-            item = {'result_id': prediction.id, **info, 'files': {}, 'errors': []}
+        for prediction, correction in snapshots:
+            info = measurement_info(prediction, correction)
+            item = {'result_id': prediction.id, **info, 'rotation_degrees': saved_rotation(correction), 'mask_coordinate_space': 'original', 'files': {}, 'errors': []}
             pixels, segments = (None, None), []
             try:
                 cassava, rotten, cp, rp, _ = measurement_masks(prediction, correction)
@@ -92,7 +99,8 @@ def export_response(queryset, file_type):
                          json.dumps(params, ensure_ascii=False), info['measurement_status'],
                          *[next((m.get('ppd_percent') for m in (prediction.ensemble_details or {}).get('members', []) if m.get('model') == name), None) for name in ('resnet101', 'm6_best')],
                          (prediction.ensemble_details or {}).get('agreement_percent'),
-                         json.dumps(prediction.ensemble_details or {}, ensure_ascii=False)])
+                         json.dumps(prediction.ensemble_details or {}, ensure_ascii=False),
+                         info['protocol'], info['legacy_raw_value'], info['legacy_unit']])
             for segment in segments:
                 segment_rows.append([prediction.id, segment['segment'], info['correction_version'],
                                      segment['cassava_pixels'], segment['rotten_pixels'], segment['ppd_percent'],
@@ -124,6 +132,15 @@ def export_response(queryset, file_type):
                 try:
                     archive.writestr(f'{prefix}/final_overlay.png', overlay_png(prediction, correction))
                     item['files']['final_overlay.png'] = f'{prefix}/final_overlay.png'
+                    figure_data = figure_png(prediction, correction, style)
+                    archive.writestr(f'{prefix}/PPD_contours.png', figure_data)
+                    item['files']['PPD_contours.png'] = f'{prefix}/PPD_contours.png'
+                    if style['collage']:
+                        if style['stages'] == ['prediction']:
+                            collage_panels.extend(panels(prediction, correction, style))
+                        else:
+                            from PIL import Image
+                            collage_figures.append(Image.open(BytesIO(figure_data)).convert('RGB'))
                 except (OSError, ValueError, TypeError) as exc:
                     item['errors'].append(f'final_overlay.png: {exc}')
             manifest.append(item)
@@ -131,12 +148,16 @@ def export_response(queryset, file_type):
             raise ValueError('没有符合条件的可导出结果')
         sheets = [('结果总表', rows), ('切面明细', segment_rows)]
         if archive:
+            if collage_figures:
+                archive.writestr('PPD_collage.png', compose_blocks(collage_figures, 'rows', style['padding']))
+            if collage_panels:
+                archive.writestr('PPD_collage.png', compose(collage_panels, style))
             archive.writestr('results.csv', csv_bytes(rows))
             archive.writestr('segments.csv', csv_bytes(segment_rows))
             archive.writestr('results.xlsx', xlsx_bytes(sheets))
             archive.writestr('manifest.json', json.dumps({'schema_version': 1, 'count': len(manifest),
-                'generated_at': timezone.now().isoformat(), 'results': manifest}, ensure_ascii=False, indent=2))
-            archive.writestr('说明.txt', 'PPD=木薯范围内病变像素/木薯像素×100%。总值使用原图掩码计算，不对重叠切面重复计数。\n校正结果为人工编辑，尚未经独立复核。历史任务参数可能不代表实际执行模型，以结果模型字段为准。\n历史切面坐标缺失时不生成推测值；资源缺失会记录在manifest.json的errors中。\n')
+                'generated_at': timezone.now().isoformat(), 'style': style, 'version_selection': version, 'results': manifest}, ensure_ascii=False, indent=2))
+            archive.writestr('说明.txt', 'PPD=木薯范围内病变像素/木薯像素×100%。总值使用原图掩码计算，不对重叠切面重复计数。\n每条结果的模型、修订版本和复检状态见manifest.json及数值表。历史任务参数可能不代表实际执行模型，以结果模型字段为准。\n历史切面坐标缺失时不生成推测值；资源缺失会记录在manifest.json的errors中。\n')
             archive.close()
             archive = None
             package.seek(0)

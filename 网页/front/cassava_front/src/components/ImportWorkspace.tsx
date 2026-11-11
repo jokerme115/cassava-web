@@ -1,0 +1,223 @@
+import { getUserPreferences } from '../utils/userPreferences';
+import { message } from '../utils/feedback';
+import React, { useEffect, useRef, useState } from 'react';
+import { Button, Dropdown, Drawer, Modal, Progress, Select, Switch, Input, Alert, Spin } from 'antd';
+import { Upload, History, RotateCcw } from 'lucide-react';
+import api from '../services/rest/client';
+import { folderPath, useWorkspace, updateWorkspace } from '../utils/workspaceContext';
+import { getApiErrorMessage } from '../utils/apiError';
+import type { Folder } from '../types';
+import { type ImportJob, type TransferActivity, terminalImportStates as terminal, formatImportBytes as bytes,
+  importStage, stagePercent, importUploadError } from '../utils/importProgress';
+
+const labels: Record<string, string> = { uploading: '正在上传', checking: '核验续传文件', paused: '上传未完成', verifying: '正在校验文件',
+  queued: '等待服务器处理', scanning: '正在读取压缩包', extracting: '正在解压', importing: '正在导入图片',
+  completed: '导入完成', partial: '部分失败', failed: '导入失败', cancelled: '已取消' };
+const supported = /\.(jpe?g|png|bmp|webp|tiff?|mpo|zip|7z|rar)$/i;
+const isArchive = (file: File) => /\.(zip|7z|rar)$/i.test(file.name);
+const pathOf = (file: File) => file.webkitRelativePath || file.name;
+const sha256 = async (blob: Blob) => [...new Uint8Array(await crypto.subtle.digest('SHA-256', await blob.arrayBuffer()))].map(n => n.toString(16).padStart(2, '0')).join('');
+
+export default function ImportWorkspace({ folders, onComplete }: { folders: Folder[]; onComplete: () => void }) {
+  const workspace = useWorkspace();
+  const target = workspace.folder && /^\d+$/.test(workspace.folder) ? workspace.folder : workspace.lastWritableFolder;
+  const [jobs, setJobs] = useState<ImportJob[]>([]);
+  const [open, setOpen] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
+  const [preview, setPreview] = useState(false);
+  const [mode, setMode] = useState<string>(() => getUserPreferences().importMode);
+  const [name, setName] = useState('');
+  const [targetId, setTargetId] = useState<string | null>(target);
+  const [changeLocation, setChangeLocation] = useState(false);
+  const [preserve, setPreserve] = useState(() => getUserPreferences().preserveHierarchy);
+  const [busy, setBusy] = useState(false);
+  const [activity, setActivity] = useState<TransferActivity | null>(null);
+  const [refreshError, setRefreshError] = useState('');
+  const activeJobs = useRef(false), drawerVisible = useRef(false);
+  drawerVisible.current = open;
+  const controller = useRef<AbortController | null>(null);
+  const cancelledByUser = useRef(false);
+  const [resumeId, setResumeId] = useState<number | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null), folderInput = useRef<HTMLInputElement>(null);
+  const previousStates = useRef(new Map<number, string>());
+  const completeRef = useRef(onComplete); completeRef.current = onComplete;
+  const refresh = async () => {
+    try {
+      const data = (await api.get<ImportJob[]>('/imports/')).data;
+      setJobs(data);
+      activeJobs.current = data.some(job => !terminal.includes(job.state));
+      setRefreshError('');
+      let changed = false;
+      for (const job of data) {
+        const before = previousStates.current.get(job.id);
+        if (before && !terminal.includes(before) && terminal.includes(job.state)) changed = true;
+        previousStates.current.set(job.id, job.state);
+      }
+      if (changed) completeRef.current();
+    } catch { setRefreshError('无法获取最新进度，请检查网络后刷新'); }
+  };
+  useEffect(() => {
+    let stopped = false, timer: ReturnType<typeof setTimeout>;
+    const poll = async () => {
+      if (document.visibilityState === 'visible') await refresh();
+      if (!stopped) timer = setTimeout(() => void poll(), activeJobs.current ? 2500 : drawerVisible.current ? 10000 : 30000);
+    };
+    void poll();
+    return () => { stopped = true; clearTimeout(timer); };
+  }, []);
+
+  const transfer = async (selected: File[], job: ImportJob) => {
+    const map = new Map(selected.map(file => [pathOf(file), file]));
+    const sources = job.items.filter(item => !item.archive_item);
+    const pending = sources.filter(item => item.state === 'uploading');
+    const total = sources.reduce((sum, item) => sum + item.size, 0);
+    let received = sources.reduce((sum, item) => sum + item.offset, 0), next = 0;
+    const initial = received, started = Date.now(), inflight = new Map<number, number>();
+    const update = (file: string, phase: TransferActivity['phase'] = 'uploading') => {
+      const sent = Math.min(total, received + [...inflight.values()].reduce((a, b) => a + b, 0));
+      setActivity({ id: job.id, phase, file, sent, confirmed: received, total,
+        speed: (sent - initial) / Math.max(1, (Date.now() - started) / 1000) });
+    };
+    update(pending[0]?.relative_path || '');
+    const lane = async () => {
+      while (next < pending.length) {
+        const item = pending[next++], file = map.get(item.relative_path);
+        if (!file || file.size !== item.size) throw new Error(`请重新选择同一文件或目录：${item.relative_path}`);
+        for (const chunk of item.chunk_hashes || []) {
+          update(item.relative_path, 'checking');
+          if (await sha256(file.slice(chunk.offset, chunk.offset + chunk.size)) !== chunk.sha256) throw new Error(`文件内容已变化，不能续传：${item.relative_path}`);
+        }
+        let offset = item.offset;
+        while (offset < file.size) {
+          if (controller.current?.signal.aborted) throw new Error('上传已取消');
+          const blob = file.slice(offset, offset + 1024**2);
+          const body = new FormData(); body.append('chunk', blob, 'chunk.bin'); body.append('offset', String(offset));
+          const response = await api.post<{ offset: number }>(`/imports/${job.id}/items/${item.id}/chunk/`, body, {
+            timeout: 180000, signal: controller.current?.signal,
+            onUploadProgress: event => { inflight.set(item.id, Math.min(blob.size, event.loaded)); update(item.relative_path); },
+          });
+          received += response.data.offset - offset; offset = response.data.offset;
+          inflight.delete(item.id); update(item.relative_path);
+        }
+      }
+    };
+    let failure: unknown;
+    const guarded = async () => {
+      try { await lane(); }
+      catch (error) { if (failure === undefined) failure = error; controller.current?.abort(); throw error; }
+    };
+    await Promise.allSettled([guarded(), guarded(), guarded()]);
+    if (failure !== undefined) throw failure;
+    update('', 'verifying');
+    await api.post(`/imports/${job.id}/finalize/`, {}, { timeout: 600000, signal: controller.current?.signal });
+    message.success('上传完成，服务器开始处理');
+  };
+
+  const start = async (selected: File[], options: { mode: string; name?: string; preserve_hierarchy: boolean }, destination: string | null) => {
+    setBusy(true); setPreview(false); setOpen(true);
+    controller.current = new AbortController();
+    cancelledByUser.current = false;
+    let activeId: number | null = null;
+    try {
+      const job = resumeId ? (await api.get<ImportJob>(`/imports/${resumeId}/`)).data : (await api.post<ImportJob>('/imports/', {
+        files: selected.map(file => ({ path: pathOf(file), size: file.size })), target_folder: destination,
+        options: { ...options, check_duplicate: true, source_kind: selected.some(file => file.webkitRelativePath) ? 'folder' : 'files' },
+      })).data;
+      previousStates.current.set(job.id, 'uploading');
+      activeId = job.id;
+      setJobs(current => [job, ...current.filter(item => item.id !== job.id)]);
+      setResumeId(job.id);
+      await transfer(selected, job); setResumeId(null);
+    } catch (error) {
+      const reason = importUploadError(error);
+      if (!cancelledByUser.current) {
+        message.error(reason);
+        if (activeId) {
+          setJobs(current => current.map(job => job.id === activeId ? { ...job, error: reason } : job));
+          try { await api.post(`/imports/${activeId}/pause/`, { reason }); } catch { /* Poll warning keeps unavailable server state visible. */ }
+        }
+      }
+    }
+    finally { setBusy(false); setActivity(null); void refresh(); }
+  };
+
+  const choose = (incoming: File[]) => {
+    const valid = incoming.filter(file => supported.test(file.name));
+    if (valid.length !== incoming.length) message.info(`忽略 ${incoming.length - valid.length} 个非图片或不支持的文件`);
+    if (!valid.length) return;
+    setFiles(valid); setTargetId(target); setChangeLocation(false);
+    if (resumeId) { void start(valid, { mode: 'existing', preserve_hierarchy: true }, target); return; }
+    if (valid.some(file => file.webkitRelativePath || isArchive(file))) {
+      setMode(getUserPreferences().importMode); setPreserve(getUserPreferences().preserveHierarchy); setName((valid[0].webkitRelativePath?.split('/')[0] || valid[0].name).replace(/\.(zip|7z|rar)$/i, '')); setPreview(true);
+    } else void start(valid, { mode: 'existing', preserve_hierarchy: true }, target);
+  };
+  const invoke = async (job: ImportJob, action: string) => {
+    if (action === 'cancel' && activity?.id === job.id) { cancelledByUser.current = true; controller.current?.abort(); }
+    try { await api.post(`/imports/${job.id}/${action}/`, {}, { timeout: action === 'finalize' ? 600000 : 60000 }); void refresh(); }
+    catch (error) { message.error(getApiErrorMessage(error, '操作失败')); }
+  };
+  return <div className="import-workspace-controls flex min-w-0 flex-wrap items-center gap-2" onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); choose(Array.from(event.dataTransfer.files)); }}>
+    <span className="import-target max-w-64 truncate text-xs text-muted" title={folderPath(folders, target)}>上传至：{folderPath(folders, target)}</span>
+    <Dropdown trigger={['click']} disabled={busy} menu={{ items: [{ key: 'images', label: '图片（可多选）' }, { key: 'folder', label: '文件夹' }, { key: 'archive', label: '压缩包（ZIP / 7Z / RAR）' }], onClick: ({ key }) => {
+      setResumeId(null);
+      if (key === 'folder') folderInput.current?.click();
+      else if (fileInput.current) { fileInput.current.accept = key === 'archive' ? '.zip,.7z,.rar' : '.jpg,.jpeg,.png,.bmp,.webp,.tif,.tiff,.mpo'; fileInput.current.click(); }
+    } }}><Button aria-label="上传" type="primary" icon={<Upload size={15} />} disabled={busy}>上传</Button></Dropdown>
+    <Button aria-label="导入任务" icon={<History size={16} />} onClick={() => setOpen(true)} />
+    <input ref={fileInput} hidden type="file" multiple accept=".jpg,.jpeg,.png,.bmp,.webp,.tif,.tiff,.mpo,.zip,.7z,.rar" onChange={event => { choose(Array.from(event.target.files || [])); event.target.value = ''; }} />
+    <input ref={folderInput} hidden type="file" multiple {...({ webkitdirectory: '' } as React.InputHTMLAttributes<HTMLInputElement>)} onChange={event => { choose(Array.from(event.target.files || [])); event.target.value = ''; }} />
+    <Modal title="确认这批资料如何归档" open={preview} onCancel={() => setPreview(false)} onOk={() => void start(files, { mode, name, preserve_hierarchy: preserve }, targetId)} okText="开始上传" confirmLoading={busy}>
+      <p className="mb-4 text-sm text-muted">{files.length} 个文件 · {(files.reduce((sum, file) => sum + file.size, 0) / 1024**2).toFixed(1)} MB</p>
+      <div className="space-y-4">
+        <div className="rounded-lg bg-surface-muted p-3 text-sm">当前位置：{folderPath(folders, targetId)} <Button type="link" size="small" onClick={() => setChangeLocation(!changeLocation)}>更改位置</Button></div>
+        {changeLocation && <Select className="w-full" showSearch optionFilterProp="label" value={targetId || ''} onChange={value => setTargetId(value || null)} options={[{ value: '', label: '未分类' }, ...folders.map(folder => ({ value: String(folder.id), label: folderPath(folders, folder.id) }))]} />}
+        <Select className="w-full" value={mode} onChange={setMode} options={[{ value: 'new', label: '按原名称新建子目录' }, { value: 'custom', label: '自定义新目录名称' }, { value: 'existing', label: '直接放入当前位置' }]} />
+        {mode !== 'existing' && <Input aria-label="新目录名称" value={name} onChange={event => setName(event.target.value)} />}
+        <label className="flex items-center justify-between text-sm">保留内部子目录<Switch checked={preserve} onChange={setPreserve} /></label>
+
+        {mode !== 'existing' && folders.some(folder => folder.name === name && String(folder.parent || '') === String(targetId || '')) && <Button onClick={() => { const existing = folders.find(folder => folder.name === name && String(folder.parent || '') === String(targetId || '')); if (existing) { setTargetId(String(existing.id)); setMode('existing'); } }}>复用已有“{name}”目录</Button>}
+      </div>
+    </Modal>
+    <Drawer title="导入任务" width={Math.min(560, window.innerWidth)} open={open} onClose={() => setOpen(false)}>
+      {refreshError && <Alert className="mb-4" type="warning" message={refreshError} action={<Button size="small" onClick={() => void refresh()}>刷新</Button>} />}
+      {busy && !activity && <div role="status" className="mb-4 flex items-center gap-2 text-sm"><Spin size="small" />正在建立上传任务</div>}
+      {!jobs.length && <p className="text-muted">尚无导入任务</p>}
+      {jobs.map(job => {
+        const active = activity?.id === job.id ? activity : null;
+        const stage = importStage(job, active), percent = stagePercent(job, active);
+        const isTerminal = terminal.includes(job.state), interrupted = stage === 'paused';
+        const source = job.transfer, progress = job.progress;
+        const steps = source?.has_archive ? ['上传', '校验', '解压', '导入'] : ['上传', '校验', '导入'];
+        const flowStage = isTerminal && job.state !== 'completed' ? progress?.stage || 'paused' : stage;
+        const step = ['uploading', 'paused', 'checking'].includes(flowStage) ? 0 : flowStage === 'verifying' ? 1
+          : ['queued', 'scanning', 'extracting'].includes(flowStage) ? 2 : steps.length - 1;
+        const file = active?.file || progress?.current_file;
+        const age = job.heartbeat ? Math.floor((Date.now() - new Date(job.heartbeat).getTime()) / 1000) : 0;
+        return <article key={job.id} className="mb-4 rounded-xl border border-hairline p-4">
+        <div className="flex items-start justify-between gap-3"><strong className="min-w-0 truncate">{job.options.resolved_name || `导入 #${job.id}`}</strong><div role="status" className={`flex shrink-0 items-center gap-2 text-sm ${interrupted ? 'text-warn-text' : 'text-ink'}`}>{!isTerminal && !interrupted && <Spin size="small" />}{stage === 'uploading' && source?.has_archive ? '正在上传压缩包' : labels[stage] || stage}</div></div>
+        {source && <p className="mt-2 truncate text-xs text-muted" title={source.files.map(item => item.relative_path).join('、')}>{source.files[0]?.relative_path}{source.total_files > 1 ? ` 等 ${source.total_files} 个文件` : ''} · {bytes(source.bytes_total || 0)}</p>}
+        <div aria-label="处理阶段" className="my-3 flex items-center gap-1 text-xs">{steps.map((label, index) => <React.Fragment key={label}>{index > 0 && <span className="text-muted">→</span>}<span className={`rounded px-2 py-1 ${job.state === 'completed' || index < step ? 'bg-brand-soft text-brand-fill' : index === step ? 'bg-surface-sunken font-semibold text-ink' : 'text-muted'}`}>{label}</span></React.Fragment>)}</div>
+        {percent !== null && <Progress aria-label="当前阶段进度" percent={percent} status={['failed', 'partial'].includes(job.state) ? 'exception' : job.state === 'completed' ? 'success' : interrupted || isTerminal ? 'normal' : 'active'} />}
+        {['uploading', 'paused', 'checking', 'verifying'].includes(stage) && source && <div className="mb-3 space-y-1 text-xs text-muted">
+          {active?.phase === 'uploading' && <p>已发送 {bytes(active.sent)} / {bytes(active.total)}{active.speed > 0 ? ` · ${bytes(active.speed)}/秒` : ''}</p>}
+          <p>服务器已接收 {bytes(active?.confirmed ?? source.bytes_received ?? 0)} / {bytes(source.bytes_total || 0)}</p>
+          {interrupted && <p className="text-warn-text">尚未开始解压或导入，请重新选择原文件继续上传。</p>}
+        </div>}
+        {file && !isTerminal && <p className="mb-2 truncate text-xs text-ink-secondary" title={file}>{file}</p>}
+        {stage === 'extracting' && progress?.total != null && <p className="mb-2 text-xs text-muted">已解压 {progress.completed} / {progress.total} 张图片</p>}
+        {(stage === 'importing' || isTerminal) && <p className="mb-3 text-xs text-muted">已处理 {job.summary.finished || 0} / {job.summary.total || 0} · 成功 {job.summary.success || 0} · 跳过 {job.summary.skipped || 0} · 失败 {job.summary.failed || 0}</p>}
+        {!isTerminal && !interrupted && !active && age > 60 && <p className="mb-2 text-xs text-warn-text">已有 {age} 秒未收到进度更新</p>}
+        {job.error && <Alert className="mb-3" type={interrupted ? 'warning' : 'error'} message={job.error} />}
+        <div className="flex flex-wrap gap-2">
+          {(!!job.summary.success || isTerminal) && <Button size="small" onClick={() => { const folder = job.destination_folder ?? job.target_folder; updateWorkspace({ folder: folder ? String(folder) : 'uncategorized', selectedIds: [] }); setOpen(false); }}>查看已导入图片</Button>}
+          {job.state === 'uploading' && !active && <>{source && source.bytes_received === source.bytes_total && source.total_files > 0
+            ? <Button size="small" onClick={() => void invoke(job, 'finalize')}>继续校验与导入</Button>
+            : <><Button size="small" disabled={busy} onClick={() => { setResumeId(job.id); if (fileInput.current) { fileInput.current.accept = '.jpg,.jpeg,.png,.bmp,.webp,.tif,.tiff,.mpo,.zip,.7z,.rar'; fileInput.current.click(); } }}>选择原文件续传</Button><Button size="small" disabled={busy} onClick={() => { setResumeId(job.id); folderInput.current?.click(); }}>选择原目录续传</Button></>}</>}
+          {['partial', 'failed'].includes(job.state) && <Button size="small" icon={<RotateCcw size={13} />} onClick={() => void invoke(job, 'retry')}>仅重试失败项</Button>}
+          {!terminal.includes(job.state) && <Button size="small" onClick={() => void invoke(job, 'cancel')}>取消未完成部分</Button>}
+        </div>
+        {job.items.some(item => item.error) && <details className="mt-3 text-xs"><summary>查看逐项处理说明</summary>{job.items.filter(item => item.error).map(item => <p className="mt-2 break-all" key={item.id}>{item.relative_path}：{item.error}</p>)}</details>}
+      </article>; })}
+    </Drawer>
+  </div>;
+}

@@ -6,7 +6,7 @@ import { GridComponent, LegendComponent, TitleComponent, TooltipComponent } from
 import { CanvasRenderer } from 'echarts/renderers';
 import { useTranslation } from 'react-i18next';
 import { analyticsApi } from '../services/api';
-import { Table, Tag } from 'antd';
+import { Alert, Button, Table, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 
 echarts.use([
@@ -51,6 +51,7 @@ const VisitorAnalytics: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState(30);
+  const [error, setError] = useState('');
 
   // Table state
   const [logs, setLogs] = useState<VisitorLog[]>([]);
@@ -73,10 +74,12 @@ const VisitorAnalytics: React.FC = () => {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
+      setError('');
       const res = await analyticsApi.getStats(days);
       setData(res);
     } catch (error) {
       console.error("Failed to fetch analytics", error);
+      setError('访问统计加载失败，请重试');
     } finally {
       setLoading(false);
     }
@@ -98,6 +101,7 @@ const VisitorAnalytics: React.FC = () => {
       });
     } catch (error) {
       console.error("Failed to fetch logs", error);
+      setError('访问明细加载失败，请重试');
     } finally {
       setLogsLoading(false);
     }
@@ -123,6 +127,7 @@ const VisitorAnalytics: React.FC = () => {
       });
     } catch (error) {
       console.error("Failed to fetch IP stats", error);
+      setError('访客明细加载失败，请重试');
       setIpStats([]);
     } finally {
       setIpStatsLoading(false);
@@ -222,7 +227,7 @@ const VisitorAnalytics: React.FC = () => {
   ];
 
   if (loading && !data) return <div className="p-4 flex justify-center items-center h-64">{t('analytics.loading')}</div>;
-  if (!data) return <div className="p-4 flex justify-center items-center h-64">{t('analytics.no_data')}</div>;
+  if (!data) return <Alert type="error" showIcon message={error || t('analytics.no_data')} action={<Button onClick={() => void fetchData()}>重试</Button>} />;
 
   const lineOption = {
     title: { text: t('analytics.daily_trend') },
@@ -264,9 +269,10 @@ const VisitorAnalytics: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 card-soft rounded-lg">
+    <div className="space-y-6">
+      {error && <Alert type="error" showIcon message={error} action={<Button onClick={() => { void fetchData(); void fetchLogs(pagination.current, pagination.pageSize); void fetchIpStats(ipPagination.current, ipPagination.pageSize); }}>重试</Button>} />}
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-ink">{t('analytics.visitor_analytics')}</h2>
+        <span className="text-sm text-muted">访问趋势与明细</span>
         <select 
           value={days} 
           onChange={(e) => setDays(Number(e.target.value))}
@@ -310,7 +316,7 @@ const VisitorAnalytics: React.FC = () => {
 
       {/* IP Detail Table */}
       <div className="card p-6 rounded-lg shadow-sm mb-6">
-        <h3 className="text-lg font-bold text-ink mb-4">{t('analytics.ip_stats_table')}</h3>
+        <h3 className="text-lg font-semibold text-ink mb-4">{t('analytics.ip_stats_table')}</h3>
         <Table
           columns={ipColumns}
           dataSource={ipStats}
@@ -329,7 +335,7 @@ const VisitorAnalytics: React.FC = () => {
 
       {/* Access Logs Table */}
       <div className="card p-6 rounded-lg shadow-sm">
-        <h3 className="text-lg font-bold text-ink mb-4">{t('analytics.access_logs')}</h3>
+        <h3 className="text-lg font-semibold text-ink mb-4">{t('analytics.access_logs')}</h3>
         <Table 
           columns={columns} 
           dataSource={logs} 

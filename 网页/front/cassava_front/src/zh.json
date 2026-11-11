@@ -527,14 +527,14 @@
       }
     },
     "advantages": {
-       "title": "核心优势",
-       "subtitle": "我们的系统在木薯腐烂面积预测方面具有独特优势",
-       "background_title": "研究背景",
-       "background_desc": "木薯采后 48 h 内一旦出现细菌性软腐，损失率可达 30 % 以上。传统人工勾绘每 100 筐需 2.5 人·时，误差 > 15 %。",
-       "highlights_title": "技术亮点",
-       "highlights_desc": "18.4 万张 5 通道多光谱影像，覆盖 1 096 份核心种质",
-       "performance_title": "性能指标",
-       "performance_desc": "1秒预测20张，误差 < 2.1%"
+      "title": "核心优势",
+      "subtitle": "我们的系统在木薯腐烂面积预测方面具有独特优势",
+      "background_title": "研究背景",
+      "background_desc": "木薯采后 48 h 内一旦出现细菌性软腐，损失率可达 30 % 以上。传统人工勾绘每 100 筐需 2.5 人·时，误差 > 15 %。",
+      "highlights_title": "技术亮点",
+      "highlights_desc": "18.4 万张 5 通道多光谱影像，覆盖 1 096 份核心种质",
+      "performance_title": "性能指标",
+      "performance_desc": "1秒预测20张，误差 < 2.1%"
     },
     "cta": {
       "title": "开启智能农业新时代",
@@ -776,12 +776,18 @@
     },
     "prev_image": "← 上一张",
     "next_image": "下一张 →",
-    "distribution" : "疾病分布",
+    "distribution": "疾病分布",
     "size_categories": {
       "small": "< 1 MB",
       "medium": "1-5 MB",
       "large": "> 5 MB"
-    }
+    },
+    "all_review_status": "全部复检状态",
+    "review_status_filter": "复检状态",
+    "clear_filters": "清除筛选",
+    "go_predict": "去选择图片并预测 →",
+    "statistics": "结果统计",
+    "guest_no_results": "这里显示公开结果与本次试用结果，暂无可展示内容。"
   },
   "connection": {
     "description": "测试前端与后端API的连通性",

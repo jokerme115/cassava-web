@@ -4,9 +4,9 @@
 
 /* ============================================================
    设计系统：HeroUI 口径（柔和现代 · 单一强调色 · 实底卡片）
-   - 页面底：纯色 #f7f8fa，不铺渐变、不铺色斑
+   - 页面底：纯色 #f7f6f0，不铺渐变、不铺色斑
    - 卡片：纯白实底 + 1px 发丝描边 + 极淡投影 + 大圆角
-   - 强调色：只有 #0a84ff 一支
+   - 强调色：只有 #3d8060 一支
    - 状态色：只做圆点、细条、浅底胶囊，不做大面积着色
    ============================================================ */
 
@@ -15,18 +15,18 @@
 
   /* 强调色与状态色
      --accent 只用于图标、描边、焦点环和装饰；
-     承载白色文字的实底一律用 --brand-fill（#0070e0，白字对比 4.78:1） */
-  --accent: #0a84ff;
-  --brand-fill: #0070e0;
-  --brand-fill-hover: #005cb8;
-  --accent-hover: #0070e0;
-  --accent-soft: rgba(10, 132, 255, 0.10);
+     承载白色文字的实底一律用 --brand-fill（#245c45，白字对比 4.78:1） */
+  --accent: #3d8060;
+  --brand-fill: #245c45;
+  --brand-fill-hover: #173e31;
+  --accent-hover: #245c45;
+  --accent-soft: rgba(61, 128, 96, 0.10);
   --ok: #17c964;
   --warn: #f5a524;
   --danger: #f31260;
   /* 文字档强调/状态色：白底对比均 ≥4.5:1，可用于正文；上面的 --accent/--ok/--warn/--danger
      只做图标、描边、圆点与浅底，不承载正文文字 */
-  --brand-text: #0070e0;
+  --brand-text: #245c45;
   --ok-text: #12805c;
   --warn-text: #b54708;
   --danger-text: #d92d20;
@@ -38,21 +38,21 @@
   --ppd-high: #d92d20;
   --ppd-mid: #b54708;
   --ppd-low: #12805c;
-  --ppd-unknown: #687076;
+  --ppd-unknown: #68756b;
   --ppd-high-soft: rgba(217, 45, 32, 0.10);
   --ppd-mid-soft: rgba(181, 71, 8, 0.10);
   --ppd-low-soft: rgba(18, 128, 92, 0.10);
 
   /* 中性色 */
-  --ink: #11181c;
-  --ink-secondary: #3f4650;
-  --muted: #687076;
+  --ink: #20392e;
+  --ink-secondary: #48584e;
+  --muted: #68756b;
   --muted-light: #8b9199; /* 仅限占位符、禁用态、纯装饰 */
   --surface: #ffffff;
-  --surface-muted: #f7f8fa;
-  --surface-sunken: #f2f3f6;
-  --hairline: #ededf2;
-  --hairline-strong: #e4e5eb;
+  --surface-muted: #f7f6f0;
+  --surface-sunken: #eeefe7;
+  --hairline: #e3e7dd;
+  --hairline-strong: #d5ddcf;
 
   /* 圆角：面板 16 / 卡片 12 / 控件 10 / Hero 24 / 胶囊全圆 */
   --radius-hero: 24px;
@@ -79,7 +79,7 @@ html {
 body {
   margin: 0;
   color: var(--ink);
-  font-family: "SF Pro Text", -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
   background-color: var(--surface-muted);
   background-image: none;
@@ -140,7 +140,7 @@ body {
 
   .card-soft:hover,
   .glass-panel-soft:not(.glass-no-lift):hover {
-    background: #f2f3f6;
+    background: #eeefe7;
   }
 
   .chip:hover,
@@ -349,37 +349,36 @@ body {
   }
 }
 
-/* 字号层级：页面 28 / 区块 20 / 卡片 16 / 正文 14 */
+/* 字号取自 theme/typography.json。 */
 .page-title {
-  font-size: 28px;
+  font-size: var(--text-page-size);
   line-height: 1.25;
   font-weight: 600;
   letter-spacing: -0.01em;
-  color: var(--ink);
 }
 
 .section-title {
-  font-size: 20px;
+  font-size: var(--text-panel-size);
   line-height: 1.4;
   font-weight: 600;
   color: var(--ink);
 }
 
 .card-title {
-  font-size: 16px;
+  font-size: var(--text-panel-size);
   line-height: 1.5;
   font-weight: 600;
   color: var(--ink);
 }
 
 .body-text {
-  font-size: 14px;
+  font-size: var(--text-body-size);
   line-height: 1.7;
   color: var(--ink-secondary);
 }
 
 .metric-value {
-  font-size: 28px;
+  font-size: var(--text-metric-size);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--ink);
@@ -399,7 +398,7 @@ body {
     padding-block: 14px 24px;
   }
   .page-title {
-    font-size: 24px;
+    font-size: var(--text-page-size);
   }
   .metrics-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -432,8 +431,69 @@ body {
 }
 
 /* 文件夹树（预测页等）：节点铺满整行，选中态与左侧导航胶囊保持一致 */
-.folder-tree .ant-tree-treenode { width: 100%; padding-bottom: 2px; }
+.folder-tree .ant-tree-treenode:not([aria-hidden="true"]) { width: 100%; padding-bottom: 2px; }
 .folder-tree .ant-tree-node-content-wrapper { flex: 1; min-width: 0; border-radius: 8px; padding: 2px 6px; }
 .folder-tree .ant-tree-node-content-wrapper.ant-tree-node-selected { background: var(--brand-fill); color: #fff; }
 .folder-tree .ant-tree-node-content-wrapper:hover { background: var(--surface-sunken); }
 .folder-tree .ant-tree-node-content-wrapper.ant-tree-node-selected:hover { background: var(--brand-fill-hover); }
+
+.image-folder-tree .ant-tree-treenode:not([aria-hidden="true"]) { align-items: center; min-height: 30px; padding: 0; }
+.image-folder-tree .ant-tree-switcher { width: 16px; flex: 0 0 16px; margin-left: -12px; line-height: 30px; }
+.image-folder-tree .ant-tree-indent-unit { width: 16px; }
+.image-folder-tree .ant-tree-node-content-wrapper { padding: 0 4px; min-height: 30px; line-height: 30px; }
+.image-folder-tree .ant-tree-title { display: block; min-width: 0; }
+.image-folder-tree .ant-tree-title > div { min-height: 30px; }
+.prediction-folder-tree .ant-tree-indent-unit { width: 12px; }
+.prediction-folder-tree .ant-tree-switcher { width: 14px; flex-basis: 14px; }
+.prediction-folder-tree .ant-tree-node-content-wrapper { padding: 3px 5px; font-size: var(--text-control-size); }
+.prediction-folder-tree .ant-tree-treenode { align-items: flex-start; }
+.prediction-folder-tree .ant-tree-node-selected .ant-tree-title,
+.prediction-folder-tree .ant-tree-node-selected .ant-tree-title span { color: #fff; }
+.image-folder-tree .ant-tree-node-selected .ant-tree-title > div > div:first-child > span,
+.image-folder-tree .ant-tree-node-selected .ant-tree-title > div > div:first-child > svg { color: #fff; }
+.image-folder-tree .ant-tree-node-selected .ant-tree-title > div > div:last-child > span { color: #fff; background: rgba(255,255,255,.15); }
+.home-capability { transition: transform .2s ease, border-color .2s ease; }
+.home-capability:hover { transform: translateY(-3px); border-color: var(--accent-line); }
+@media (max-width: 1023px) {
+  .prediction-workbench, .prediction-columns { height: auto; }
+  .prediction-image-scroll { flex: none; height: 360px; }
+}
+/* Cassava research identity: warm paper surfaces, forest green, image-led public pages. */
+.research-home { background: #f7f6f0; }
+.research-home .research-hero-copy { border: 0; background: transparent; box-shadow: none; padding-block: 2.5rem; }
+.research-home .research-hero-title { font-family: var(--font-ui); font-size: var(--text-hero-size); line-height: var(--text-hero-line); letter-spacing: 0; font-weight: 600; }
+.research-home .research-hero-image { min-height: 510px; border-radius: 100px 22px 22px 22px; }
+.research-home .research-hero-image::after { content: none; }
+.research-step { border-top: 1px solid #ccd7c7; padding-top: 22px; }
+.research-step-number { color: #7c9474; font-family: var(--font-ui); font-size: var(--text-metric-size); line-height: var(--text-metric-line); }
+.research-contact { background: #f7f6f0; }
+.research-contact .contact-hero { background: #173e31; border-radius: 24px 80px 24px 24px; }
+.research-contact summary { cursor: pointer; color: #245c45; font-weight: 600; }
+@media (max-width: 767px) {
+  .research-home .research-hero-title { font-size: var(--text-metric-size); line-height: var(--text-metric-line); }
+  .research-home .research-hero-copy { padding-block: 1rem; }
+  .research-home .research-hero-image { min-height: 300px; border-radius: 56px 18px 18px 18px; }
+  .research-contact .contact-hero { border-radius: 18px 48px 18px 18px; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
+
+/* Compact workspace controls share the same action alignment. */
+.image-pagination-bar .ant-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 4px; }
+.image-pagination-bar .ant-pagination-item, .image-pagination-bar .ant-pagination-prev, .image-pagination-bar .ant-pagination-next { margin-inline-end: 0; }
+.image-pagination-bar .ant-pagination-total-text { margin-inline-end: 12px; }
+@media (max-width: 639px) {
+  .image-search-tools { flex-basis: 100%; flex-wrap: wrap; }
+  .image-main-toolbar .image-primary-actions { width: 100%; }
+  .image-view-tools { flex-shrink: 1; }
+  .image-pagination-bar .ant-pagination-options { margin-inline-start: 0; }
+}
+
+.image-primary-actions > .import-workspace-controls { display: contents; }
+@media (max-width: 639px) {
+  .image-primary-actions .import-target { order: 1; flex-basis: 100%; max-width: 100%; text-align: right; }
+}
+
+.workspace-pagination { display: flex; flex: none; min-height: 52px; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid var(--hairline); background: white; padding: 8px 12px; }
+.workspace-pagination .ant-pagination { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 4px; margin: 0; }
+.workspace-pagination .ant-pagination-item, .workspace-pagination .ant-pagination-prev, .workspace-pagination .ant-pagination-next { margin-inline-end: 0; }
+@media (max-width: 639px) { .workspace-pagination { flex-wrap: wrap; } .workspace-pagination .ant-pagination { margin-left: auto; } }

@@ -1,5 +1,13 @@
+import { getUserPreferences } from '../utils/userPreferences';
+import { readEditorView, saveEditorView } from '../utils/editorViewport';
+import { Popover } from 'antd';
+import { editorScreenMetrics, nearestVertex } from '../utils/editorGeometry';
+import { message, modal } from '../utils/feedback';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  ChevronLeft,
+  ChevronRight,
+  RotateCw,
   Brush,
   Check,
   CircleDot,
@@ -9,7 +17,6 @@ import {
   Hand,
   Layers3,
   Maximize2,
-  MousePointer2,
   PenTool,
   Redo2,
   RotateCcw,
@@ -18,24 +25,26 @@ import {
   Sparkles,
   Spline,
   Moon,
-  Keyboard,
   Undo2,
   X,
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
-import { Modal, message } from 'antd';
+
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
 import { PredictionResult } from '../types';
 import { predictionsApi, resolveFileUrl } from '../services/api';
 import { calculateMaskPixelMetrics, formatPpd } from '../utils/measurement';
 import { readDraft, writeDraft, removeDraft } from '../utils/correctionDrafts';
+import { imagePointFromRotatedRect, normalizeRotation } from '../utils/imageRotation';
+import { replaceEditedContours } from '../utils/maskContours';
 
 type LayerName = 'cassava' | 'rotten';
 type ToolName = 'brush-add' | 'brush-erase' | 'pen-add' | 'pen-erase' | 'smart-add' | 'smart-erase' | 'pan';
 
 interface Masks {
+  rotation?: number;
   width: number;
   height: number;
   cassava: Uint8Array;
@@ -46,6 +55,11 @@ interface PredictionResultEditorProps {
   prediction: PredictionResult;
   onClose: () => void;
   onSaved: (correction: any) => void;
+  onNavigate?: (direction: -1 | 1) => void;
+  onReviewed?: () => void;
+  positionLabel?: string;
+  canPrevious?: boolean;
+  canNext?: boolean;
 }
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
@@ -53,7 +67,7 @@ const cx = (...classes: Array<string | false | null | undefined>) => classes.fil
 
 const confirmAction = (title: string, content: string, okText: string, cancelText: string) =>
   new Promise<boolean>((resolve) => {
-    Modal.confirm({
+    modal.confirm({
       title,
       content,
       okText,
@@ -317,7 +331,8 @@ const toolShortcut: Record<ToolName, string> = {
   pan: 'H / V',
 };
 
-const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ prediction, onClose, onSaved }) => {
+const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ prediction, onClose, onSaved, onNavigate, onReviewed, positionLabel, canPrevious = true, canNext = true }) => {
+  const originalMaskRingsRef = useRef<PolygonRing[]>([]);
   const { t } = useTranslation();
   const [editor, setEditor] = useState<any>(null);
   const [activeSource, setActiveSource] = useState<any>(null);
@@ -333,23 +348,25 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
   const [versionLoading, setVersionLoading] = useState(false);
   const draftKey = `${prediction.id}`;
   const [error, setError] = useState<string | null>(null);
-  const [theme, setTheme] = useState<'dark' | 'light'>('light');
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => getUserPreferences().editorTheme);
   const [layer, setLayer] = useState<LayerName>('rotten');
   const [tool, setTool] = useState<ToolName>('brush-add');
-  const [brushSize, setBrushSize] = useState(24);
+  const [brushSize, setBrushSize] = useState(() => getUserPreferences().brushSize);
+  const [vertexSize, setVertexSize] = useState(() => getUserPreferences().vertexSize);
   const [zoom, setZoom] = useState(1);
   const [spacePressed, setSpacePressed] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const [smartThreshold, setSmartThreshold] = useState(0.08);
   const [smartLoading, setSmartLoading] = useState(false);
-  const [confidenceReady, setConfidenceReady] = useState(false);
+  const [, setConfidenceReady] = useState(false);
   const [smartSelection, setSmartSelection] = useState<Uint8Array | null>(null);
   const [smartSelectionCount, setSmartSelectionCount] = useState(0);
-  const [showCassava, setShowCassava] = useState(true);
-  const [showRotten, setShowRotten] = useState(true);
+  const [showCassava, setShowCassava] = useState(() => getUserPreferences().editorShowCassava);
+  const [showRotten, setShowRotten] = useState(() => getUserPreferences().editorShowRotten);
   const [showOriginal, setShowOriginal] = useState(true);
-  const [dimOutside, setDimOutside] = useState(true);
-  const [cassavaOpacity, setCassavaOpacity] = useState(0.28);
-  const [rottenOpacity, setRottenOpacity] = useState(0.68);
+  const [dimOutside, setDimOutside] = useState(() => getUserPreferences().editorDimOutside);
+  const [cassavaOpacity, setCassavaOpacity] = useState(() => getUserPreferences().cassavaOpacity);
+  const [rottenOpacity, setRottenOpacity] = useState(() => getUserPreferences().rottenOpacity);
   const [polygonPoints, setPolygonPoints] = useState<PolygonPoint[]>([]);
   const [polygonDragIndex, setPolygonDragIndex] = useState<number | null>(null);
   const [maskRings, setMaskRings] = useState<PolygonRing[]>([]);
@@ -368,7 +385,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
   const spacePressedRef = useRef(false);
   const confidenceMapRef = useRef<Uint8Array | null>(null);
   const smartRunRef = useRef(0);
-  const keyboardActionsRef = useRef({ undo: () => {}, redo: () => {}, save: () => {} });
+  const keyboardActionsRef = useRef({ undo: () => {}, redo: () => {}, save: () => {}, previous: () => {}, next: () => {} });
 
   useEffect(() => {
     let active = true;
@@ -391,23 +408,27 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
         fetchRaster(resolveFileUrl(source.rotten_mask_url), width, height),
       ]);
       if (!active) return;
-      let next = { width, height, cassava, rotten };
+      let next: Masks = { width, height, cassava, rotten, rotation: normalizeRotation(Number(source.edit_data?.rotation_degrees || 0)) };
       try {
         const draft = await readDraft(draftKey);
         if (!active) return;
-        if (draft && draft.width === width && draft.height === height &&
-            await confirmAction(
-              t('editor.dialog.draft_title'),
-              draft.baseVersion === (payload.current_correction?.version || 0)
-                ? t('editor.dialog.draft_content')
-                : t('editor.dialog.draft_content_stale'),
-              t('editor.dialog.draft_restore'),
-              t('editor.dialog.draft_discard'),
-            )) {
-          next = { width, height, cassava: draft.cassava, rotten: draft.rotten };
-          setNote(draft.note);
-          setDirty(true);
-          setRevision((value) => value + 1);
+        if (draft && draft.width === width && draft.height === height) {
+          const restore = await confirmAction(
+            t('editor.dialog.draft_title'),
+            draft.baseVersion === (payload.current_correction?.version || 0)
+              ? t('editor.dialog.draft_content')
+              : t('editor.dialog.draft_content_stale'),
+            t('editor.dialog.draft_restore'),
+            t('editor.dialog.draft_discard'),
+          );
+          if (restore) {
+            next = { width, height, cassava: draft.cassava, rotten: draft.rotten, rotation: draft.rotation || 0 };
+            setNote(draft.note);
+            setDirty(true);
+            setRevision((value) => value + 1);
+          } else {
+            try { await removeDraft(draftKey); } catch { /* ignore */ }
+          }
         }
       } catch { message.warning(t('editor.dialog.draft_warning')); }
 
@@ -432,22 +453,39 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
   const toolbarClass = isLight ? 'bg-white' : 'bg-[#141e2b]';
   const asideClass = isLight ? 'bg-surface-muted' : 'bg-[#111b28]';
 
-  const canvasWidth = masks?.width || 0;
-  const canvasHeight = masks?.height || 0;
+  const rotation = masks?.rotation || 0;
+  const rotated = rotation % 180 !== 0;
+  const canvasWidth = (rotated ? masks?.height : masks?.width) || 0;
+  const canvasHeight = (rotated ? masks?.width : masks?.height) || 0;
 
   const fitToView = useCallback(() => {
     if (!canvasWidth || !canvasHeight || !viewportRef.current) return;
     const availableWidth = Math.max(240, viewportRef.current.clientWidth - 72);
     const availableHeight = Math.max(240, viewportRef.current.clientHeight - 72);
     const fit = Math.min(availableWidth / canvasWidth, availableHeight / canvasHeight);
-    setZoom(clamp(fit, 0.25, 4));
+    setZoom(clamp(fit, 0.02, 4));
   }, [canvasHeight, canvasWidth]);
 
   useEffect(() => {
     if (!baseImage || !canvasWidth || !canvasHeight) return undefined;
-    const frame = requestAnimationFrame(fitToView);
-    return () => cancelAnimationFrame(frame);
+    const remembered = !getUserPreferences().editorResetZoom && readEditorView();
+    let second = 0;
+    const frame = requestAnimationFrame(() => {
+      if (!remembered) { fitToView(); return; }
+      setZoom(remembered.zoom);
+      second = requestAnimationFrame(() => {
+        const node = viewportRef.current;
+        if (node) { node.scrollLeft = Math.max(0, canvasWidth * remembered.zoom * remembered.x - node.clientWidth / 2); node.scrollTop = Math.max(0, canvasHeight * remembered.zoom * remembered.y - node.clientHeight / 2); }
+      });
+    });
+    return () => { cancelAnimationFrame(frame); cancelAnimationFrame(second); };
   }, [baseImage, canvasHeight, canvasWidth, fitToView]);
+
+  const rememberView = () => {
+    const node = viewportRef.current;
+    if (!node || !canvasWidth || !canvasHeight) return;
+    saveEditorView({ zoom, x: clamp((node.scrollLeft + node.clientWidth / 2) / (canvasWidth * zoom), 0, 1), y: clamp((node.scrollTop + node.clientHeight / 2) / (canvasHeight * zoom), 0, 1) });
+  };
 
   const renderCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -508,9 +546,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
     context.drawImage(overlayCanvas, 0, 0);
     if (polygonPoints.length > 0 || maskRings.length > 0) {
       // 屏幕像素 → 掩码像素的换算，保证顶点在任何缩放下都是固定屏幕尺寸（小圆点，不遮挡细节）
-      const scale = masks.width / Math.max(1, canvas.getBoundingClientRect().width);
-      const handleRadius = clamp(4 * scale, 1.5, masks.width);
-      const lineWidth = clamp(1.6 * scale, 1, masks.width);
+      const { scale, radius: handleRadius, lineWidth } = editorScreenMetrics(zoom, vertexSize);
       context.save();
       // 掩码转换出的多环轮廓：青色虚线 + 淡青填充，表示「待确认的病害边界」
       if (maskRings.length > 0) {
@@ -533,10 +569,10 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
             const active = maskRingDrag?.ring === ringIndex && maskRingDrag.index === index;
             context.beginPath();
             context.fillStyle = active ? '#ffffff' : '#38bdf8';
-            context.arc(point.x, point.y, active ? handleRadius * 1.8 : handleRadius * 0.9, 0, Math.PI * 2);
+            context.arc(point.x, point.y, active ? handleRadius * 1.5 : handleRadius, 0, Math.PI * 2);
             context.fill();
             context.strokeStyle = '#0f172a';
-            context.lineWidth = clamp(1.1 * scale, 0.7, masks.width);
+            context.lineWidth = scale;
             context.stroke();
           });
         });
@@ -556,16 +592,16 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
           const active = polygonDragIndex === index;
           context.beginPath();
           context.fillStyle = index === 0 ? '#f8fafc' : active ? '#ffffff' : '#fbbf24';
-          context.arc(point.x, point.y, active ? handleRadius * 1.6 : handleRadius, 0, Math.PI * 2);
+          context.arc(point.x, point.y, active ? handleRadius * 1.5 : handleRadius, 0, Math.PI * 2);
           context.fill();
           context.strokeStyle = '#0f172a';
-          context.lineWidth = clamp(1.2 * scale, 0.8, masks.width);
+          context.lineWidth = scale;
           context.stroke();
         });
       }
       context.restore();
     }
-  }, [baseImage, cassavaOpacity, dimOutside, maskRingDrag, maskRings, masks, polygonDragIndex, polygonPoints, rottenOpacity, showCassava, showOriginal, showRotten, smartSelection]);
+  }, [baseImage, cassavaOpacity, dimOutside, maskRingDrag, maskRings, masks, polygonDragIndex, polygonPoints, rottenOpacity, showCassava, showOriginal, showRotten, smartSelection, zoom, rotation, vertexSize]);
 
   useEffect(() => { renderCanvas(); }, [renderCanvas]);
 
@@ -620,6 +656,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
   const snapshot = (value: Masks): Masks => ({
     width: value.width,
     height: value.height,
+    rotation: value.rotation || 0,
     cassava: value.cassava.slice(),
     rotten: value.rotten.slice(),
   });
@@ -672,10 +709,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
     const canvas = canvasRef.current;
     if (!canvas || !masks) return null;
     const rect = canvas.getBoundingClientRect();
-    return {
-      x: clamp((event.clientX - rect.left) * masks.width / rect.width, 0, masks.width - 1),
-      y: clamp((event.clientY - rect.top) * masks.height / rect.height, 0, masks.height - 1),
-    };
+    return imagePointFromRotatedRect(event.clientX, event.clientY, rect, masks.width, masks.height, rotation);
   };
 
   const ensureConfidenceMap = async () => {
@@ -836,6 +870,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
         }
         const totalPoints = simplifiedRings.reduce((sum, ring) => sum + ring.length, 0);
         setPolygonPoints([]);
+        originalMaskRingsRef.current = simplifiedRings.map(ring => ring.map(point => ({ ...point })));
         setMaskRings(simplifiedRings);
         // 转换出来的轮廓表示「当前掩码的边界」，应用时应当还原而不是擦除，故默认用添加工具
         setTool('pen-add');
@@ -852,23 +887,9 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
     const current = masksRef.current;
     if (!current || !maskRings.length) return;
     const next = snapshot(current);
-    const erase = tool === 'pen-erase';
     const target = layer === 'cassava' ? next.cassava : next.rotten;
-    maskRings.forEach((ring) => {
-      if (ring.length < 3) return;
-      const minX = Math.max(0, Math.floor(Math.min(...ring.map((p) => p.x))));
-      const maxX = Math.min(next.width - 1, Math.ceil(Math.max(...ring.map((p) => p.x))));
-      const minY = Math.max(0, Math.floor(Math.min(...ring.map((p) => p.y))));
-      const maxY = Math.min(next.height - 1, Math.ceil(Math.max(...ring.map((p) => p.y))));
-      for (let py = minY; py <= maxY; py += 1) {
-        for (let px = minX; px <= maxX; px += 1) {
-          if (!pointInPolygon(px, py, ring)) continue;
-          const index = py * next.width + px;
-          target[index] = erase ? 0 : 1;
-          if (layer === 'cassava' && erase) next.rotten[index] = 0;
-        }
-      }
-    });
+    const replacement = replaceEditedContours(target, next.width, next.height, originalMaskRingsRef.current, maskRings);
+    if (layer === 'cassava') next.cassava = replacement; else next.rotten = replacement;
     for (let i = 0; i < next.rotten.length; i += 1) next.rotten[i] = next.rotten[i] && next.cassava[i] ? 1 : 0;
     commitSnapshot(current);
     updateMasks(next);
@@ -888,31 +909,19 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
       return;
     }
     if (tool.startsWith('pen')) {
-      const canvas = canvasRef.current;
-      const scale = canvas ? masksRef.current.width / Math.max(1, canvas.getBoundingClientRect().width) : 1;
-      const hitRadius = Math.max(6 * scale, masksRef.current.width / 220);
-      // 掩码多环轮廓优先响应拖动：命中任一环的顶点即进入拖动
-      if (maskRings.length) {
-        for (let ringIndex = 0; ringIndex < maskRings.length; ringIndex += 1) {
-          const ring = maskRings[ringIndex];
-          for (let index = 0; index < ring.length; index += 1) {
-            const item = ring[index];
-            if (Math.hypot(item.x - point.x, item.y - point.y) > hitRadius) continue;
-            event.preventDefault();
-            setMaskRingDrag({ ring: ringIndex, index });
-            event.currentTarget.setPointerCapture(event.pointerId);
-            return;
-          }
-        }
+      const { hitRadius, scale } = editorScreenMetrics(zoom, vertexSize);
+      const nearest = nearestVertex(maskRings, point, hitRadius);
+      if (nearest) {
+        event.preventDefault(); setMaskRingDrag(nearest); event.currentTarget.setPointerCapture(event.pointerId); return;
       }
       const firstPoint = polygonPoints[0];
-      const closeDistance = Math.max(12, masksRef.current.width / 180);
+      const closeDistance = 8 * scale;
       if (firstPoint && polygonPoints.length >= 3 && Math.hypot(point.x - firstPoint.x, point.y - firstPoint.y) <= closeDistance) {
         applyPolygon();
         return;
       }
       // 命中已有点 → 进入拖动，而不是新增一个点
-      const hitIndex = polygonPoints.findIndex((item) => Math.hypot(item.x - point.x, item.y - point.y) <= hitRadius);
+      const hitIndex = nearestVertex([polygonPoints], point, hitRadius)?.index ?? -1;
       if (hitIndex >= 0) {
         event.preventDefault();
         setPolygonDragIndex(hitIndex);
@@ -1005,7 +1014,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
     if (!event.altKey) return;
     event.preventDefault();
     const direction = event.deltaY > 0 ? -1 : 1;
-    setZoom((value) => clamp(value + direction * 0.1, 0.25, 4));
+    setZoom((value) => clamp(value + direction * 0.1, 0.02, 4));
   };
 
   const handleCanvasDoubleClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
@@ -1019,11 +1028,11 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
 
   const handleUndo = () => {
     if (savingRef.current || versionLoading) return;
-    setDirty(true);
-    setRevision((value) => value + 1);
     const current = masksRef.current;
     const previous = history[history.length - 1];
     if (!current || !previous) return;
+    setDirty(true);
+    setRevision((value) => value + 1);
     setFuture((items) => [snapshot(current), ...items]);
     setHistory((items) => items.slice(0, -1));
     restore(previous);
@@ -1031,11 +1040,11 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
 
   const handleRedo = () => {
     if (savingRef.current || versionLoading) return;
-    setDirty(true);
-    setRevision((value) => value + 1);
     const current = masksRef.current;
     const next = future[0];
     if (!current || !next) return;
+    setDirty(true);
+    setRevision((value) => value + 1);
     setHistory((items) => [...items, snapshot(current)]);
     setFuture((items) => items.slice(1));
     restore(next);
@@ -1055,6 +1064,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
       ]);
       next.cassava = cassava;
       next.rotten = rotten;
+      next.rotation = normalizeRotation(Number(source.edit_data?.rotation_degrees || 0));
       commitSnapshot(current);
       updateMasks(next);
     };
@@ -1087,7 +1097,8 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
       setHistory([]);
       setFuture([]);
       setDirty(false);
-      updateMasks({ ...current, cassava, rotten });
+      setNote(source.note || '');
+      updateMasks({ ...current, cassava, rotten, rotation: normalizeRotation(Number(source.edit_data?.rotation_degrees || 0)) });
     } catch (versionError: any) { message.error(versionError?.message || t('editor.message.version_failed')); }
     finally { setVersionLoading(false); }
   };
@@ -1110,7 +1121,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
       const form = new FormData();
       form.append('cassava_mask', await maskToBlob(saveSnapshot.cassava, saveSnapshot.width, saveSnapshot.height), 'cassava-mask.png');
       form.append('rotten_mask', await maskToBlob(saveSnapshot.rotten, saveSnapshot.width, saveSnapshot.height), 'rotten-mask.png');
-      form.append('edit_data', JSON.stringify({ layer, tool, brushSize, width: saveSnapshot.width, height: saveSnapshot.height, source_version: activeSource?.version || 0 }));
+      form.append('edit_data', JSON.stringify({ layer, tool, brushSize, width: saveSnapshot.width, height: saveSnapshot.height, rotation_degrees: saveSnapshot.rotation || 0, source_version: activeSource?.version || 0 }));
       form.append('base_version', String(editor.current_correction?.version || 0));
       form.append('note', note);
       const correction = await predictionsApi.saveCorrection(prediction.id, form);
@@ -1126,6 +1137,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
       setFuture([]);
       message.success(t('editor.save.saved'));
       onSaved(correction);
+      return correction;
     } catch (saveError: any) {
       message.error(saveError?.response?.data?.message || saveError?.response?.data?.detail || saveError?.message || t('editor.save.failed'));
     } finally {
@@ -1134,17 +1146,53 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
     }
   };
 
+  const completeReview = async () => {
+    if (savingRef.current || versionLoading || polygonPoints.length || maskRings.length || smartSelection) {
+      message.warning('请先应用或取消当前选区'); return;
+    }
+    let version = editor?.current_correction?.version || 0;
+    let newlySaved = false;
+    if (dirty) { const saved = await handleSave(); if (!saved) return; version = saved.version; newlySaved = true; }
+    if (!newlySaved && (activeSource?.version || 0) !== version) { message.warning('请先切换至最新版本，或将当前编辑保存为新修订'); return; }
+    try {
+      await predictionsApi.completeReview(prediction.id, version);
+      message.success('已完成复检'); onReviewed?.();
+      if (getUserPreferences().autoAdvanceReview && canNext) { rememberView(); onNavigate?.(1); }
+    } catch (error: any) { message.error(error?.response?.data?.error || '完成复检失败，请重新载入'); }
+  };
+  const rotateImage = (direction: -1 | 1) => {
+    if (!masksRef.current || savingRef.current || versionLoading) return;
+    if (polygonPoints.length || maskRings.length || smartSelection || smartLoading) { message.warning('请先应用或取消当前选区'); return; }
+    const current = masksRef.current;
+    commitSnapshot(current);
+    updateMasks({ ...snapshot(current), rotation: normalizeRotation((current.rotation || 0) + direction * 90) });
+    setCursor(null);
+  };
+  const navigateResult = async (direction: -1 | 1) => {
+    if (savingRef.current || versionLoading || (direction < 0 ? !canPrevious : !canNext)) return;
+    if ((polygonPoints.length || maskRings.length || smartSelection) && !(await confirmAction('切换图片？', '尚未应用的选区不会保存。', '切换', '继续编辑'))) return;
+    if (dirty && masksRef.current) {
+      try { await writeDraft({ id: draftKey, baseVersion: editor.current_correction?.version || 0, ...snapshot(masksRef.current), note, savedAt: new Date().toISOString() }); }
+      catch { message.error('草稿保存失败，请先保存修订再切换'); return; }
+    }
+    rememberView(); onNavigate?.(direction);
+  };
+
   keyboardActionsRef.current = {
     undo: handleUndo,
     redo: handleRedo,
     save: () => { void handleSave(); },
+    previous: () => { void navigateResult(-1); },
+    next: () => { void navigateResult(1); },
   };
 
   useEffect(() => {
     const handleKeyboard = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
-      if (target?.tagName === 'INPUT' || target?.tagName === 'SELECT' || target?.tagName === 'TEXTAREA') return;
+      if (target?.isContentEditable || document.querySelector('.ant-modal-confirm') || target?.tagName === 'INPUT' || target?.tagName === 'SELECT' || target?.tagName === 'TEXTAREA') return;
+      if (event.altKey) return;
       const key = event.key.toLowerCase();
+      if (key === '?') { event.preventDefault(); setShowShortcuts(value => !value); return; }
 
       if (event.code === 'Space') {
         event.preventDefault();
@@ -1169,7 +1217,8 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
         return;
       }
 
-      if (key === 'b') setTool('brush-add');
+      if (key === 'arrowleft' || key === 'arrowright') { event.preventDefault(); if (!event.repeat) (key === 'arrowleft' ? keyboardActionsRef.current.previous : keyboardActionsRef.current.next)(); }
+      else if (key === 'b') setTool('brush-add');
       else if (key === 'e') setTool('brush-erase');
       else if (key === 'p') setTool(event.shiftKey ? 'pen-erase' : 'pen-add');
       else if (key === 'w') setTool(event.shiftKey ? 'smart-erase' : 'smart-add');
@@ -1182,10 +1231,10 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
       }
       else if (key === 'x') {
         setTool((current) => current.endsWith('erase') ? current.replace('-erase', '-add') as ToolName : current.replace('-add', '-erase') as ToolName);
-      } else if (key === '[') setBrushSize((value) => clamp(value - 4, 4, 120));
-      else if (key === ']') setBrushSize((value) => clamp(value + 4, 4, 120));
-      else if (key === '+' || key === '=') setZoom((value) => clamp(value + 0.1, 0.25, 4));
-      else if (key === '-') setZoom((value) => clamp(value - 0.1, 0.25, 4));
+      } else if (key === '[') setBrushSize((value) => clamp(value - 1, 1, 120));
+      else if (key === ']') setBrushSize((value) => clamp(value + 1, 1, 120));
+      else if (key === '+' || key === '=') setZoom((value) => clamp(value + 0.1, 0.02, 4));
+      else if (key === '-') setZoom((value) => clamp(value - 0.1, 0.02, 4));
       else if (key === '0') fitToView();
       else if (key === '1') setZoom(1);
       else if (key === 'escape') { setPolygonPoints([]); setMaskRings([]); setMaskRingDrag(null); }
@@ -1212,6 +1261,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
     };
   }, [fitToView]);
 
+  useEffect(() => { setMaskRings([]); setPolygonPoints([]); originalMaskRingsRef.current = []; }, [layer]);
   const hasPendingChanges = dirty || polygonPoints.length > 0 || maskRings.length > 0 || Boolean(smartSelection);
   useEffect(() => {
     if (!dirty || saving || !masksRef.current || !editor) return;
@@ -1251,6 +1301,16 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
     return <Hand className="h-4 w-4" />;
   };
 
+  const layerSettings = (name: LayerName) => <div className="w-56 space-y-3 text-ink">
+    <button onClick={() => name === 'cassava' ? setShowCassava(value => !value) : setShowRotten(value => !value)} className="flex w-full items-center justify-between text-sm">显示范围{(name === 'cassava' ? showCassava : showRotten) ? <Eye size={16} /> : <EyeOff size={16} />}</button>
+    <label className="block text-sm">不透明度 <span className="float-right tabular-nums">{Math.round((name === 'cassava' ? cassavaOpacity : rottenOpacity) * 100)}%</span><input aria-label={t(name === 'cassava' ? 'editor.inspector.cassava_opacity' : 'editor.inspector.rotten_opacity')} type="range" min="0" max="100" value={Math.round((name === 'cassava' ? cassavaOpacity : rottenOpacity) * 100)} onChange={event => (name === 'cassava' ? setCassavaOpacity : setRottenOpacity)(Number(event.target.value) / 100)} className="mt-2 w-full accent-emerald-700" /></label>
+  </div>;
+  const toolSettings = (name: ToolName) => <div className="w-56 space-y-3 text-ink">
+    {name.startsWith('brush') && <label className="block text-sm">画笔大小 <span className="float-right tabular-nums">{brushSize}px</span><input aria-label={t('editor.inspector.brush_size')} type="range" min="1" max="120" value={brushSize} onChange={event => setBrushSize(Number(event.target.value))} className="mt-2 w-full accent-emerald-700" /><input aria-label="画笔像素数" type="number" min="1" max="120" value={brushSize} onChange={event => setBrushSize(clamp(Number(event.target.value) || 1, 1, 120))} className="mt-2 w-full rounded border border-hairline px-2 py-1" /></label>}
+    {name.startsWith('pen') && <label className="block text-sm">顶点大小 <span className="float-right tabular-nums">{vertexSize}px</span><input aria-label="顶点大小" type="range" min="1" max="4" step="0.5" value={vertexSize} onChange={event => setVertexSize(Number(event.target.value))} className="mt-2 w-full accent-emerald-700" /></label>}
+    {name.startsWith('smart') && <label className="block text-sm">{t('editor.inspector.smart_threshold')}<input aria-label={t('editor.inspector.smart_threshold')} type="range" min="2" max="30" value={Math.round(smartThreshold * 100)} onChange={event => setSmartThreshold(Number(event.target.value) / 100)} className="mt-2 w-full accent-emerald-700" /></label>}
+  </div>;
+
   return (
     <div className={cx('fixed inset-0 z-[70]', isLight ? 'bg-hairline' : 'bg-[#070b12]')}>
       <div className={cx('flex h-screen w-screen flex-col overflow-hidden', shellClass)}>
@@ -1261,6 +1321,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
             <span className={cx('hidden shrink-0 text-xs md:inline', mutedClass)} title={t('editor.header.ppd_hint')}>{t('editor.header.ppd')}</span>
           </div>
           <div className="flex shrink-0 items-center gap-1">
+            <Popover open={showShortcuts} onOpenChange={setShowShortcuts} trigger="click" title="快捷键" content={<div className="grid grid-cols-[auto_auto] gap-x-6 gap-y-2 text-sm">{[['B / E', '画笔 / 橡皮'], ['P / Shift+P', '钢笔添加 / 删除'], ['W / Shift+W', '智能添加 / 删除'], ['空格', '按住平移'], ['← / →', '上一张 / 下一张'], ['[ / ]', '画笔减小 / 增大'], ['Ctrl+S', '保存修订'], ['Ctrl+Z / Ctrl+Y', '撤销 / 重做'], ['0 / 1', '适应窗口 / 原尺寸'], ['?', '快捷键速查']].map(([key, action]) => <React.Fragment key={key}><kbd>{key}</kbd><span>{action}</span></React.Fragment>)}</div>}><button aria-label="快捷键速查" title="?" className="rounded-lg px-2 py-1 text-sm text-muted">?</button></Popover>
             <button onClick={() => setTheme((value) => value === 'dark' ? 'light' : 'dark')} className={cx('inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title={t('editor.header.toggle_theme')}>
               {isLight ? <Moon className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />}{isLight ? t('editor.header.theme_dark') : t('editor.header.theme_light')}
             </button>
@@ -1275,21 +1336,62 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
             <div className={cx('flex flex-wrap items-center gap-1.5 border-b px-3 py-1.5', borderClass, toolbarClass)}>
               <span className={cx('mr-1 hidden items-center xl:flex', mutedClass)} title={t('editor.canvas.fullscreen_hint')}><Maximize2 className="h-3.5 w-3.5 text-muted" /></span>
               <div className={cx('mr-1 flex items-center gap-1 rounded-lg p-0.5', isLight ? 'bg-surface-muted' : 'bg-white/5')}>
-                <button onClick={() => setLayer('cassava')} className={cx('rounded-md px-2.5 py-1 text-xs', layer === 'cassava' ? 'bg-white text-ink shadow-sm' : mutedClass, layer === 'cassava' ? '' : (isLight ? 'hover:bg-white' : 'hover:bg-white/10'))} title={t('editor.layer.cassava_title')}><i className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-[#30b0c7] align-middle" />{t('editor.layer.cassava')}</button>
-                <button onClick={() => setLayer('rotten')} className={cx('rounded-md px-2.5 py-1 text-xs', layer === 'rotten' ? 'bg-white text-ink shadow-sm' : mutedClass, layer === 'rotten' ? '' : (isLight ? 'hover:bg-white' : 'hover:bg-white/10'))} title={t('editor.layer.rotten_title')}><i className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-rose-400 align-middle" />{t('editor.layer.rotten')}</button>
+                <Popover trigger="click" placement="bottomLeft" content={layerSettings('cassava')}><button onClick={() => setLayer('cassava')} className={cx('rounded-md px-2.5 py-1 text-xs', layer === 'cassava' ? 'bg-white text-ink shadow-sm' : mutedClass, layer === 'cassava' ? '' : (isLight ? 'hover:bg-white' : 'hover:bg-white/10'))} title={t('editor.layer.cassava_title')}><i className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-[#30b0c7] align-middle" />{t('editor.layer.cassava')}</button></Popover>
+                <Popover trigger="click" placement="bottomLeft" content={layerSettings('rotten')}><button onClick={() => setLayer('rotten')} className={cx('rounded-md px-2.5 py-1 text-xs', layer === 'rotten' ? 'bg-white text-ink shadow-sm' : mutedClass, layer === 'rotten' ? '' : (isLight ? 'hover:bg-white' : 'hover:bg-white/10'))} title={t('editor.layer.rotten_title')}><i className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-rose-400 align-middle" />{t('editor.layer.rotten')}</button></Popover>
               </div>
-              {(['brush-add', 'brush-erase', 'pen-add', 'pen-erase', 'smart-add', 'smart-erase', 'pan'] as ToolName[]).map((name) => (
-                <button key={name} onClick={() => { setTool(name); setSmartSelection(null); setSmartSelectionCount(0); if (!name.startsWith('pen')) { setPolygonPoints([]); setMaskRings([]); setMaskRingDrag(null); } }} className={cx('inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs transition', tool === name ? (isLight ? 'bg-brand-fill text-white' : 'bg-white text-slate-950') : mutedClass, tool === name ? '' : (isLight ? 'hover:bg-white' : 'hover:bg-white/10'))} title={`${t(toolLabelKey[name])}（${toolShortcut[name]}）${name.startsWith('smart') && !editor?.confidence_map_url ? t('editor.tool.needs_confidence') : ''}`}>{activeToolIcon(name)}<span className="hidden md:inline">{t(toolLabelKey[name])}</span></button>
-              ))}
+              {(['brush-add', 'brush-erase', 'pen-add', 'pen-erase', 'smart-add', 'smart-erase', 'pan'] as ToolName[]).map((name) => {
+                const isSmart = name.startsWith('smart');
+                const disabled = isSmart && !editor?.confidence_map_url;
+                const tooltip = disabled
+                  ? `${t(toolLabelKey[name])}（${toolShortcut[name]}）· ${t('editor.tool.needs_confidence_disabled')}`
+                  : `${t(toolLabelKey[name])}（${toolShortcut[name]}）`;
+                return (
+                  <Popover
+                    key={name}
+                    trigger="click"
+                    placement="bottomLeft"
+                    content={disabled ? null : toolSettings(name)}
+                    open={name === 'pan' || disabled ? false : undefined}
+                  >
+                    <button
+                      disabled={disabled}
+                      onClick={() => {
+                        if (disabled) return;
+                        setTool(name);
+                        setSmartSelection(null);
+                        setSmartSelectionCount(0);
+                        if (!name.startsWith('pen')) {
+                          setPolygonPoints([]);
+                          setMaskRings([]);
+                          setMaskRingDrag(null);
+                        }
+                      }}
+                      className={cx(
+                        'inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs transition disabled:cursor-not-allowed disabled:opacity-40',
+                        tool === name ? (isLight ? 'bg-brand-fill text-white' : 'bg-white text-slate-950') : mutedClass,
+                        tool === name ? '' : (isLight ? 'hover:bg-white' : 'hover:bg-white/10')
+                      )}
+                      title={tooltip}
+                    >
+                      {activeToolIcon(name)}
+                      <span className="hidden md:inline">{t(toolLabelKey[name])}</span>
+                    </button>
+                  </Popover>
+                );
+              })}
+              <Popover trigger="click" placement="bottomLeft" content={<div className="w-44 space-y-3 text-ink"><label className="flex justify-between text-sm">原图<input type="checkbox" checked={showOriginal} onChange={event => setShowOriginal(event.target.checked)} /></label><label className="flex justify-between text-sm">暗化背景<input type="checkbox" checked={dimOutside} onChange={event => setDimOutside(event.target.checked)} /></label></div>}><button aria-label="显示设置" className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm"><Eye size={15} />显示</button></Popover>
               <div className={cx('ml-auto flex items-center gap-1 border-l pl-2', borderClass)}>
                 <button onClick={handleUndo} disabled={!history.length} className={cx('rounded-lg p-1.5 disabled:opacity-30', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title={t('editor.tool.undo')}><Undo2 className="h-3.5 w-3.5" /></button>
                 <button onClick={handleRedo} disabled={!future.length} className={cx('rounded-lg p-1.5 disabled:opacity-30', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title={t('editor.tool.redo')}><Redo2 className="h-3.5 w-3.5" /></button>
                 <button onClick={handleReset} className={cx('rounded-lg p-1.5', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title={t('editor.tool.reset')}><RotateCcw className="h-3.5 w-3.5" /></button>
               </div>
+              <button aria-label="向左旋转90度" title="向左旋转90°" disabled={saving || versionLoading} onClick={() => rotateImage(-1)} className="rounded-lg p-1.5 disabled:opacity-30"><RotateCcw className="h-4 w-4" /></button>
+              <button aria-label="向右旋转90度" title="向右旋转90°" disabled={saving || versionLoading} onClick={() => rotateImage(1)} className="rounded-lg p-1.5 disabled:opacity-30"><RotateCw className="h-4 w-4" /></button>
+              <span className="text-xs tabular-nums">{rotation}°</span>
               <div className={cx('flex items-center gap-1 rounded-lg p-0.5', isLight ? 'bg-surface-muted' : 'bg-white/5')}>
-                <button onClick={() => setZoom((value) => clamp(value - 0.1, 0.25, 4))} className={cx('rounded-md p-1.5', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title={t('editor.tool.zoom_out')}><ZoomOut className="h-3.5 w-3.5" /></button>
+                <button onClick={() => setZoom((value) => clamp(value - 0.1, 0.02, 4))} className={cx('rounded-md p-1.5', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title={t('editor.tool.zoom_out')}><ZoomOut className="h-3.5 w-3.5" /></button>
                 <span className={cx('w-10 text-center text-xs', mutedClass)}>{Math.round(zoom * 100)}%</span>
-                <button onClick={() => setZoom((value) => clamp(value + 0.1, 0.25, 4))} className={cx('rounded-md p-1.5', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title={t('editor.tool.zoom_in')}><ZoomIn className="h-3.5 w-3.5" /></button>
+                <button onClick={() => setZoom((value) => clamp(value + 0.1, 0.02, 4))} className={cx('rounded-md p-1.5', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title={t('editor.tool.zoom_in')}><ZoomIn className="h-3.5 w-3.5" /></button>
                 <button onClick={fitToView} className={cx('rounded-md px-2 py-1 text-xs', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/10')} title={t('editor.tool.fit_title')}>{t('editor.tool.fit')}</button>
               </div>
               {tool.startsWith('pen') && polygonPoints.length >= 3 && <button onClick={applyPolygon} className="inline-flex items-center gap-1 rounded-xl bg-amber-300 px-3 py-2 text-xs font-semibold text-slate-950"><Check className="h-4 w-4" />{t('editor.tool.close_polygon')}</button>}
@@ -1300,34 +1402,39 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-              <main ref={viewportRef} className={cx('relative min-h-0 flex-1 overflow-auto p-3 md:p-4', isLight ? 'bg-surface-muted' : 'bg-[#080d14]')} style={{ cursor: tool === 'pan' || spacePressed ? 'grab' : (tool.startsWith('brush') || tool.startsWith('pen')) ? 'none' : 'default' }}>
+              <main ref={viewportRef} className={cx('relative min-h-[320px] flex-1 overflow-auto p-3 md:p-4', isLight ? 'bg-surface-muted' : 'bg-[#080d14]')} style={{ cursor: tool === 'pan' || spacePressed ? 'grab' : (tool.startsWith('brush') || tool.startsWith('pen')) ? 'none' : 'default' }}>
                 <div className="flex min-h-full min-w-full p-2">
-                  <div className="relative m-auto shrink-0" style={{ width: masks.width * zoom, height: masks.height * zoom }}>
-                    <canvas aria-label={t('editor.canvas.aria')} ref={canvasRef} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} onPointerLeave={() => setCursor(null)} onDoubleClick={handleCanvasDoubleClick} onWheel={handleCanvasWheel} className="block max-w-none rounded-xl shadow-2xl" style={{ width: `${masks.width * zoom}px`, height: `${masks.height * zoom}px`, imageRendering: zoom > 1.5 ? 'pixelated' : 'auto' }} />
+                  <div className="relative m-auto shrink-0" style={{ width: canvasWidth * zoom, height: canvasHeight * zoom }}>
+                    <div className="absolute left-1/2 top-1/2" style={{ width: masks.width * zoom, height: masks.height * zoom, transform: `translate(-50%, -50%) rotate(${rotation}deg)` }}>
+                    <canvas aria-label={t('editor.canvas.aria')} ref={canvasRef} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerUp} onPointerLeave={() => setCursor(null)} onDoubleClick={handleCanvasDoubleClick} onWheel={handleCanvasWheel} className="block max-w-none rounded-xl shadow-2xl touch-none" style={{ width: `${masks.width * zoom}px`, height: `${masks.height * zoom}px`, imageRendering: zoom > 1.5 ? 'pixelated' : 'auto', touchAction: 'none' }} />
                     {cursor && tool.startsWith('brush') && !spacePressed && (
                       <span
                         aria-hidden
-                        className="pointer-events-none absolute rounded-full border border-hairline shadow-[0_0_0_1px_rgba(15,23,42,0.45)]"
-                        style={{ left: cursor.x * zoom, top: cursor.y * zoom, width: Math.max(8, brushSize * zoom), height: Math.max(8, brushSize * zoom), transform: 'translate(-50%, -50%)' }}
+                        className="pointer-events-none absolute rounded-full"
+                        style={{ left: cursor.x * zoom, top: cursor.y * zoom, width: Math.max(1, brushSize * zoom), height: Math.max(1, brushSize * zoom), background: brushSize * zoom < 3 ? '#fff' : 'transparent', boxShadow: brushSize * zoom < 3 ? 'none' : 'inset 0 0 0 1px #fff, 0 0 0 1px #17212b', transform: 'translate(-50%, -50%)' }}
                       />
                     )}
                     {cursor && tool.startsWith('pen') && !spacePressed && (
                       <span
                         aria-hidden
-                        className="pointer-events-none absolute h-3 w-3 rounded-full border border-hairline bg-surface-muted shadow-[0_0_0_1px_rgba(15,23,42,0.45)]"
+                        className="pointer-events-none absolute h-1.5 w-1.5 rounded-full border border-hairline bg-transparent shadow-[0_0_0_1px_rgba(15,23,42,0.45)]"
                         style={{ left: cursor.x * zoom, top: cursor.y * zoom, transform: 'translate(-50%, -50%)' }}
                       />
                     )}
+                    </div>
                   </div>
                 </div>
                 <div className={cx('absolute bottom-4 left-4 flex flex-wrap gap-2 rounded-lg border px-2.5 py-1.5 text-xs backdrop-blur', isLight ? 'border-hairline bg-white text-ink-secondary' : 'border-hairline bg-slate-950/75 text-slate-200')}>
                   <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-[#30b0c7]" />{t('editor.layer.cassava')}</span><span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-rose-400" />{t('editor.layer.rotten')}</span>
                 </div>
+                {onNavigate && <div className="sticky bottom-3 ml-auto flex w-fit items-center gap-2 rounded-lg border border-hairline bg-white px-2 py-1.5 text-ink shadow-sm">
+                  <button aria-label="上一张" title="上一张（←）" disabled={!canPrevious || saving || versionLoading} onClick={() => void navigateResult(-1)} className="rounded p-2 disabled:opacity-30"><ChevronLeft size={18} /></button><span className="text-xs tabular-nums">{positionLabel}</span><button aria-label="下一张" title="下一张（→）" disabled={!canNext || saving || versionLoading} onClick={() => void navigateResult(1)} className="rounded p-2 disabled:opacity-30"><ChevronRight size={18} /></button>
+                </div>}
               </main>
 
-              <aside className={cx('w-full shrink-0 overflow-y-auto border-t p-3 lg:w-[270px] lg:border-l lg:border-t-0', borderClass, asideClass)}>
-                <div className="flex items-center justify-between"><h3 className="text-sm font-semibold">{t('editor.inspector.title')}</h3><span className="rounded-full bg-[rgba(10,132,255,0.10)] px-2 py-1 text-xs font-medium text-brand-fill-hover">{t('editor.inspector.live')}</span></div>
-                <div className={cx('mt-3 rounded-xl border p-3', borderClass, isLight ? 'bg-white' : 'bg-white/[0.04]')}><p className={cx('text-xs', mutedClass)}>{t('editor.inspector.corrected_ppd')}</p><p className={cx('mt-1 text-3xl font-semibold tracking-tight', isLight ? 'text-ink' : 'text-white')}>{formatPpd(metrics.ppd)}</p><p className={cx('mt-1 text-xs', delta >= 0 ? 'text-danger-text' : 'text-muted')}>{t('editor.inspector.delta', { sign: delta >= 0 ? '+' : '', value: delta.toFixed(2) })}</p></div>
+              <aside className={cx('flex min-h-0 w-full shrink-0 flex-col overflow-hidden border-t p-3 lg:w-[270px] lg:border-l lg:border-t-0', borderClass, asideClass)}>
+                <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                <div className={cx('mt-3 rounded-xl border p-3', borderClass, isLight ? 'bg-white' : 'bg-white/[0.04]')}><p className={cx('text-xs', mutedClass)}>{t('editor.inspector.corrected_ppd')}</p><p className={cx('mt-1 text-3xl font-semibold tracking-normal', isLight ? 'text-ink' : 'text-white')}>{formatPpd(metrics.ppd)}</p><p className={cx('mt-1 text-xs', delta >= 0 ? 'text-danger-text' : 'text-muted')}>{t('editor.inspector.delta', { sign: delta >= 0 ? '+' : '', value: delta.toFixed(2) })}</p></div>
                 {editor?.corrections?.length > 0 && <div className="mt-3"><label htmlFor="correction-version" className={cx('mb-1.5 block text-xs font-semibold', mutedClass)}>{t('editor.inspector.version')}</label><select id="correction-version" value={activeSource?.version ? String(activeSource.version) : 'model'} onChange={(event) => { void handleVersionChange(event.target.value); }} className={cx('w-full rounded-lg border px-2.5 py-1.5 text-xs outline-none focus:border-slate-400', borderClass, isLight ? 'bg-white text-ink-secondary' : 'bg-slate-950/50 text-slate-200')}><option value="model">{t('editor.inspector.version_model')}</option>{editor.corrections.map((item: any) => <option key={item.version} value={String(item.version)}>{t('editor.inspector.version_option', { version: item.version, ppd: formatPpd(Number(item.ppd_percent)) })}</option>)}</select></div>}
                 <div className="mt-3 space-y-2 text-xs">
                   <div className={cx('flex items-center justify-between border-b pb-2', borderClass)}><span className={mutedClass}>{t('editor.inspector.cassava_area')}</span><strong>{metrics.cassavaPixels.toLocaleString()} px</strong></div>
@@ -1337,30 +1444,16 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
                 </div>
                 {prediction.ppd_unit === 'unknown' && <div className={cx('mt-3 rounded-lg border p-2 text-xs', isLight ? 'border-[rgba(245,165,36,0.30)] bg-[rgba(245,165,36,0.12)] text-warn-text' : 'border-amber-300/20 bg-amber-300/10 text-amber-100')}>{t('editor.inspector.unit_unknown')}</div>}
 
-                <div className={cx('mt-3 border-t pt-3', borderClass)}><p className={cx('mb-2 text-xs font-semibold', mutedClass)}>{t('editor.inspector.layers')}</p><div className="grid grid-cols-2 gap-1">
-                  <button onClick={() => setShowOriginal((value) => !value)} title={t('editor.layer.original_title')} className={cx('flex items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/5')}><span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-surface-muted" />{t('editor.layer.original')}</span>{showOriginal ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5 text-muted" />}</button>
-                  <button onClick={() => setShowCassava((value) => !value)} title={t('editor.layer.cassava')} className={cx('flex items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/5')}><span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-slate-300" />{t('editor.layer.cassava_short')}</span>{showCassava ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5 text-muted" />}</button>
-                  <button onClick={() => setShowRotten((value) => !value)} title={t('editor.layer.rotten')} className={cx('flex items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/5')}><span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-rose-400" />{t('editor.layer.rotten_short')}</span>{showRotten ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5 text-muted" />}</button>
-                  <button onClick={() => setDimOutside((value) => !value)} title={t('editor.layer.dim_title')} className={cx('flex items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs', mutedClass, isLight ? 'hover:bg-white' : 'hover:bg-white/5')}><span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-surface-muted0" />{t('editor.layer.dim')}</span>{dimOutside ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5 text-muted" />}</button>
-                </div>
-                <div className={cx('mt-3 space-y-2 rounded-lg p-2.5', isLight ? 'bg-surface-muted' : 'bg-white/[0.03]')}>
-                  <div><div className="mb-1 flex justify-between text-xs text-muted"><span>{t('editor.inspector.cassava_opacity')}</span><span>{Math.round(cassavaOpacity * 100)}%</span></div><input aria-label={t('editor.inspector.cassava_opacity')} type="range" min="0" max="100" value={Math.round(cassavaOpacity * 100)} onChange={(event) => setCassavaOpacity(Number(event.target.value) / 100)} className="w-full accent-[var(--accent)]" /></div>
-                  <div><div className="mb-1 flex justify-between text-xs text-muted"><span>{t('editor.inspector.rotten_opacity')}</span><span>{Math.round(rottenOpacity * 100)}%</span></div><input aria-label={t('editor.inspector.rotten_opacity')} type="range" min="0" max="100" value={Math.round(rottenOpacity * 100)} onChange={(event) => setRottenOpacity(Number(event.target.value) / 100)} className="w-full accent-rose-400" /></div>
-                </div></div>
-
-                {(tool === 'brush-add' || tool === 'brush-erase') && <div className={cx('mt-3 border-t pt-3', borderClass)}><div className={cx('mb-1.5 flex items-center justify-between text-xs', mutedClass)}><span>{t('editor.inspector.brush_size')}</span><span>{brushSize}px</span></div><input aria-label={t('editor.inspector.brush_size')} type="range" min="4" max="120" value={brushSize} onChange={(event) => setBrushSize(Number(event.target.value))} className="w-full accent-[var(--accent)]" /></div>}
-                {tool.startsWith('pen') && <div className={cx('mt-3 rounded-lg border p-2.5 text-xs leading-4', isLight ? 'border-[rgba(245,165,36,0.30)] bg-[rgba(245,165,36,0.12)] text-warn-text' : 'border-amber-300/20 bg-amber-300/10 text-amber-100')}>{t('editor.inspector.pen_hint')}</div>}
-                {tool.startsWith('smart') && <div className={cx('mt-3 rounded-lg border p-2.5 text-xs leading-4', isLight ? 'border-[rgba(245,165,36,0.30)] bg-[rgba(245,165,36,0.12)] text-warn-text' : 'border-amber-300/20 bg-amber-300/10 text-amber-100')}>
-                  <div className="mb-1.5 flex items-center justify-between font-semibold"><span className="flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" />{t('editor.inspector.smart_title')}</span><span>{Math.round(smartThreshold * 100)}%</span></div>
-                  <input aria-label={t('editor.inspector.smart_threshold')} type="range" min="2" max="30" value={Math.round(smartThreshold * 100)} onChange={(event) => setSmartThreshold(Number(event.target.value) / 100)} className="w-full accent-[var(--accent)]" />
-                  <p className="mt-1.5">{t('editor.inspector.smart_hint')}</p>
-                  <p className="mt-1">{smartLoading ? t('editor.inspector.smart_loading') : confidenceReady ? t('editor.inspector.smart_ready', { px: smartSelectionCount.toLocaleString() }) : editor?.confidence_map_url ? t('editor.inspector.smart_lazy') : t('editor.inspector.smart_missing')}</p>
-                </div>}
-                <div className="mt-3 flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs" title={t('editor.inspector.shortcuts')}><span className={cx('flex items-center gap-1.5', isLight ? 'text-ink' : 'text-slate-200')}><MousePointer2 className="h-3.5 w-3.5 text-muted" />{t(toolLabelKey[tool])}</span><Keyboard className="h-3.5 w-3.5 text-muted" /></div>
                 <label className="mt-3 block text-xs" htmlFor="correction-note">{t('editor.note.label')}</label>
                 <textarea id="correction-note" value={note} disabled={saving} maxLength={2000} onChange={(event) => { setNote(event.target.value); setDirty(true); }} className="mt-1 w-full rounded-lg border border-slate-500 bg-transparent p-2 text-xs" placeholder={t('editor.note.placeholder')} />
+                </div>
+                <div className={cx('shrink-0 border-t pt-2', borderClass)}>
                 <p className="mt-1 text-xs text-muted">{saving ? t('editor.note.saving') : dirty ? t('editor.note.dirty') : t('editor.note.clean')}</p>
                 <button onClick={handleSave} disabled={saving || versionLoading || smartLoading || !dirty} className="mt-3 flex w-full items-center justify-center gap-2 rounded-[12px] bg-brand-fill px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-brand-fill-hover disabled:cursor-not-allowed disabled:bg-hairline disabled:text-muted"><Save className="h-3.5 w-3.5" />{saving ? t('editor.save.busy') : t('editor.save.button')}</button>
+                <button onClick={() => void completeReview()} disabled={saving || versionLoading || smartLoading} className="mt-2 w-full rounded-lg bg-brand-fill px-3 py-2.5 text-xs font-semibold text-white disabled:opacity-50">{dirty ? '保存并完成复检' : '确认无需修改'}{getUserPreferences().autoAdvanceReview && canNext ? '，下一张' : ''}</button>
+                {onNavigate && <div className="mt-2 flex items-center justify-between gap-2 text-xs"><button disabled={!canPrevious || saving || versionLoading} title="←" onClick={() => void navigateResult(-1)}>← 上一张</button><span>{positionLabel}</span><button disabled={!canNext || saving || versionLoading} title="→" onClick={() => void navigateResult(1)}>下一张 →</button></div>}
+
+                </div>
               </aside>
             </div>
           </>
@@ -1371,3 +1464,4 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
 };
 
 export default PredictionResultEditor;
+

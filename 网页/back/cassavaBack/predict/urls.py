@@ -12,9 +12,11 @@ from django.middleware.csrf import get_token
 from . import views
 from . import permission_views
 from . import auth_views
+from .import_views import ImportJobViewSet
 
 # 创建默认路由器并注册视图集
 router = DefaultRouter()
+router.register(r'imports', ImportJobViewSet, basename='imports')
 router.register(r'images', views.CassavaImageViewSet, basename='images')          # 木薯图像管理接口
 router.register(r'folders', views.FolderViewSet, basename='folders')              # 文件夹管理接口
 router.register(r'segmentations', views.SegmentationResultViewSet, basename='segmentations')  # 分割结果查询接口
@@ -39,7 +41,18 @@ def get_csrf_token(request):
     token = get_token(request)
     return JsonResponse({'csrftoken': token})
 
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def model_catalogue(request):
+    from .model_registry import catalogue
+    return Response(catalogue())
+
 urlpatterns = [
+    path('models/', model_catalogue, name='model-catalogue'),
     # 2026-10-27：DRF 的 APIView.as_view() 内部已统一包 csrf_exempt
     # （rest_framework/views.py:144 `return csrf_exempt(view)`），此前的显式 csrf_exempt 是冗余包装，
     # 反而让人误以为「这些端点靠豁免 CSRF 才通」。真实防护是 token 鉴权 + 权限类，

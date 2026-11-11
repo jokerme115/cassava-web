@@ -824,7 +824,13 @@
     "reviewed": "Reviewed",
     "open_editor": "Manual review",
     "vote_detail": "Vote details",
-    "ppd_threshold_note": "Thresholds: severe ≥ 7%, mild 4–7%, healthy < 4% (rot area as a share of the cut surface)"
+    "ppd_threshold_note": "Thresholds: severe ≥ 7%, mild 4–7%, healthy < 4% (rot area as a share of the cut surface)",
+    "all_review_status": "All Review Statuses",
+    "review_status_filter": "Review Status",
+    "clear_filters": "Clear filters",
+    "go_predict": "Select images and predict →",
+    "statistics": "Results Statistics",
+    "guest_no_results": "Public and trial results are displayed here; no items to display yet."
   },
   "connection": {
     "description": "Test connectivity between frontend and backend API",
@@ -1235,7 +1241,8 @@
       "converted": "Converted {{count}} rotten outlines ({{points}} vertices). Drag vertices to fine-tune, then click “Apply polygon” to write them back.",
       "convert_empty_cassava": "The current layer has no area to convert",
       "convert_empty_rotten": "The rotten area is empty — brush or use magic select first",
-      "convert_too_fine": "The outlines are too fragmented to convert into draggable polygons"
+      "convert_too_fine": "The outlines are too fragmented to convert into draggable polygons",
+      "needs_confidence_disabled": "Current model did not generate a confidence map; use brush or pen instead"
     },
     "inspector": {
       "title": "Measurement inspector",

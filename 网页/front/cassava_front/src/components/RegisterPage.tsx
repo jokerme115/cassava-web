@@ -207,7 +207,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister, onNavigate }) =
                   <p className="text-sm font-semibold uppercase tracking-[0.22em] text-accent-text">
                     Create Account
                   </p>
-                  <h2 className="mt-2 text-3xl font-semibold tracking-tight text-ink">
+                  <h2 className="mt-2 text-3xl font-semibold tracking-normal text-ink">
                     {t('register.title')}
                   </h2>
                 </div>

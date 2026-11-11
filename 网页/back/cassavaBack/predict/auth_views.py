@@ -45,6 +45,9 @@ def user_login(request):
     """
     username = request.data.get('username') or request.data.get('email')
     password = request.data.get('password')
+    remember_me = request.data.get('remember_me', False)
+    if not isinstance(remember_me, bool):
+        return Response({'error': '记住我必须为布尔值'}, status=status.HTTP_400_BAD_REQUEST)
     
     if not username or not password:
         return Response({
@@ -82,6 +85,8 @@ def user_login(request):
             
             # 登录用户
             login(request, user)
+            remember_seconds = int(getattr(settings, 'REMEMBER_ME_SECONDS', 30 * 24 * 3600))
+            request.session.set_expiry(remember_seconds if remember_me else 0)
             
             # 多端登录：每次登录签发新会话，保留最近 MAX_SESSIONS_PER_USER 个。
             # 历史上这里是「登录即删除该用户全部 Token」（单会话），导致 A 端刚登录
@@ -89,7 +94,8 @@ def user_login(request):
             # 仅裁剪超出上限的最旧会话，避免会话表无限增长。
             max_sessions = max(int(getattr(settings, 'MAX_SESSIONS_PER_USER', 5) or 5), 1)
             with transaction.atomic():
-                token = LoginSession.objects.create(user=user)
+                token = LoginSession.objects.create(user=user, expires_at=(
+                    timezone.now() + timedelta(seconds=remember_seconds) if remember_me else None))
                 stale_keys = list(
                     LoginSession.objects.filter(user=user)
                     .order_by('-created')
@@ -98,15 +104,10 @@ def user_login(request):
                 if stale_keys:
                     LoginSession.objects.filter(key__in=stale_keys).delete()
             
-            # 返回成功响应
+            # 返回成功响应（携带完整 user profile & preferences，避免覆盖偏好缓存）
             return Response({
                 'success': True,
-                'user': {
-                    'id': user.id,
-                    'username': user.username,
-                    'first_name': user.first_name,
-                    'is_superuser': user.is_superuser
-                },
+                'user': UserSerializer(user, context={'request': request}).data,
                 'token': token.key
             }, status=status.HTTP_200_OK)
         else:
@@ -138,11 +139,17 @@ def user_logout(request):
     # 只吊销本次请求所用的会话。多端登录后同一用户可能同时存在多个会话，
     # 早先的 AuthToken.objects.get(user=...) 会抛 MultipleObjectsReturned，
     # 且会把其他设备的会话一起登出。
-    if request.user.is_authenticated:
-        token = getattr(request, 'auth', None)
-        if isinstance(token, LoginSession):
-            token.delete()
-        
+    token = getattr(request, 'auth', None)
+    if isinstance(token, LoginSession):
+        token.delete()
+    else:
+        auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+        token_key = None
+        if auth_header.startswith('Bearer ') or auth_header.startswith('Token '):
+            token_key = auth_header.split(' ', 1)[1].strip()
+        if token_key:
+            LoginSession.objects.filter(key=token_key).delete()
+
     logout(request)
     return Response({'success': True, 'message': '登出成功'})
 
@@ -185,43 +192,28 @@ def update_profile(request):
     """
     更新个人信息
     """
+    from .user_preferences import preferences_etag
     user = request.user
-    
-    user_data = {}
-    for key in ['email', 'first_name', 'last_name']:
-        if key in request.data:
-            user_data[key] = request.data.get(key)
-
-    profile_data = {}
-    for key in ['avatar', 'employee_id', 'department', 'phone', 'bio', 'theme', 'notification_settings']:
-        if key in request.data:
-            profile_data[key] = request.data.get(key)
-
-    user_serializer = UserSerializer(user, data=user_data, partial=True, context={'request': request})
-    if user_serializer.is_valid():
+    user_data = {key: request.data[key] for key in ['email', 'first_name', 'last_name'] if key in request.data}
+    profile_data = {key: request.data[key] for key in ['avatar', 'employee_id', 'department', 'phone', 'bio', 'theme', 'notification_settings', 'preferences'] if key in request.data}
+    with transaction.atomic():
+        profile = UserProfile.objects.select_for_update().get(user=user)
+        if 'preferences' in profile_data:
+            expected = request.data.get('preferences_etag')
+            if expected and expected != preferences_etag(profile.preferences):
+                return Response({'error': '设置已在其他页面更新，请刷新后再保存', 'code': 'preferences_conflict'}, status=409)
+            patch = profile_data['preferences']
+            if not isinstance(patch, dict):
+                return Response({'error': '偏好设置必须为对象'}, status=400)
+            profile_data['preferences'] = {**profile.preferences, **patch}
+        user_serializer = UserSerializer(user, data=user_data, partial=True, context={'request': request})
+        profile_serializer = UserProfileSerializer(profile, data=profile_data, partial=True, context={'request': request})
+        user_serializer.is_valid(raise_exception=True)
+        profile_serializer.is_valid(raise_exception=True)
         user_serializer.save()
-    else:
-        return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    # Update UserProfile fields
-    if hasattr(user, 'profile'):
-        profile_serializer = UserProfileSerializer(user.profile, data=profile_data, partial=True, context={'request': request})
-        if profile_serializer.is_valid():
-            profile_serializer.save()
-        else:
-            return Response(profile_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            
-    # Log audit
-    AuditLog.objects.create(
-        user=user,
-        action='UPDATE',
-        resource='UserProfile',
-        resource_id=str(user.id),
-        details=str(request.data), # Convert to string to avoid JSON errors if any
-        success=True
-    )
-    
-    # Return updated user data
+        profile_serializer.save()
+        user._state.fields_cache['profile'] = profile
+        AuditLog.objects.create(user=user, action='UPDATE', resource='UserProfile', resource_id=str(user.id), details={'fields': list(user_data) + list(profile_data)}, success=True)
     return Response(UserSerializer(user, context={'request': request}).data)
 
 
@@ -249,6 +241,10 @@ def change_password(request):
 
     user.set_password(new_password)
     user.save()
+    sessions = LoginSession.objects.filter(user=user)
+    if isinstance(request.auth, LoginSession):
+        sessions = sessions.exclude(key=request.auth.key)
+    sessions.delete()
     
     # Update session auth hash to keep user logged in
     from django.contrib.auth import update_session_auth_hash

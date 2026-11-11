@@ -1,10 +1,20 @@
+import { getUserPreferences } from '../utils/userPreferences';
+import WorkspacePagination from './WorkspacePagination';
+import api from '../services/rest/client';
+import BulkCaptureTime from './BulkCaptureTime';
+import { message, modal } from '../utils/feedback';
+import { useViewState } from '../utils/useViewState';
+import RecycleBin from './RecycleBin';
+import ImportWorkspace from './ImportWorkspace';
+import { workspaceStorageKey } from '../utils/workspaceContext';
+import { useNavigate } from 'react-router-dom';
 import ImageResolutionLabel from './ImageResolutionLabel';
 import React, { useState, useMemo, useEffect, useRef, useDeferredValue } from 'react';
 import { Upload, Plus, Trash2, Move, Grid, List, Search, SortAsc, SortDesc, X, ChevronLeft, ChevronRight, Calendar, FolderOpen, FileText, Eye, Share2, Users, Edit, MoreVertical, FolderPlus, Menu } from 'lucide-react';
 import { useImageStore } from '../hooks/useImageStore';
 import { ppdToneClass } from '../utils/ppdTone';
 import { formatPpd } from '../utils/measurement';
-import { Modal, Switch, Input, message, Button, InputNumber, Dropdown, Tree, TreeSelect, Pagination, Drawer } from 'antd';
+import { Modal, Switch, Input, Button, InputNumber, Dropdown, Tree, TreeSelect, Drawer } from 'antd';
 import { foldersApi, sharesApi, guestResourcesApi } from '../services/api';
 import { useTranslation } from 'react-i18next';
 import { Folder, User, Image, ResourceShare } from '../types';
@@ -19,9 +29,18 @@ interface ImageManagementProps {
 
 const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const imageScrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const node = imageScrollRef.current;
+    const timer = window.setTimeout(() => { if (node) node.scrollTop = Number(sessionStorage.getItem(workspaceStorageKey('image-scroll')) || 0); }, 200);
+    const save = () => { if (node) sessionStorage.setItem(workspaceStorageKey('image-scroll'), String(node.scrollTop)); };
+    node?.addEventListener('scroll', save);
+    return () => { window.clearTimeout(timer); node?.removeEventListener('scroll', save); };
+  }, []);
+
   const ROOT_NODE_VALUE = '__root__';
   const {
-    images,
     folders,
     selectedImages,
     selectedFolder,
@@ -45,10 +64,10 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
     loadImageDetail,
   } = useImageStore(currentUser?.is_guest);
 
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'name' | 'date' | 'folder' | 'size' | 'capture_time'>('date');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [viewMode, setViewMode] = useViewState<'grid' | 'list'>('image-view-mode', getUserPreferences().listView);
+  const [searchQuery, setSearchQuery] = useViewState('image-search', '');
+  const [sortBy, setSortBy] = useViewState<'name' | 'date' | 'folder' | 'size' | 'capture_time'>('image-sort', getUserPreferences().listSort);
+  const [sortOrder, setSortOrder] = useViewState<'asc' | 'desc'>('image-sort-order', getUserPreferences().listOrder);
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [editingImage, setEditingImage] = useState<Image | null>(null);
   const [uploadProgress, setUploadProgress] = useState<Array<{fileName: string, progress: number, status: string}>>([]);
@@ -58,7 +77,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
   const [previewImage, setPreviewImage] = useState<Image | null>(null);
   const [previewImageLoading, setPreviewImageLoading] = useState(false);
   const [previewIndex, setPreviewIndex] = useState(0);
-  const [dateGroupType, setDateGroupType] = useState<'year' | 'month' | 'day'>('year');
+  const [dateGroupType, setDateGroupType] = useViewState<'none' | 'year' | 'month' | 'day'>('image-group', getUserPreferences().listGroup);
   const [showUploadConfigModal, setShowUploadConfigModal] = useState(false);
   const [uploadTargetFolder, setUploadTargetFolder] = useState<string | null>(null);
   const [uploadCheckDuplicate, setUploadCheckDuplicate] = useState(true);
@@ -76,7 +95,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
   const [renamePrefix, setRenamePrefix] = useState('');
   const [renameStartSeq, setRenameStartSeq] = useState(1);
   const [renameDigits, setRenameDigits] = useState(2);
-  const [folderTreeExpandedKeys, setFolderTreeExpandedKeys] = useState<React.Key[]>([]);
+  const [folderTreeExpandedKeys, setFolderTreeExpandedKeys] = useViewState<React.Key[]>('folder-expanded', []);
   const [folderTreeAutoExpandParent, setFolderTreeAutoExpandParent] = useState(true);
   const [folderTreeSearch, setFolderTreeSearch] = useState('');
   const isGuest = currentUser?.is_guest;
@@ -105,6 +124,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
   const [folderDrawerOpen, setFolderDrawerOpen] = useState(false);
   const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
   const [showRenameFolderModal, setShowRenameFolderModal] = useState(false);
+  const [inlineFolderId, setInlineFolderId] = useState<string | null>(null);
   const [folderRenameValue, setFolderRenameValue] = useState('');
   const [folderRenameDescription, setFolderRenameDescription] = useState('');
   const [contextFolder, setContextFolder] = useState<Folder | null>(null);
@@ -393,7 +413,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
 
   const handleRevokeShare = async (shareId: string) => {
     if (!shareId) return;
-    Modal.confirm({
+    modal.confirm({
       title: t('common.confirm'),
       content: t('shares.revoke'),
       onOk: async () => {
@@ -467,6 +487,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
 
   // Grouped image data
   const groupedImages = useMemo(() => {
+    if (dateGroupType === 'none') return [{ key: '', images: filteredAndSortedImages }];
     if (sortBy === 'date' || sortBy === 'capture_time') {
       // Date grouping
       const groupKey = (img: any) => {
@@ -493,7 +514,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
         if (!groups[key]) groups[key] = [];
         groups[key].push(img);
       });
-      return Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0])).map(([key, imgs]) => ({ key, images: imgs }));
+      return Object.entries(groups).sort((a, b) => (sortOrder === 'asc' ? 1 : -1) * a[0].localeCompare(b[0])).map(([key, imgs]) => ({ key, images: imgs }));
     } else if (sortBy === 'folder') {
       // Folder grouping
       const groups: Record<string, any[]> = {};
@@ -502,12 +523,12 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
         if (!groups[folder]) groups[folder] = [];
         groups[folder].push(img);
       });
-      return Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0])).map(([key, imgs]) => ({ key, images: imgs }));
+      return Object.entries(groups).sort((a, b) => (sortOrder === 'asc' ? 1 : -1) * a[0].localeCompare(b[0])).map(([key, imgs]) => ({ key, images: imgs }));
     } else {
       // No grouping
       return [{ key: '', images: filteredAndSortedImages }];
     }
-  }, [filteredAndSortedImages, sortBy, dateGroupType, folders, t]);
+  }, [filteredAndSortedImages, sortBy, sortOrder, dateGroupType, folders, t]);
 
   // Generate global image array and mapping
   const flatImages = useMemo(() => filteredAndSortedImages, [filteredAndSortedImages]);
@@ -705,25 +726,29 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
   };
 
   const handleSelectAll = () => {
-    if (selectedImages.length === filteredAndSortedImages.length) {
-      setSelectedImages([]);
-    } else {
-      setSelectedImages(filteredAndSortedImages.map(img => img.id));
-    }
+    const visible = filteredAndSortedImages.map(image => image.id);
+    if (visible.every(id => selectedImages.includes(id))) setSelectedImages(selectedImages.filter(id => !visible.includes(id)));
+    else setSelectedImages([...new Set([...selectedImages, ...visible])]);
+  };
+  const selectAllMatching = async () => {
+    try {
+      const folder = selectedFolder === 'root' || selectedFolder === 'uncategorized' ? 'uncategorized' : selectedFolder && /^\d+$/.test(selectedFolder) ? selectedFolder : undefined;
+      const { data } = await api.get('/images/selection/', { params: { folder, search: searchQuery } });
+      setSelectedImages(data.image_ids.map(String)); message.success(`已选择全部符合条件的 ${data.count} 张图片`);
+    } catch (error) { message.error('选择失败，请重试'); }
   };
 
   const handleBatchDelete = () => {
     if (!selectedImages.length) return;
-    Modal.confirm({
+    modal.confirm({
       title: t('images.delete_title', { defaultValue: '删除图片' }),
-      content: t('images.confirm_delete', { count: selectedImages.length }),
+      content: `将 ${selectedImages.length} 张图片移入回收站，历史预测和人工修订保留，可随时恢复。`,
       okText: t('common.confirm', { defaultValue: '确认' }),
       okButtonProps: { danger: true },
       cancelText: t('common.cancel', { defaultValue: '取消' }),
       centered: true,
       onOk: () => {
-        deleteImages(selectedImages);
-        setSelectedImages([]);
+        void deleteImages(selectedImages);
       },
     });
   };
@@ -731,10 +756,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
   const handleBatchMove = async (targetFolderId: string) => {
     if (selectedImages.length > 0) {
       await moveImages(selectedImages, targetFolderId);
-      setSelectedImages([]);
       setShowMoveModal(false);
-      // Auto refresh after move
-      loadImages?.();
     }
   };
 
@@ -781,6 +803,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
       // If we created a root folder (and we were at root), we might want to enter it or just see it.
       // Current logic sets uploadTarget to it.
       setUploadTargetFolder(res.id);
+      setSelectedFolder(String(res.id));
       
       setNewFolderName('');
       setNewFolderDescription('');
@@ -799,7 +822,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
     try {
       await foldersApi.update(contextFolder.id, { name: folderRenameValue, description: folderRenameDescription });
       await loadFolders?.();
-      setShowRenameFolderModal(false);
+      setShowRenameFolderModal(false); setInlineFolderId(null);
       setFolderRenameValue('');
       setFolderRenameDescription('');
       setContextFolder(null);
@@ -809,16 +832,16 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
     }
   };
 
-  const handleDeleteFolder = async (deleteImagesInFolder: boolean) => {
+  const handleDeleteFolder = async () => {
     if (!contextFolder) return;
     try {
-      await foldersApi.deleteWithStrategy(contextFolder.id, { strategy: deleteImagesInFolder ? 'delete' : 'keep' });
+      await foldersApi.deleteWithStrategy(contextFolder.id, { strategy: 'delete' });
       await loadFolders?.();
       await loadImages?.({ reset: true });
       
       // If we deleted the currently selected folder, go to root
       if (selectedFolder === contextFolder.id) {
-        setSelectedFolder(null);
+        setSelectedFolder(contextFolder.parent || 'root');
       }
       
       setShowDeleteFolderModal(false);
@@ -869,7 +892,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
   };
 
   const getBreadcrumbs = () => {
-    if (!selectedFolder || ['uncategorized', 'shared_with_me', 'my_shares'].includes(selectedFolder)) return [];
+    if (!selectedFolder || ['root', 'uncategorized', 'shared_with_me', 'my_shares'].includes(selectedFolder)) return [];
     
     const crumbs = [];
     let currentId: string | undefined = selectedFolder;
@@ -887,10 +910,11 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
 
   const getCurrentSubfolders = () => {
     // If selectedFolder is null (Root/All Images), show root folders (those with no parent)
-    if (selectedFolder === null) {
+    if (selectedFolder === null) return [];
+    if (selectedFolder === 'root') {
       return folders.filter(f => !f.parent);
     }
-    if (['uncategorized', 'shared_with_me', 'my_shares'].includes(selectedFolder)) return [];
+    if (['root', 'uncategorized', 'shared_with_me', 'my_shares'].includes(selectedFolder)) return [];
     return folders.filter(f => f.parent === selectedFolder);
   };
 
@@ -1194,7 +1218,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
     const isSelected = selectedFolder === folderId;
     return (
       <div
-        className="flex items-center justify-between w-full group min-w-0"
+        className="relative flex items-center justify-between w-full group min-w-0"
         onDragOver={(e) => {
           if (isGuest) return;
           const ids = getDraggedImageIds(e);
@@ -1214,7 +1238,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
         <div className="flex items-center min-w-0">
           <FolderOpen className={`w-4 h-4 mr-2 flex-shrink-0 ${isSelected ? 'text-accent-text' : 'text-accent-text'}`} />
           <span className={`truncate text-sm ${isSelected ? 'font-semibold text-blue-700' : 'font-medium text-ink-secondary'}`}>
-            {folder.name}
+            {inlineFolderId === folder.id ? <Input autoFocus size="small" aria-label="文件夹新名称" value={folderRenameValue} onChange={event => setFolderRenameValue(event.target.value)} onClick={event => event.stopPropagation()} onPressEnter={() => void handleRenameFolder()} onBlur={() => void handleRenameFolder()} onKeyDown={event => { if (event.key === 'Escape') setInlineFolderId(null); event.stopPropagation(); }} /> : folder.name}
           </span>
         </div>
         <div className="flex items-center flex-shrink-0">
@@ -1222,7 +1246,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
             {folder.imageCount}
           </span>
           {!isGuest && (
-            <div className="flex items-center ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute right-0 top-0 hidden h-full items-center rounded-md bg-white px-1 shadow-sm group-hover:flex group-focus-within:flex">
               <button
                 className="p-1 rounded hover:bg-white"
                 aria-label={t('a11y.create_subfolder', { name: folder.name })}
@@ -1246,7 +1270,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                   setContextFolder(folder);
                   setFolderRenameValue(folder.name);
                   setFolderRenameDescription(folder.description || '');
-                  setShowRenameFolderModal(true);
+                  setInlineFolderId(folder.id);
                 }}
               >
                 <Edit className="w-3.5 h-3.5 text-muted" />
@@ -1315,17 +1339,13 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
   const folderSidebar = (
     <div className="flex h-full w-full flex-col bg-white">
         <div className="p-4 border-b border-hairline bg-white">
-          <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-ink">
-            <FolderOpen className="w-5 h-5 text-accent-text" />
-            {t('images.folders')}
-          </h2>
           {!isGuest && (
           <button 
             onClick={() => {
               setNewFolderName('');
               setNewFolderDescription('');
               const parent =
-                selectedFolder && !['uncategorized', 'shared_with_me', 'my_shares'].includes(selectedFolder)
+                selectedFolder && !['root', 'uncategorized', 'shared_with_me', 'my_shares'].includes(selectedFolder)
                   ? selectedFolder
                   : null;
               setCreateFolderParentId(parent);
@@ -1347,7 +1367,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
           >
             <div className="flex items-center justify-between">
               <span className="font-medium">{t('images.all_images')}</span>
-              <span className="rounded-full bg-black/5 px-2 py-0.5 text-xs font-medium text-current">{totalImages || images.length}</span>
+              {selectedFolder === null && <span className="rounded-full bg-black/5 px-2 py-0.5 text-xs font-medium text-current">{totalImages}</span>}
             </div>
           </button>
           <button
@@ -1389,7 +1409,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
           >
             <div className="flex items-center justify-between">
               <span className="font-medium">{t('images.uncategorized')}</span>
-              <span className="rounded-full bg-black/5 px-2 py-0.5 text-xs font-medium text-current">{images.filter(img => !img.folderId).length}</span>
+              {['root', 'uncategorized'].includes(selectedFolder || '') && <span className="rounded-full bg-black/5 px-2 py-0.5 text-xs font-medium text-current">{totalImages}</span>}
             </div>
           </button>
           
@@ -1478,9 +1498,10 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
               </div>
             ) : (
               <Tree
+                className="folder-tree image-folder-tree"
                 treeData={isSharedWithMeView ? sharedFolderTreeData : folderTreeData}
                 titleRender={isSharedWithMeView ? renderSharedFolderTreeTitle : renderFolderTreeTitle}
-                draggable={!isGuest && !isSharedWithMeView}
+                draggable={!isGuest && !isSharedWithMeView ? { icon: false } : false}
                 blockNode
                 expandedKeys={folderTreeExpandedKeys}
                 autoExpandParent={folderTreeAutoExpandParent}
@@ -1491,7 +1512,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                 selectedKeys={
                   isSharedWithMeView
                     ? (sharedWithMeSelectedFolderId ? [sharedWithMeSelectedFolderId] : [])
-                    : (selectedFolder && !['uncategorized', 'shared_with_me', 'my_shares'].includes(selectedFolder) ? [selectedFolder] : [])
+                    : (selectedFolder && !['root', 'uncategorized', 'shared_with_me', 'my_shares'].includes(selectedFolder) ? [selectedFolder] : [])
                 }
                 onSelect={(keys) => {
                   const key = keys?.[0];
@@ -1514,25 +1535,12 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
       <div className="hidden w-64 shrink-0 border-r border-hairline bg-white sm:flex">{folderSidebar}</div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col w-full">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {/* Header */}
-        <div className="bg-white border-b border-hairline p-4 shadow-sm">
-          <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="image-workspace-toolbar shrink-0 border-b border-hairline bg-white px-4 py-3">
+          <div className="flex items-center justify-between gap-2 empty:hidden">
             <div className="flex min-w-0 items-center gap-2">
-              <button
-                onClick={() => setFolderDrawerOpen(true)}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-hairline-strong text-ink-secondary transition-colors hover:bg-surface-sunken sm:hidden"
-                aria-label={t('a11y.toggle_folders')}
-                aria-expanded={folderDrawerOpen}
-              >
-                <Menu className="h-4 w-4" />
-              </button>
-              <h2 
-                className="cursor-pointer truncate text-xl font-semibold text-ink hover:underline"
-                onClick={() => setSelectedFolder(null)}
-              >
-                {t('navigation.images')}
-              </h2>
+
               {getBreadcrumbs().map((folder, index) => (
                 <React.Fragment key={folder.id}>
                   <ChevronRight className="w-5 h-5 text-muted" />
@@ -1550,9 +1558,17 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
           </div>
 
           {/* Search and Actions */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center space-x-3 flex-1 w-full sm:w-auto">
-              <div className="relative flex-1 max-w-md w-full">
+          <div className="image-main-toolbar flex flex-wrap items-center justify-end gap-3">
+            <div className="image-search-tools flex min-w-0 flex-1 items-center gap-3">
+              <button
+                onClick={() => setFolderDrawerOpen(true)}
+                className="flex h-9 shrink-0 items-center justify-center gap-1 px-2 rounded-lg border border-hairline-strong text-ink-secondary transition-colors hover:bg-surface-sunken sm:hidden"
+                aria-label={t('a11y.toggle_folders')}
+                aria-expanded={folderDrawerOpen}
+              >
+                <Menu className="h-4 w-4" /><span className="text-xs">目录</span>
+              </button>
+              <div className="relative min-w-[140px] max-w-sm flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted w-5 h-5" />
                 <input
                   type="text"
@@ -1564,13 +1580,13 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
               </div>
               
               {/* Toolbar: sort / group / view */}
-              <div className="flex shrink-0 items-center gap-1 rounded-lg border border-hairline bg-surface-muted p-1">
-                <div className="hidden items-center gap-1 sm:flex">
+              <div className={`image-view-tools ml-auto ${totalImages > 0 ? 'flex' : 'hidden'} shrink-0 items-center gap-1`}>
+                <fieldset disabled={!totalImages} className="hidden items-center gap-1 disabled:opacity-40 sm:flex">
                 <select
                   value={sortBy}
                   aria-label={t('a11y.sort_by')}
                   onChange={(e) => setSortBy(e.target.value as any)}
-                  className="rounded-lg border border-hairline-strong px-3 py-1.5 text-sm transition-all duration-200 focus:border-transparent focus:ring-2 focus:ring-accent-line"
+                  className="h-9 rounded-md border-0 bg-transparent px-2 text-xs text-ink-secondary outline-none hover:bg-surface-muted focus:ring-2 focus:ring-accent-line"
                 >
                   <option value="date">{t('images.sort.date')}</option>
                   <option value="capture_time">{t('images.capture_time')}</option>
@@ -1583,9 +1599,9 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                     value={dateGroupType}
                     aria-label={t('a11y.group_by')}
                     onChange={e => setDateGroupType(e.target.value as any)}
-                    className="rounded-lg border border-hairline-strong px-3 py-1.5 text-sm transition-all duration-200 focus:border-transparent focus:ring-2 focus:ring-accent-line"
+                    className="h-9 rounded-md border-0 bg-transparent px-2 text-xs text-ink-secondary outline-none hover:bg-surface-muted focus:ring-2 focus:ring-accent-line"
                   >
-                    <option value="year">{t('images.group.year')}</option>
+                    <option value="none">不分组</option><option value="year">{t('images.group.year')}</option>
                     <option value="month">{t('images.group.month')}</option>
                     <option value="day">{t('images.group.day')}</option>
                   </select>
@@ -1593,13 +1609,13 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                 <button
                   onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
                   aria-label={t('a11y.sort_order')}
-                  className="rounded-lg border border-hairline-strong p-2 transition-all duration-200 hover:border-accent-line hover:text-accent-text"
+                  className="rounded-md p-2 text-muted transition-colors hover:bg-surface-muted hover:text-accent-text"
                 >
                   {getSortIcon()}
                 </button>
-                </div>
+                </fieldset>
                 <span className="mx-1 hidden h-5 w-px bg-hairline-strong sm:block" />
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-0.5 rounded-lg bg-surface-muted p-0.5">
                   <button
                     onClick={() => setViewMode('grid')}
                     aria-label={t('a11y.grid_view')}
@@ -1620,8 +1636,8 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
               </div>
             </div>
             
-            <div className="flex items-center space-x-2 flex-wrap">
-              {selectedFolder && !['uncategorized', 'shared_with_me', 'my_shares'].includes(selectedFolder) && !isGuest && (
+            <div className="image-primary-actions ml-auto flex flex-wrap items-center justify-end gap-2">
+              {selectedFolder && !['root', 'uncategorized', 'shared_with_me', 'my_shares'].includes(selectedFolder) && !isGuest && (
                 <button
                   onClick={() => {
                       setShareResourceType('folder');
@@ -1678,29 +1694,19 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                   </button>
                 </>
               )}
-              {/* Upload image/folder entry - Hide for Guest */}
-              {!isGuest && (
-              <>
-              <button
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-fill text-white text-sm font-medium transition-all duration-200 hover:bg-brand-fill-hover active:scale-[0.98] cursor-pointer"
-                onClick={e => {
-                  e.preventDefault();
-                  setShowUploadConfigModal(true);
-                }}
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                <span>{t('images.upload')}</span>
-              </button>
-              </>
-              )}
+              {!isGuest && <RecycleBin onChange={() => { void loadImages({ page: imagesPage }); void loadFolders(); }} />}
+              {!isGuest && <ImportWorkspace folders={folders} onComplete={() => { void loadImages({ page: imagesPage }); void loadFolders(); }} />}
+              {!isGuest && selectedImages.length > 0 && <BulkCaptureTime ids={selectedImages} onDone={() => void loadImages({ page: imagesPage })} />}
+              {!isGuest && selectedImages.length > 0 && <Button onClick={() => navigate('/prediction')}>预测所选 {selectedImages.length} 张</Button>}
+
             </div>
           </div>
         </div>
 
         {/* Content with Alphabet Index */}
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex min-h-0 flex-1 overflow-hidden">
           {/* Main Content Area */}
-          <div className="flex-1 min-w-0 p-4 overflow-y-auto overflow-x-hidden">
+          <div className="flex-1 min-w-0 p-4 overflow-y-auto overflow-x-hidden" ref={imageScrollRef}>
             
             {isMySharesView ? (
               <div className="space-y-4">
@@ -1791,19 +1797,20 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
             <>
             {/* Selection Controls */}
             {filteredAndSortedImages.length > 0 && (
-              <div className="mb-3 flex items-center justify-between rounded-lg card px-3 py-2 shadow-sm">
+              <div className="mb-3 flex min-h-10 flex-wrap items-center gap-x-4 gap-y-2 border-b border-hairline pb-3 text-xs">
                 <label className="flex items-center cursor-pointer group">
                   <input
                     type="checkbox"
-                    checked={selectedImages.length === filteredAndSortedImages.length && filteredAndSortedImages.length > 0}
+                    checked={filteredAndSortedImages.length > 0 && filteredAndSortedImages.every(image => selectedImages.includes(image.id))}
                     onChange={handleSelectAll}
                     className="mr-3 w-5 h-5 text-accent-text rounded-lg border-hairline-strong focus:ring-2 focus:ring-accent-line transition-all duration-200 group-hover:scale-110"
                   />
-                  <span className="text-sm font-medium text-ink-secondary group-hover:text-accent-text transition-colors">{t('images.select_all', { count: filteredAndSortedImages.length })}</span>
+                  <span className="text-sm font-medium text-ink-secondary group-hover:text-accent-text transition-colors">全选本页</span>
                 </label>
-                <div className="text-sm text-muted">
-                  {t('images.page_items', { count: filteredAndSortedImages.length })}
-                </div>
+                {selectedImages.length > 0 && <span className="font-medium text-ink">已选 {selectedImages.length} 张</span>}
+                {!isGuest && filteredAndSortedImages.every(image => selectedImages.includes(image.id)) && selectedImages.length < totalImages && totalImages > filteredAndSortedImages.length && <button className="text-accent-text hover:underline" onClick={() => void selectAllMatching()}>全选{searchQuery.trim() ? '搜索结果' : selectedFolder === null ? '全部图片' : '当前目录'}（{totalImages} 张）</button>}
+                {selectedImages.length > 0 && <button className="text-muted hover:text-ink" onClick={() => setSelectedImages([])}>取消选择</button>}
+                <div className="ml-auto text-muted">本页 {filteredAndSortedImages.length} 张 · 共 {totalImages} 张</div>
               </div>
             )}
 
@@ -1863,7 +1870,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                   <Search className="w-8 h-8 text-muted" />
                 </div>
                 <h3 className="text-lg font-medium text-ink mb-2">{t('images.no_images_found')}</h3>
-                <p className="text-muted">{searchQuery ? t('images.no_match') : t('images.no_images')}</p>
+                <p className="text-muted">{searchQuery ? t('images.no_match') : isGuest ? '管理员尚未开放试用图片；登录后可上传自己的图片。' : t('images.no_images')}</p>{isGuest ? <a href="/login" className="mt-4 inline-block text-sm font-medium text-accent-text">登录账号 →</a> : searchQuery ? <button className="mt-4 text-sm text-accent-text" onClick={() => setSearchQuery('')}>清除搜索</button> : null}
               </div>
             ) : (
               <div className={viewMode === 'grid' 
@@ -1927,7 +1934,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                                 )}
                               </div>
                               <div className="px-2.5 pb-2 pt-1.5">
-                                <p className="truncate text-[13px] font-semibold text-ink" title={image.name}>
+                                <p className="truncate text-xs font-semibold text-ink" title={image.name}>
                                   {image.name}
                                 </p>
                                 <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted" title={`${image.created_time ? new Date(image.created_time).toLocaleString() : ''}`}>
@@ -1935,6 +1942,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                                   <span className="text-hairline-strong" aria-hidden="true">·</span>
                                   <span className="truncate">{formatFileSize(image.size)}</span>
                                 </div>
+                                <p className="mt-1 truncate text-xs text-muted" title={image.capture_time || '拍摄时间未提供'}>{image.capture_time ? `拍摄 ${new Date(image.capture_time).toLocaleString()} · ${image.capture_time_source === 'manual' ? '人工填写' : image.capture_time_source === 'exif' ? 'EXIF' : '来源未记录'}` : '拍摄时间未提供'}</p>
                                 {image.hasPPD && (
                                   <div className="mt-1 flex items-center">
                                     <div className={`w-3 h-3 rounded-full mr-2 ${
@@ -2016,10 +2024,10 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                                     <Upload className="w-3.5 h-3.5 mr-1.5" />
                                     {image.created_time ? new Date(image.created_time).toLocaleString() : ''}
                                   </span>
-                                  {image.capture_time && (
+                                  {true && (
                                     <span className="flex items-center" title={t('images.capture_time')}>
                                       <Calendar className="w-3.5 h-3.5 mr-1.5" />
-                                      {new Date(image.capture_time).toLocaleString()}
+                                      {image.capture_time ? new Date(image.capture_time).toLocaleString() : '拍摄时间未提供'}
                                     </span>
                                   )}
                                   <span className="flex items-center">
@@ -2050,22 +2058,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                     })}
                   </React.Fragment>
                 ))}
-                {!isSharedWithMeView && !isMySharesView && totalImages > 0 && (
-                  <div className={viewMode === 'grid' ? 'col-span-full flex flex-col items-center gap-3 mt-6' : 'flex flex-col items-center gap-3 mt-6'}>
-                    <Pagination
-                      current={imagesPage}
-                      pageSize={imagesPageSize}
-                      total={totalImages}
-                      showSizeChanger
-                      pageSizeOptions={['24', '48', '96', '120']}
-                      showTotal={(total, range) => t('images.pagination_total', { start: range[0], end: range[1], total })}
-                      onChange={(page, pageSize) => {
-                        void goToImagesPage(page, pageSize);
-                      }}
-                      size="small"
-                    />
-                  </div>
-                )}
+
               </div>
             )}
             </>
@@ -2091,6 +2084,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
             </nav>
           )}
         </div>
+        {!isSharedWithMeView && !isMySharesView && <WorkspacePagination page={imagesPage} pageSize={imagesPageSize} total={totalImages} onChange={(page, size) => void goToImagesPage(page, size)} />}
       </div>
 
       <Drawer
@@ -2252,43 +2246,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
         footer={null}
         width={500}
       >
-        <div className="p-4">
-            <div className="flex items-center gap-3 mb-4 text-danger-text bg-red-50 p-3 rounded-lg">
-                <Trash2 className="w-6 h-6" />
-                <span className="font-medium">{t('images.confirm_delete_folder')}</span>
-            </div>
-            
-            <p className="mb-4 text-ink-secondary">
-                <span className="font-semibold">{contextFolder?.name}</span> 
-                {(contextFolder?.imageCount || 0) > 0 
-                    ? ` ${t('images.contains_images', { count: contextFolder?.imageCount || 0 })}`
-                    : ` ${t('images.is_empty')}`
-                }
-            </p>
-
-            <div className="flex flex-col gap-3">
-                {(contextFolder?.imageCount || 0) > 0 && (
-                    <Button 
-                        onClick={() => handleDeleteFolder(false)}
-                        className="w-full text-left flex items-center justify-between"
-                    >
-                        <span>{t('images.delete_folder_keep_images')}</span>
-                    </Button>
-                )}
-                
-                <Button 
-                    danger 
-                    type="primary"
-                    onClick={() => handleDeleteFolder(true)}
-                    className="w-full text-left flex items-center justify-center"
-                >
-                     {(contextFolder?.imageCount || 0) > 0 
-                        ? t('images.delete_folder_and_images')
-                        : t('images.delete_folder')
-                     }
-                </Button>
-            </div>
-        </div>
+        <div className="p-4 space-y-4"><p>将“{contextFolder?.name}”及其子目录、图片一起移入回收站。历史预测和人工修订保留，恢复时保留原来的关联。</p><Button danger type="primary" onClick={() => void handleDeleteFolder()}>移入回收站</Button></div>
       </Modal>
 
       {/* Move Modal */}
@@ -2298,6 +2256,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
             <h3 className="text-xl font-semibold mb-4 text-ink">{t('images.move_to_folder')}</h3>
             <div className="space-y-3 max-h-72 overflow-y-auto">
               <Tree
+                className="folder-tree image-folder-tree"
                 treeData={folderTreeData}
                 blockNode
                 defaultExpandAll
@@ -2509,7 +2468,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
           >
             <input
               type="file"
-              id="real-upload-input"
+              id="legacy-upload-input"
               multiple
               accept="image/*,.zip"
               className="hidden"

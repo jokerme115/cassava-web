@@ -97,6 +97,9 @@ class TaskService(BaseService):
     @staticmethod
     def cancel_task(task):
         if task.status in {'pending', 'running'}:
+            if task.type == 'upload':
+                from ..models import ImportJob
+                ImportJob.objects.filter(task=task, state__in=['uploading', 'queued', 'running']).update(state='cancelled')
             task.status = 'cancelled'
             task.save()
             return {'success': True}
@@ -186,16 +189,24 @@ class TaskService(BaseService):
                 progress_callback=progress_callback
             )
 
-            if execution.get('cancelled'):
+            task.refresh_from_db(fields=['status'])
+            if execution.get('cancelled') or task.status == 'cancelled':
                 return {"cancelled": True, "processed": execution.get('processed_count', 0)}
 
             if not execution.get('results'):
+                task.refresh_from_db(fields=['status'])
+                if task.status == 'cancelled':
+                    return {"cancelled": True, "processed": execution.get('processed_count', 0)}
                 task.status = 'failed'
                 task.error = '; '.join(
                     error.get('message', '预测失败') for error in execution.get('errors', [])[:3]
                 ) or '预测失败'
                 task.save()
                 return {"error": task.error}
+
+            task.refresh_from_db(fields=['status'])
+            if task.status == 'cancelled':
+                return {"cancelled": True, "processed": execution.get('processed_count', 0)}
 
             task.status = 'completed'
             task.progress = 100
@@ -218,18 +229,26 @@ class TaskService(BaseService):
             }
             
         except Exception as e:
+            try:
+                task.refresh_from_db(fields=['status'])
+                if task.status == 'cancelled':
+                    return {"cancelled": True}
+            except Exception:
+                pass
             failure_text = describe_prediction_failure(e)
             try:
-                task.status = 'failed'
-                task.error = failure_text
-                execution_meta = dict((task.parameters or {}).get('_execution') or {})
-                execution_meta.update({
-                    'error_code': e.__class__.__name__,
-                    'error_detail': str(e)[:500],
-                    'failed_at': timezone.now().isoformat(),
-                })
-                task.parameters = {**(task.parameters or {}), '_execution': execution_meta}
-                task.save(update_fields=['status', 'error', 'parameters', 'updated_time'])
+                task.refresh_from_db(fields=['status'])
+                if task.status != 'cancelled':
+                    task.status = 'failed'
+                    task.error = failure_text
+                    execution_meta = dict((task.parameters or {}).get('_execution') or {})
+                    execution_meta.update({
+                        'error_code': e.__class__.__name__,
+                        'error_detail': str(e)[:500],
+                        'failed_at': timezone.now().isoformat(),
+                    })
+                    task.parameters = {**(task.parameters or {}), '_execution': execution_meta}
+                    task.save(update_fields=['status', 'error', 'parameters', 'updated_time'])
             except Exception:
                 pass
             logger.error(f"任务执行失败: {e}", exc_info=True)
