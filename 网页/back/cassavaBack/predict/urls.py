@@ -12,6 +12,7 @@ from django.middleware.csrf import get_token
 from . import views
 from . import permission_views
 from . import auth_views
+from .assistant import assistant_chat
 from .import_views import ImportJobViewSet
 
 # 创建默认路由器并注册视图集
@@ -79,4 +80,7 @@ urlpatterns = [
 
     path('system/settings/', views.SystemSettingView.as_view(), name='system-settings'),
     path('system/settings/public/', views.public_settings, name='public-settings'),
+
+    # 结果中心「PPD 助手」：检索增强对话（SSE 流式，Token 鉴权）
+    path('assistant/chat/', assistant_chat, name='assistant-chat'),
 ]

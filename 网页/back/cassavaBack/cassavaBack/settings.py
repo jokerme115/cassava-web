@@ -411,6 +411,16 @@ DEEPLABV3_RESNET101_PATH = _resolve_optional_model_path(
 DEEPLABV3_RESNET50_PATH = _resolve_optional_model_path('DEEPLABV3_RESNET50_PATH')
 DEEPLABV3_MOBILENET_PATH = _resolve_optional_model_path('DEEPLABV3_MOBILENET_PATH')
 
+# ---- 结果中心「PPD 助手」大模型配置（检索增强：模型只说话，数字来自检索）----
+# 渠道为 OpenAI 兼容 chat/completions。生产走 opencode.ai/inference/openai/v1 + glm-5.3-flash（Go 订阅）；
+# 本地联调可用 DeepSeek 官方 key。密钥一律放 .env，不入库不入 Git。
+ASSISTANT_LLM_ENABLED = _env_bool('ASSISTANT_LLM_ENABLED', True)
+ASSISTANT_LLM_BASE_URL = os.getenv('ASSISTANT_LLM_BASE_URL', 'https://opencode.ai/inference/openai/v1')
+ASSISTANT_LLM_API_KEY = os.getenv('ASSISTANT_LLM_API_KEY', '')
+ASSISTANT_LLM_MODEL = os.getenv('ASSISTANT_LLM_MODEL', 'glm-5.3-flash')
+ASSISTANT_LLM_TIMEOUT = _env_int('ASSISTANT_LLM_TIMEOUT', 60)
+
+
 DEFAULT_DEEPLAB_MODEL_KEY = os.getenv('DEFAULT_DEEPLAB_MODEL_KEY', 'resnet101').strip().lower() or 'resnet101'
 
 DEEPLAB_MODEL_CONFIGS = {
