@@ -115,6 +115,12 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
     return filtered;
   }, [taskFilter, results, searchQuery, filterStatus]);
 
+  // 提供给 PPD 助手的"第一条已加载记录"（不额外发请求）
+  const assistantRecord = useMemo(() => {
+    const first = taskResults[0];
+    return first?.imageName ? { fileName: first.imageName, ppd: effectivePpd(first) } : null;
+  }, [taskResults]);
+
   const navigating = resultsLoading;
   useEffect(() => {
     if ((!modalOpen && !editorOpen) || !selectedResult) return;
@@ -393,7 +399,7 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
         />
       )}
 
-      <PpdAssistant currentUser={currentUser} />
+      <PpdAssistant currentUser={currentUser} latestRecord={assistantRecord} />
     </div>
   );
 };
