@@ -3,6 +3,7 @@ import ResultPreview from './ResultPreview';
 import WorkspacePagination from './WorkspacePagination';
 import { useViewState } from '../utils/useViewState';
 import ExportDesigner from './ExportDesigner';
+import PpdAssistant from './PpdAssistant';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Download,
@@ -391,6 +392,8 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
           }}
         />
       )}
+
+      <PpdAssistant currentUser={currentUser} />
     </div>
   );
 };
