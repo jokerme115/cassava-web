@@ -23,8 +23,9 @@ import requests
 from django.conf import settings
 from django.utils import timezone
 from django.db.models import Q
-from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.decorators import api_view, authentication_classes, permission_classes, renderer_classes
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.renderers import BaseRenderer, JSONRenderer
 from rest_framework.response import Response
 
 from .authentication import ExpiringTokenAuthentication
@@ -356,7 +357,17 @@ def build_followup(payloads, not_found, scope):
     return None
 
 
+class EventStreamRenderer(BaseRenderer):
+    """允许 Accept: text/event-stream 通过 DRF 内容协商（SSE 专用）。"""
+    media_type = 'text/event-stream'
+    format = 'text'
+
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        return data
+
+
 @api_view(['POST'])
+@renderer_classes([EventStreamRenderer, JSONRenderer])
 @authentication_classes([ExpiringTokenAuthentication])
 @permission_classes([IsAuthenticated])
 def assistant_chat(request):
