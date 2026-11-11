@@ -113,14 +113,18 @@ def record_payload(record):
     }
 
 
-def base_queryset():
-    return (PredictionResult.objects
-            .select_related('original_image', 'processing_task', 'segmentation')
-            .prefetch_related('corrections')
-            .order_by('-prediction_time'))
+def base_queryset(user=None):
+    """与结果中心列表同一可见性口径：本人图片/任务的记录，超管看全部。"""
+    qs = (PredictionResult.objects
+          .select_related('original_image', 'processing_task', 'segmentation')
+          .prefetch_related('corrections')
+          .order_by('-prediction_time'))
+    if user and not user.is_superuser:
+        qs = qs.filter(Q(original_image__owner=user) | Q(processing_task__owner=user))
+    return qs
 
 
-def retrieve(message, last_file=None):
+def retrieve(message, last_file=None, user=None):
     """按用户输入检索结果中心记录。
 
     返回 (records_payload, cards, scope_note, not_found)。
@@ -133,7 +137,7 @@ def retrieve(message, last_file=None):
         seen = set()
         for fn in filenames:
             stem = fn.rsplit('.', 1)[0].strip()
-            hit = list(base_queryset().filter(
+            hit = list(base_queryset(user).filter(
                 Q(original_image__name__iexact=fn) | Q(original_image__name__icontains=stem)
             )[:3])
             if hit:
@@ -147,7 +151,7 @@ def retrieve(message, last_file=None):
     elif last_file:
         scope = 'named'
         stem = str(last_file).rsplit('.', 1)[0].strip()
-        matched = list(base_queryset().filter(
+        matched = list(base_queryset(user).filter(
             Q(original_image__name__iexact=last_file) | Q(original_image__name__icontains=stem)
         )[:1])
         if not matched:
@@ -157,12 +161,12 @@ def retrieve(message, last_file=None):
     if not matched and percentages:
         # 提到具体数值（如"10.42%"）但没指名文件：按数值近似匹配
         target = percentages[0]
-        candidates = list(base_queryset()[:200])
+        candidates = list(base_queryset(user)[:200])
         matched = [c for c in candidates if c.ppd_value is not None
                    and abs(float(c.ppd_value) - target) < 0.02][:MAX_NAMED]
 
     if not matched and scope == 'recent':
-        matched = list(base_queryset()[:RECENT_LIMIT])
+        matched = list(base_queryset(user)[:RECENT_LIMIT])
 
     payloads = [record_payload(r) for r in matched]
     if scope == 'named' and not not_found:
@@ -380,7 +384,7 @@ def assistant_chat(request):
     def stream():
         try:
             yield _sse({'type': 'status', 'text': '正在检索结果中心记录…'})
-            payloads, cards, scope_note, not_found = retrieve(message, last_file)
+            payloads, cards, scope_note, not_found = retrieve(message, last_file, request.user)
             scope = 'named' if (not_found or any(
                 p['fileName'] and p['fileName'] in [m.group().strip() for m in FILE_RE.finditer(message)]
                 for p in payloads) or last_file) else 'recent'

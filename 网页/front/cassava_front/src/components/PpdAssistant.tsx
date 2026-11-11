@@ -240,7 +240,7 @@ const AssistantPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   return (
     <div
       className="ppd-assistant-panel fixed bottom-5 right-5 z-40 flex w-[min(400px,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-hairline bg-white shadow-float"
-      style={{ height: 'min(620px, calc(100vh - 7rem))' }}
+      style={{ height: 'min(620px, calc(100vh - 11rem))' }}
       role="dialog"
       aria-label="PPD 助手"
     >
