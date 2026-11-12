@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Activity, AlertCircle, BarChart3, Bot, FolderOpen, History, Loader2, MessageSquare, Play, ShieldCheck, X } from 'lucide-react';
+import { Activity, AlertCircle, BarChart3, Bot, FolderOpen, History, Loader2, MessageSquare, Play, ShieldCheck, SquarePen, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import AgentPanel, { AgentPanelHandle } from './AgentPanel';
 import PageHeader from './PageHeader';
@@ -44,17 +44,42 @@ const relativeTime = (value: string) => {
 };
 
 const HISTORY_STYLE = `
-.agent-history { transform: translateX(-102%); visibility: hidden; transition: transform .3s cubic-bezier(.22,.8,.2,1), visibility 0s linear .3s; }
+/* 窄屏：历史栏是从右侧滑出的浮层；≥1024 时变成常驻右栏，不再受 data-open 控制 */
+.agent-history { transform: translateX(104%); visibility: hidden; transition: transform .3s cubic-bezier(.22,.8,.2,1), visibility 0s linear .3s; }
 .agent-history[data-open="true"] { transform: translateX(0); visibility: visible; transition: transform .3s cubic-bezier(.22,.8,.2,1); }
 .agent-scrim { opacity: 0; visibility: hidden; transition: opacity .24s ease, visibility 0s linear .24s; }
 .agent-scrim[data-open="true"] { opacity: 1; visibility: visible; transition: opacity .24s ease; }
-@media (prefers-reduced-motion: reduce) { .agent-history, .agent-scrim { transition: none; } }
+@media (min-width: 1024px) {
+  .agent-history, .agent-history[data-open="true"], .agent-history[data-open="false"] { transform: none; visibility: visible; transition: none; }
+  /* 窗口很矮时右栏需要竖向滚动：底部渐隐，提示下面还有内容 */
+  .agent-rail-scroll {
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 12px), transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 12px), transparent 100%);
+  }
+}
+/* 列表底部做 14px 渐隐：条数超出一屏时，被裁掉的那一行看起来是「还有更多」，而不是断掉 */
+.hist-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #d5ddcf transparent;
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent 100%);
+}
+.hist-scroll::-webkit-scrollbar { width: 6px; }
+.hist-scroll::-webkit-scrollbar-thumb { background: #dfe4d8; border-radius: 999px; }
+.hist-scroll::-webkit-scrollbar-track { background: transparent; }
+.agent-rail-card { animation: agentRailIn .44s cubic-bezier(.22,.8,.2,1) both; }
+@keyframes agentRailIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .agent-history, .agent-scrim { transition: none; }
+  .agent-rail-card { animation: none; }
+}
 `;
 
 /**
- * 智能体独立页：左侧对话主区（执行过程、确认卡、进度都在气泡里），
- * 右侧是使用说明与能力清单，窄屏（<1280）只留对话，说明由空态承担。
- * 历史会话从左上角滑出，覆盖在对话区之上，不挤压正文。
+ * 智能体独立页：中间是对话主区（执行过程、确认卡、进度都在气泡里），
+ * 右侧一列从上到下是「历史会话」「怎么用」「智能体会做」。
+ * 历史会话常驻右栏（零会话时也给空态，不让功能看起来消失）；
+ * 窄屏（<1024）右栏收起成右侧滑出浮层，由页头「历史」按钮唤出。
  */
 const AgentPage: React.FC<{ currentUser?: User }> = ({ currentUser }) => {
   const displayName = (currentUser?.first_name || currentUser?.username || '').trim();
@@ -86,18 +111,13 @@ const AgentPage: React.FC<{ currentUser?: User }> = ({ currentUser }) => {
   }, []);
 
   // 游客没有 agent 会话（上传本身也需要登录），不去打这个接口，免得空报一条「加载失败」
-  const canLoadHistory = !currentUser?.is_guest;
+  const isGuest = !!currentUser?.is_guest;
+  const canLoadHistory = !isGuest;
 
   useEffect(() => {
     if (!canLoadHistory) return;
     void loadSessions();
   }, [canLoadHistory, loadSessions]);
-
-  // 打开历史时顺手刷新一次，刚聊完的会话才会出现在最上面
-  useEffect(() => {
-    if (!canLoadHistory || !railOpen) return;
-    void loadSessions();
-  }, [canLoadHistory, railOpen, loadSessions]);
 
   useEffect(() => {
     if (!railOpen) return undefined;
@@ -131,11 +151,72 @@ const AgentPage: React.FC<{ currentUser?: User }> = ({ currentUser }) => {
     }
   }, [opening]);
 
-  const showHistoryEntry = (sessions?.length ?? 0) > 0 || historyError;
+  const startNewSession = useCallback(() => {
+    if (opening) return;
+    panelRef.current?.reset();
+    setActiveSession(null);
+    setRailOpen(false);
+  }, [opening]);
+
+  const sessionCount = sessions?.length ?? 0;
+
+  const emptyBlock = 'flex h-full min-h-[120px] flex-col items-center justify-center gap-1 px-2 py-6 text-center';
+
+  const historyBody = isGuest ? (
+    <div className={emptyBlock}>
+      <History className="h-4 w-4 text-muted-light" />
+      <p className="text-xs text-muted">登录后可查看历史会话</p>
+      <p className="text-[11px] leading-relaxed text-muted-light">登录后每次对话都会自动保存</p>
+    </div>
+  ) : historyError ? (
+    <div data-testid="agent-history-error" className={`${emptyBlock} gap-1.5`}>
+      <AlertCircle className="h-4 w-4 text-muted-light" />
+      <p className="text-xs text-muted">历史记录加载失败</p>
+      <button type="button" onClick={() => void loadSessions()} className="text-[11px] text-accent-text underline-offset-2 hover:underline">重试</button>
+    </div>
+  ) : sessions === null ? (
+    <p className="flex h-full min-h-[120px] items-center justify-center gap-1.5 px-2 py-6 text-xs text-muted"><Loader2 className="h-3.5 w-3.5 animate-spin text-accent-line" />正在加载…</p>
+  ) : sessionCount === 0 ? (
+    <div className={emptyBlock}>
+      <MessageSquare className="h-4 w-4 text-muted-light" />
+      <p className="text-xs text-muted">暂无历史会话</p>
+      <p className="text-[11px] leading-relaxed text-muted-light">发起对话后自动保存</p>
+    </div>
+  ) : (
+    <ul className="space-y-1">
+      {sessions.map((item) => {
+        const isActive = item.session === activeSession;
+        return (
+          <li key={item.session}>
+            <button
+              type="button"
+              data-active={isActive}
+              aria-current={isActive ? 'true' : undefined}
+              onClick={() => void openSession(item.session)}
+              disabled={!!opening}
+              className={`w-full rounded-xl px-2.5 py-2 text-left transition-colors disabled:opacity-60 ${
+                isActive
+                  ? 'bg-[#f1f5ef] shadow-[inset_3px_0_0_0_#3d8060] ring-1 ring-inset ring-accent-line/25'
+                  : 'hover:bg-surface-muted'
+              }`}
+            >
+              <span className="flex items-baseline gap-1.5">
+                <span className={`min-w-0 flex-1 truncate text-[13px] leading-[18px] ${isActive ? 'font-semibold text-ink' : 'text-ink-secondary'}`} title={item.title || '未命名会话'}>
+                  {item.title || '未命名会话'}
+                </span>
+                {opening === item.session && <Loader2 className="h-3 w-3 shrink-0 animate-spin text-accent-line" />}
+              </span>
+              <span className="mt-0.5 block text-[11px] leading-[15px] text-muted-light">{relativeTime(item.updatedAt)}</span>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
 
   return (
     <div className="flex h-full min-h-0 flex-col px-3 py-3 sm:px-5 lg:px-6">
-      <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 gap-5 xl:gap-6">
+      <div className="relative mx-auto flex min-h-0 w-full max-w-7xl flex-1 gap-5 xl:gap-6">
         <section
           data-testid="agent-workspace"
           className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[16px] border border-hairline bg-white shadow-card"
@@ -144,133 +225,108 @@ const AgentPage: React.FC<{ currentUser?: User }> = ({ currentUser }) => {
           <header className="shrink-0 border-b border-hairline px-4 py-3 sm:px-5">
             <div className="mx-auto w-full max-w-[760px]">
               <PageHeader
-              leading={<span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-fill text-white"><Bot className="h-5 w-5" /></span>}
-              title="智能体"
-              subtitle="上传图片、创建预测任务、跟踪进度，执行前一律由你确认。"
-              actions={showHistoryEntry ? (
-                <button
-                  type="button"
-                  onClick={() => setRailOpen((open) => !open)}
-                  aria-expanded={railOpen}
-                  aria-label="历史会话"
-                  className={`inline-flex h-9 items-center gap-1.5 rounded-pill border px-3 text-xs transition-colors ${railOpen ? 'border-accent-line/50 bg-surface-muted text-ink' : 'border-hairline bg-white text-ink-secondary hover:bg-surface-muted'}`}
-                >
-                  <History className="h-3.5 w-3.5" />
-                  历史
-                  {sessions && sessions.length > 0 && <span className="tabular-nums text-muted">{sessions.length}</span>}
-                </button>
-              ) : undefined}
-            />
+                leading={<span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-fill text-white"><Bot className="h-5 w-5" /></span>}
+                title="智能体"
+                subtitle="上传图片、创建预测任务、跟踪进度，执行前一律由你确认。"
+                actions={(
+                  <button
+                    type="button"
+                    onClick={() => setRailOpen(true)}
+                    aria-expanded={railOpen}
+                    aria-label="历史会话"
+                    className="inline-flex h-9 items-center gap-1.5 rounded-pill border border-hairline bg-white px-3 text-xs text-ink-secondary transition-colors hover:bg-surface-muted lg:hidden"
+                  >
+                    <History className="h-3.5 w-3.5" />
+                    历史
+                    {sessionCount > 0 && <span className="tabular-nums text-muted">{sessionCount}</span>}
+                  </button>
+                )}
+              />
             </div>
           </header>
 
-          {historyError && (
-            <div data-testid="agent-history-error" className="flex shrink-0 border-b border-hairline px-4 py-1.5 text-[11px] text-muted">
-              <span className="mx-auto flex w-full max-w-[760px] items-center gap-1.5">
-                <AlertCircle className="h-3.5 w-3.5 shrink-0 text-muted-light" />
-                <span className="min-w-0 flex-1 truncate">历史记录加载失败</span>
-                <button type="button" onClick={() => void loadSessions()} className="shrink-0 text-accent-text underline-offset-2 hover:underline">重试</button>
-              </span>
-            </div>
-          )}
-
           <div className="relative flex min-h-0 flex-1">
             <AgentPanel ref={panelRef} displayName={displayName} onSessionChange={setActiveSession} />
-
-            <div
-              className="agent-scrim absolute inset-0 z-10 bg-[#17201a]/15"
-              data-open={railOpen}
-              onClick={() => setRailOpen(false)}
-              aria-hidden="true"
-            />
-            <aside
-              data-testid="agent-history-rail"
-              data-open={railOpen}
-              aria-label="历史会话"
-              aria-hidden={!railOpen}
-              className="agent-history absolute inset-y-0 left-0 z-20 flex w-[280px] max-w-[85%] flex-col border-r border-hairline bg-[#fbfaf6] shadow-[10px_0_28px_-20px_rgba(23,32,26,0.4)]"
-            >
-              <div className="flex items-center justify-between gap-2 border-b border-hairline px-3 py-2.5">
-                <span className="text-xs font-semibold tracking-[0.08em] text-ink-secondary">历史会话</span>
-                <button type="button" onClick={() => setRailOpen(false)} aria-label="收起历史会话" className="rounded-md p-1 text-muted transition-colors hover:bg-surface-sunken hover:text-ink">
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-              <div className="ppd-scroll min-h-0 flex-1 overflow-y-auto p-2">
-                {sessions === null && !historyError ? (
-                  <p className="flex items-center gap-1.5 px-2 py-3 text-xs text-muted"><Loader2 className="h-3.5 w-3.5 animate-spin text-accent-line" />正在加载…</p>
-                ) : !sessions || sessions.length === 0 ? (
-                  <p className="px-2 py-6 text-center text-xs text-muted">{historyError ? '历史记录加载失败' : '暂无历史会话'}</p>
-                ) : (
-                  <ul className="space-y-1">
-                    {sessions.map((item) => {
-                      const isActive = item.session === activeSession;
-                      return (
-                        <li key={item.session}>
-                          <button
-                            type="button"
-                            data-active={isActive}
-                            onClick={() => void openSession(item.session)}
-                            disabled={!!opening}
-                            className={`w-full rounded-xl border px-3 py-2.5 text-left transition-colors disabled:opacity-60 ${
-                              isActive
-                                ? 'border-accent-line/50 bg-white shadow-card'
-                                : 'border-transparent hover:border-hairline hover:bg-white'
-                            }`}
-                          >
-                            <span className="flex items-baseline gap-1.5">
-                              <span className={`min-w-0 flex-1 truncate text-sm ${isActive ? 'font-semibold text-ink' : 'text-ink-secondary'}`} title={item.title || '未命名会话'}>
-                                {item.title || '未命名会话'}
-                              </span>
-                              {opening === item.session && <Loader2 className="h-3 w-3 shrink-0 animate-spin text-accent-line" />}
-                            </span>
-                            <span className="mt-0.5 block text-[11px] text-muted">{relativeTime(item.updatedAt)}</span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
-              {sessions && sessions.length > 0 && (
-                <p className="border-t border-hairline px-3 py-2 text-[11px] leading-relaxed text-muted-light">点一条会话继续聊，输入会接着那段对话。</p>
-              )}
-            </aside>
           </div>
         </section>
 
-        <aside className="hidden w-[288px] shrink-0 flex-col gap-3 overflow-y-auto pb-1 xl:flex" aria-label="智能体使用说明">
-          <section className="rounded-[16px] border border-hairline bg-white p-4 shadow-card">
+        <div
+          className="agent-scrim absolute inset-0 z-10 bg-[#17201a]/15 lg:hidden"
+          data-open={railOpen}
+          onClick={() => setRailOpen(false)}
+          aria-hidden="true"
+        />
+
+        <aside
+          data-testid="agent-history-rail"
+          data-open={railOpen}
+          aria-label="历史会话"
+          className="agent-history agent-rail-scroll absolute inset-y-0 right-0 z-20 flex w-[280px] max-w-[85%] flex-col gap-0 overflow-hidden rounded-[16px] border border-hairline bg-white shadow-float lg:static lg:z-auto lg:w-[272px] lg:max-w-none lg:flex-none lg:shrink-0 lg:gap-3 lg:overflow-y-auto lg:overflow-x-hidden lg:rounded-none lg:border-0 lg:bg-transparent lg:pb-3 lg:shadow-none xl:w-[288px]"
+        >
+          <section
+            data-testid="agent-history-card"
+            className="agent-rail-card flex min-h-0 flex-1 flex-col overflow-hidden rounded-[16px] border border-hairline bg-white shadow-card lg:min-h-[232px]"
+          >
+            <div className="flex shrink-0 items-center gap-1.5 border-b border-hairline px-2.5 py-2">
+              <History className="h-3.5 w-3.5 shrink-0 text-muted-light" />
+              <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">历史会话</h2>
+              {sessionCount > 0 && (
+                <span className="rounded-pill bg-surface-sunken px-1.5 text-[10px] font-medium leading-[16px] tabular-nums text-ink-secondary">{sessionCount}</span>
+              )}
+              <span className="min-w-0 flex-1" />
+              <button
+                type="button"
+                onClick={startNewSession}
+                disabled={!!opening}
+                className="inline-flex h-6 shrink-0 items-center gap-1 rounded-pill px-1.5 text-[11px] text-muted transition-colors hover:bg-surface-muted hover:text-ink disabled:opacity-50"
+              >
+                <SquarePen className="h-3 w-3" />
+                新会话
+              </button>
+              <button
+                type="button"
+                onClick={() => setRailOpen(false)}
+                aria-label="收起历史会话"
+                className="shrink-0 rounded-md p-1 text-muted transition-colors hover:bg-surface-sunken hover:text-ink lg:hidden"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            <div className="hist-scroll min-h-0 flex-1 overflow-y-auto px-2 pb-2 pt-2">{historyBody}</div>
+          </section>
+
+          <section className="agent-rail-card hidden shrink-0 rounded-[16px] border border-hairline bg-white px-3 py-2.5 shadow-card lg:block" style={{ animationDelay: '60ms' }}>
             <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">怎么用</h2>
-            <ol className="mt-3 space-y-3">
+            <ol className="mt-2 space-y-1.5">
               {GUIDE.map((item, index) => (
-                <li key={item.title} className="flex gap-2.5">
+                <li key={item.title} className="flex gap-2">
                   <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-fill/10 text-[11px] font-semibold tabular-nums text-accent-text">
                     {index + 1}
                   </span>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-ink">{item.title}</p>
-                    <p className="mt-0.5 text-xs leading-relaxed text-muted">{item.desc}</p>
+                    <p className="text-[13px] font-medium leading-[18px] text-ink">{item.title}</p>
+                    <p className="mt-0.5 text-[11px] leading-[15px] text-muted">{item.desc}</p>
                   </div>
                 </li>
               ))}
             </ol>
           </section>
 
-          <section className="rounded-[16px] border border-hairline bg-white p-4 shadow-card">
+          <section className="agent-rail-card hidden shrink-0 rounded-[16px] border border-hairline bg-white px-3 py-2.5 shadow-card lg:block" style={{ animationDelay: '120ms' }}>
             <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">智能体会做</h2>
-            <ul className="mt-2.5 space-y-1.5">
+            <ul className="mt-2 grid grid-cols-2 gap-1.5">
               {ABILITIES.map((item) => (
-                <li key={item.label} className="flex items-center gap-2 text-xs text-ink-secondary">
+                <li key={item.label} className="flex items-center gap-1.5 text-[11px] leading-[15px] text-ink-secondary">
                   <item.icon className="h-3.5 w-3.5 shrink-0 text-muted-light" />
                   <span className="truncate">{item.label}</span>
                 </li>
               ))}
             </ul>
-            <p className="mt-3 border-t border-hairline pt-2.5 text-[11px] leading-relaxed text-muted-light">
-              每个动作都会以「执行过程」形式显示在回复顶部，全部结束后收成一行摘要。上百张的批量会自动分批上传，进度条就在确认卡里。
+            <p className="mt-2.5 border-t border-hairline pt-2 text-[11px] leading-[15px] text-muted-light">
+              每个动作都以「执行过程」显示在回复顶部，结束后收成一行摘要；上百张会自动分批上传。
             </p>
-            <p className="mt-2 text-[11px] leading-relaxed text-muted-light">
+            <p className="mt-1.5 text-[11px] leading-[15px] text-muted-light">
               创建的任务到
               <Link to="/tasks" className="mx-0.5 font-medium text-accent-text underline-offset-2 hover:underline">任务中心</Link>
               看进度，结果到
