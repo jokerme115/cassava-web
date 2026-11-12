@@ -7,6 +7,7 @@ CATEGORIES = {
     'prediction': '预测结果',
     'task': '任务管理',
     'folder': '文件夹管理',
+    'agent': '智能体',
     'system': '系统管理',
     'security': '安全管理'
 }
@@ -42,9 +43,11 @@ PERMISSIONS = {
     'create_prediction': {'name': '创建预测任务', 'category': CATEGORIES['prediction'], 'description': '允许创建新的预测任务'},
     'export_prediction': {'name': '导出预测结果', 'category': CATEGORIES['prediction'], 'description': '允许导出预测结果'},
 
+    # 智能体
+    'use_agent': {'name': '使用智能体', 'category': CATEGORIES['agent'], 'description': '允许使用结果中心智能体（按角色/单人额度限制每日调用次数）'},
+
     # 系统管理
-    'manage_user': {'name': '管理系统用户', 'category': CATEGORIES['system'], 'description': '允许管理系统用户'},
-    'manage_role': {'name': '管理系统角色', 'category': CATEGORIES['system'], 'description': '允许管理系统角色'},
+    'manage_user': {'name': '管理系统用户', 'category': CATEGORIES['system'], 'description': '允许管理系统用户'},    'manage_role': {'name': '管理系统角色', 'category': CATEGORIES['system'], 'description': '允许管理系统角色'},
     'manage_permission': {'name': '管理系统权限', 'category': CATEGORIES['system'], 'description': '允许管理系统权限'},
     
     # 细粒度权限管理
@@ -94,7 +97,8 @@ ROLES = {
             'view_image', 'upload_image', 'delete_image', 'edit_image',
             'view_folder', 'create_folder', 'edit_folder',
             'view_task', 'create_task', 'cancel_task', 'delete_task',
-            'view_prediction', 'view_segmentation', 'export_prediction'
+            'view_prediction', 'view_segmentation', 'export_prediction',
+            'use_agent'
         ],
         'description': '高级用户，拥有更多操作权限'
     }

@@ -502,6 +502,11 @@ class Role(BaseModel):
         verbose_name="权限"
     )
     is_active = models.BooleanField(default=True, verbose_name="是否激活")
+    # 智能体每日调用额度：None=跟随系统默认，0=不限，N=每天 N 次
+    agent_daily_quota = models.PositiveIntegerField(
+        null=True, blank=True, verbose_name="智能体每日额度",
+        help_text="留空表示跟随系统默认额度，0 表示不限次数",
+    )
 
     class Meta:
         verbose_name = "用户角色"
@@ -874,6 +879,42 @@ class LoginSession(models.Model):
         if not self.key:
             self.key = secrets.token_hex(20)
         return super().save(*args, **kwargs)
+
+
+class AgentUsage(models.Model):
+    """智能体每日调用计数（按用户按天累加，一次提问计一次）"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='agent_usage', verbose_name="用户")
+    date = models.DateField(verbose_name="日期", db_index=True)
+    count = models.IntegerField(default=0, verbose_name="调用次数")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间")
+
+    class Meta:
+        verbose_name = "智能体用量"
+        verbose_name_plural = "智能体用量"
+        unique_together = ('user', 'date')
+        indexes = [models.Index(fields=['user', 'date'], name='agent_usage_user_date_idx')]
+
+    def __str__(self):
+        return f'{self.user_id}@{self.date}: {self.count}'
+
+
+class AgentQuotaOverride(models.Model):
+    """单人智能体额度覆盖，优先于角色额度
+
+    daily_quota: None=跟随角色/系统默认，0=不限，N=每天 N 次
+    """
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='agent_quota', verbose_name="用户")
+    daily_quota = models.PositiveIntegerField(null=True, blank=True, verbose_name="每日额度",
+                                              help_text="留空表示跟随角色/系统默认，0 表示不限")
+    note = models.CharField(max_length=200, blank=True, verbose_name="备注")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间")
+
+    class Meta:
+        verbose_name = "智能体额度覆盖"
+        verbose_name_plural = "智能体额度覆盖"
+
+    def __str__(self):
+        return f'{self.user_id}: {self.daily_quota}'
 
 
 # Register durable import models after shared resource classes are defined.

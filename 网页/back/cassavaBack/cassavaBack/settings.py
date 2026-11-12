@@ -437,6 +437,8 @@ ASSISTANT_AGENT_TOKEN_FILE = os.getenv('ASSISTANT_AGENT_TOKEN_FILE', '')
 ASSISTANT_AGENT_BATCH_DIR = os.getenv('ASSISTANT_AGENT_BATCH_DIR', '')
 # 单轮事件流挂起秒数（有事件自动续期，无事件到期兜底；收到权限确认后重置）
 ASSISTANT_AGENT_POLL_MAX = _env_int('ASSISTANT_AGENT_POLL_MAX', 120)
+# 智能体每日默认额度（角色/单人都未设置时生效；0 表示不限）
+ASSISTANT_AGENT_DEFAULT_DAILY_QUOTA = _env_int('ASSISTANT_AGENT_DEFAULT_DAILY_QUOTA', 50)
 
 
 DEFAULT_DEEPLAB_MODEL_KEY = os.getenv('DEFAULT_DEEPLAB_MODEL_KEY', 'resnet101').strip().lower() or 'resnet101'

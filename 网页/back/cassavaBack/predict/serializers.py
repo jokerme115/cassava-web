@@ -507,8 +507,8 @@ class RoleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Role
-        fields = ['id', 'name', 'description', 'is_active', 'permissions_count', 
-                  'permission_ids', 'user_count', 'created_at', 'updated_at']
+        fields = ['id', 'name', 'description', 'is_active', 'permissions_count',
+                  'permission_ids', 'user_count', 'agent_daily_quota', 'created_at', 'updated_at']
 
     def get_permissions_count(self, obj):
         return obj.permissions.count()

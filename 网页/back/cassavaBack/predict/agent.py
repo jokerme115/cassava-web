@@ -45,16 +45,100 @@ from datetime import datetime
 
 import requests
 from django.conf import settings
+from django.db import IntegrityError
+from django.db.models import F
 from django.http import StreamingHttpResponse
+from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes, renderer_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .assistant import EventStreamRenderer, JSONRenderer
+from .models import AgentQuotaOverride, AgentUsage, Role
+from .permissions import user_has_permission
 
 logger = logging.getLogger(__name__)
 
 UNAVAILABLE_TEXT = '智能体服务暂时不可用，请稍后再试。'
+NO_AGENT_PERMISSION_TEXT = '当前账号没有使用智能体的权限，请联系管理员开通。'
+QUOTA_EXCEEDED_TEXT = '今日智能体额度已用完（{used}/{quota} 次），明日 0 点恢复。'
+
+
+def _today():
+    return timezone.localdate()
+
+
+def _default_quota():
+    try:
+        return int(getattr(settings, 'ASSISTANT_AGENT_DEFAULT_DAILY_QUOTA', 50))
+    except (TypeError, ValueError):
+        return 50
+
+
+def _resolve_quota(user):
+    """每日额度，0 表示不限。优先级：超管不限 > 单人覆盖 > 角色（最宽松） > 系统默认。"""
+    if getattr(user, 'is_superuser', False):
+        return 0
+    override = AgentQuotaOverride.objects.filter(user=user).first()
+    if override is not None and override.daily_quota is not None:
+        return override.daily_quota
+    quotas = [
+        q for q in Role.objects.filter(user_roles__user=user, is_active=True)
+        .values_list('agent_daily_quota', flat=True)
+        if q is not None
+    ]
+    if quotas:
+        return 0 if 0 in quotas else max(quotas)
+    return _default_quota()
+
+
+def _agent_allowed(user):
+    if getattr(user, 'is_superuser', False):
+        return True
+    return bool(user_has_permission(user, 'use_agent'))
+
+
+def quota_state(user):
+    """智能体可用性与当日额度快照"""
+    quota = _resolve_quota(user)
+    used = AgentUsage.objects.filter(user=user, date=_today()).values_list('count', flat=True).first() or 0
+    unlimited = quota == 0
+    allowed = _agent_allowed(user)
+    if not allowed:
+        reason = 'no_permission'
+    elif not unlimited and used >= quota:
+        reason = 'quota_exhausted'
+    else:
+        reason = None
+    return {
+        'allowed': reason is None,
+        'reason': reason,
+        'used': used,
+        'quota': quota,
+        'remaining': None if unlimited else max(quota - used, 0),
+        'unlimited': unlimited,
+        'today': _today().isoformat(),
+    }
+
+
+def bump_usage(user):
+    """今日用量 +1（并发安全：先 UPDATE，未命中再 INSERT，冲突时回退 UPDATE）"""
+    today = _today()
+    if AgentUsage.objects.filter(user=user, date=today).update(count=F('count') + 1):
+        return
+    try:
+        AgentUsage.objects.create(user=user, date=today, count=1)
+    except IntegrityError:
+        AgentUsage.objects.filter(user=user, date=today).update(count=F('count') + 1)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def agent_quota(request):
+    """当前账号的智能体可用性与今日剩余额度"""
+    state = quota_state(request.user)
+    state['defaultQuota'] = _default_quota()
+    return Response(state)
 EMPTY_TURN_TEXT = '本轮智能体没有返回内容，可能是处理超时，请重试或换个说法。'
 CONFIRM_TOOL_HINT = 'plan_upload'
 CONFIRM_ACTION = 'cassava_plan_upload'
@@ -766,6 +850,14 @@ def agent_chat(request):
     message = str(request.data.get('message') or '').strip()
     if not message:
         return Response({'error': '消息不能为空'}, status=400)
+    state = quota_state(request.user)
+    if not state['allowed']:
+        if state['reason'] == 'no_permission':
+            return Response({'detail': NO_AGENT_PERMISSION_TEXT}, status=403)
+        return Response(
+            {'detail': QUOTA_EXCEEDED_TEXT.format(used=state['used'], quota=state['quota'])},
+            status=403,
+        )
     file_names = _normalise_files(request.data.get('fileNames'))
     reuse_session = str(request.data.get('session') or '').strip()
     _write_token_file(request)
@@ -789,6 +881,7 @@ def agent_chat(request):
             logger.exception('智能体服务不可用：发送消息失败')
             yield _sse('error', {'message': UNAVAILABLE_TEXT})
             return
+        bump_usage(request.user)  # 提示词已投递，计一次用量
         yield from _stream_events(session_id, chat_stream=True)
 
     return _sse_response(stream())
