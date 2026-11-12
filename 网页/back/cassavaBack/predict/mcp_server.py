@@ -119,11 +119,37 @@ def find_task_id(payload):
 
 # ---------------- 工具实现 ----------------
 
+def _batch_names(batch_id):
+    """按批次号读回文件清单（桥端 _save_batch 写的 JSON）；失败返回 None。"""
+    safe = ''.join(ch for ch in str(batch_id or '') if ch.isalnum() or ch in '-_')
+    if not safe:
+        return None
+    directory = os.getenv('CASSAVA_BATCH_DIR', '')
+    if not directory:
+        return None
+    path = os.path.join(directory, f'{safe}.json')
+    try:
+        with open(path, encoding='utf-8') as handle:
+            payload = json.load(handle)
+    except (OSError, ValueError):
+        return None
+    names = []
+    for raw in payload.get('fileNames') or []:
+        name = str(raw or '').strip()
+        if name:
+            names.append(name)
+    return names or None
+
+
 def tool_plan_upload(arguments):
-    """确认卡载体：只校验文件名，不碰平台 API。"""
+    """确认卡载体：只校验文件名，不碰平台 API。大清单按 batchId 从桥端批次文件取。"""
     raw_names = arguments.get('fileNames')
     if not isinstance(raw_names, list) or not raw_names:
-        return {'ok': False, 'error': 'fileNames 不能为空，请给出要上传的图片文件名列表。'}
+        raw_names = _batch_names(arguments.get('batchId'))
+        if raw_names is None:
+            return {'ok': False,
+                    'error': 'fileNames 不能为空：小清单直接传 fileNames，'
+                             '大清单传消息里给的 batchId（完整清单已存服务端）。'}
     file_names = []
     for raw in raw_names:
         name = str(raw or '').strip()
@@ -260,7 +286,9 @@ TOOLS = [
         'name': 'plan_upload',
         'description': ('规划一次图片上传并生成确认卡（写操作的确认环节，必须最先调用）。'
                         '只校验文件名，不调用平台 API、不建任务；'
-                        '返回 taskName、model、count、fileNames 供用户确认。'),
+                        '返回 taskName、model、count 供用户确认。'
+                        '小清单直接传 fileNames；消息给了 batchId 时只传 batchId，'
+                        '不要在参数里回传几百个文件名。'),
         'inputSchema': {
             'type': 'object',
             'properties': {
@@ -268,9 +296,11 @@ TOOLS = [
                 'model': {'type': 'string', 'enum': list(ALLOWED_MODELS),
                           'description': '预测模型，默认 pbt_c512'},
                 'fileNames': {'type': 'array', 'items': {'type': 'string'},
-                              'description': '要上传的图片文件名（jpg/jpeg/png）'},
+                              'description': '要上传的图片文件名（jpg/jpeg/png）；小清单用'},
+                'batchId': {'type': 'string',
+                            'description': '大清单批次号（形如 UP-XXXXXXXX，来自用户消息）；'
+                                           '传了 batchId 就不要再传 fileNames'},
             },
-            'required': ['fileNames'],
         },
     },
     {

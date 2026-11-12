@@ -433,8 +433,10 @@ ASSISTANT_AGENT_MODEL = json.loads(
 )
 # 平台 Token 落盘位置（MCP 服务器按 CASSAVA_TOKEN_FILE 读取）；为空则不落盘
 ASSISTANT_AGENT_TOKEN_FILE = os.getenv('ASSISTANT_AGENT_TOKEN_FILE', '')
-# 单轮事件流最长挂起秒数（收到权限确认后不再计时）
-ASSISTANT_AGENT_POLL_MAX = _env_int('ASSISTANT_AGENT_POLL_MAX', 60)
+# 大文件清单暂存目录（提示词只带批次号；MCP 服务器按 CASSAVA_BATCH_DIR 读取）；空=MEDIA_ROOT/agent_batches
+ASSISTANT_AGENT_BATCH_DIR = os.getenv('ASSISTANT_AGENT_BATCH_DIR', '')
+# 单轮事件流挂起秒数（有事件自动续期，无事件到期兜底；收到权限确认后重置）
+ASSISTANT_AGENT_POLL_MAX = _env_int('ASSISTANT_AGENT_POLL_MAX', 120)
 
 
 DEFAULT_DEEPLAB_MODEL_KEY = os.getenv('DEFAULT_DEEPLAB_MODEL_KEY', 'resnet101').strip().lower() or 'resnet101'
