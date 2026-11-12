@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useResultsStore } from '../hooks/useResultsStore';
 import { useTaskStore } from '../hooks/useTaskStore';
+import { usePermission } from '../hooks/usePermission';
 import { predictionsApi, resolveFileUrl, tasksApi } from '../services/api';
 import { useSearchParams } from 'react-router-dom';
 import { effectivePpd, formatPpd, formatPpdValue } from '../utils/measurement';
@@ -29,6 +30,10 @@ interface ResultsCenterProps {
 
 const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
   const { t } = useTranslation();
+  // 导出是工具栏主操作：无 export_prediction 时置灰（不隐藏），
+  // 保持占位不变，避免按钮位置随权限变化而错位。
+  const { hasPermission, isLoading: permissionsLoading } = usePermission();
+  const canExportPrediction = Boolean(currentUser?.is_superuser) || hasPermission('export_prediction');
   const [searchParams, setSearchParams] = useSearchParams();
   // 支持从任务中心跳转过来时直接聚焦某个任务的结果：/results?task=123
   const taskParam = searchParams.get('task');
@@ -269,7 +274,7 @@ const ResultsCenter: React.FC<ResultsCenterProps> = ({ currentUser }) => {
               <select aria-label={t('results.review_status_filter')} value={reviewFilter} onChange={event => setReviewFilter(event.target.value)} className="rounded-lg border border-hairline-strong bg-white px-3 py-2 text-sm"><option value="all">{t('results.all_review_status')}</option><option value="unreviewed">{t('results.unreviewed')}</option><option value="reviewed">{t('results.reviewed')}</option></select>
               <span className="text-sm tabular-nums text-muted">{t('results.results_count', { count: totalCount })}</span>
 
-              <ExportDesigner prediction={taskResults.find(item => item.id === selectedResult?.id) || taskResults[0]} count={totalCount} filters={{ ...(taskFilter ? { task_id: taskFilter } : {}), search: searchQuery, status: filterStatus, review_status: reviewFilter }} onExport={exportResults} exporting={exporting} />
+              <ExportDesigner canExport={!permissionsLoading && canExportPrediction} prediction={taskResults.find(item => item.id === selectedResult?.id) || taskResults[0]} count={totalCount} filters={{ ...(taskFilter ? { task_id: taskFilter } : {}), search: searchQuery, status: filterStatus, review_status: reviewFilter }} onExport={exportResults} exporting={exporting} />
               <div className="ml-auto flex rounded-[10px] bg-surface-sunken p-1">
                 <button onClick={() => setViewMode('grid')} className={`rounded-[8px] px-2.5 py-1.5 ${viewMode === 'grid' ? 'bg-white text-ink shadow-sm' : 'text-muted'}`} aria-label="grid"><Grid className="h-4 w-4" /></button>
                 <button onClick={() => setViewMode('list')} className={`rounded-[8px] px-2.5 py-1.5 ${viewMode === 'list' ? 'bg-white text-ink shadow-sm' : 'text-muted'}`} aria-label="list"><List className="h-4 w-4" /></button>

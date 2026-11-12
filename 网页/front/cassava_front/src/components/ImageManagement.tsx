@@ -12,6 +12,7 @@ import ImageResolutionLabel from './ImageResolutionLabel';
 import React, { useState, useMemo, useEffect, useRef, useDeferredValue } from 'react';
 import { Upload, Plus, Trash2, Move, Grid, List, Search, SortAsc, SortDesc, X, ChevronLeft, ChevronRight, Calendar, FolderOpen, FileText, Eye, Share2, Users, Edit, MoreVertical, FolderPlus, Menu } from 'lucide-react';
 import { useImageStore } from '../hooks/useImageStore';
+import { usePermission } from '../hooks/usePermission';
 import { ppdToneClass } from '../utils/ppdTone';
 import { formatPpd } from '../utils/measurement';
 import { Modal, Switch, Input, Button, InputNumber, Dropdown, Tree, TreeSelect, Drawer } from 'antd';
@@ -99,6 +100,12 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
   const [folderTreeAutoExpandParent, setFolderTreeAutoExpandParent] = useState(true);
   const [folderTreeSearch, setFolderTreeSearch] = useState('');
   const isGuest = currentUser?.is_guest;
+  // 权限门控：图片/文件夹的写操作按钮只在有权限时出现，避免点下去才被后端 403。
+  // 权限加载期间 hasPermission 为 false，按钮不渲染，不会出现“先显示后消失”。
+  const { hasPermission } = usePermission();
+  const root = Boolean(currentUser?.is_superuser);
+  const can = (code: string) => root || hasPermission(code);
+  const canUploadImage = Boolean(isGuest) ? false : can('upload_image');
   const isSharedWithMeView = selectedFolder === 'shared_with_me';
   const isMySharesView = selectedFolder === 'my_shares';
   const deferredSearchQuery = useDeferredValue(searchQuery);
@@ -935,7 +942,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
             </div>
         )
       },
-      {
+      ...(can('create_folder') ? [{
         key: 'subfolder',
         label: (
             <div className="flex items-center gap-2" onClick={(e) => {
@@ -950,24 +957,26 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                 <span>{t('images.new_subfolder')}</span>
             </div>
         )
-      },
-      {
-        type: 'divider' as const,
-      },
-      {
-        key: 'delete',
-        danger: true,
-        label: (
-            <div className="flex items-center gap-2" onClick={(e) => {
-                e.stopPropagation();
-                setContextFolder(folder);
-                setShowDeleteFolderModal(true);
-            }}>
-                <Trash2 className="w-4 h-4" />
-                <span>{t('images.delete_folder')}</span>
-            </div>
-        )
-      }
+      }] : []),
+      ...(can('delete_folder') ? [
+        {
+          type: 'divider' as const,
+        },
+        {
+          key: 'delete',
+          danger: true,
+          label: (
+              <div className="flex items-center gap-2" onClick={(e) => {
+                  e.stopPropagation();
+                  setContextFolder(folder);
+                  setShowDeleteFolderModal(true);
+              }}>
+                  <Trash2 className="w-4 h-4" />
+                  <span>{t('images.delete_folder')}</span>
+              </div>
+          )
+        }
+      ] : []),
     ]
   });
 
@@ -1247,6 +1256,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
           </span>
           {!isGuest && (
             <div className="absolute right-0 top-0 hidden h-full items-center rounded-md bg-white px-1 shadow-sm group-hover:flex group-focus-within:flex">
+              {can('create_folder') && (
               <button
                 className="p-1 rounded hover:bg-white"
                 aria-label={t('a11y.create_subfolder', { name: folder.name })}
@@ -1261,6 +1271,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
               >
                 <FolderPlus className="w-3.5 h-3.5 text-muted" />
               </button>
+              )}
               <button
                 className="p-1 rounded hover:bg-white"
                 aria-label={t('a11y.rename_folder', { name: folder.name })}
@@ -1275,6 +1286,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
               >
                 <Edit className="w-3.5 h-3.5 text-muted" />
               </button>
+              {can('delete_folder') && (
               <button
                 className="p-1 rounded hover:bg-white"
                 aria-label={t('a11y.delete_folder', { name: folder.name })}
@@ -1287,6 +1299,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
               >
                 <Trash2 className="w-3.5 h-3.5 text-muted" />
               </button>
+              )}
             </div>
           )}
         </div>
@@ -1338,8 +1351,8 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
 
   const folderSidebar = (
     <div className="flex h-full w-full flex-col bg-white">
+        {!isGuest && can('create_folder') && (
         <div className="p-4 border-b border-hairline bg-white">
-          {!isGuest && (
           <button 
             onClick={() => {
               setNewFolderName('');
@@ -1355,8 +1368,8 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
             <Plus className="w-4 h-4 mr-2" />
             {t('images.create_folder')}
           </button>
-          )}
         </div>
+        )}
         
         <div className="flex-1 min-w-0 p-2 overflow-y-auto overflow-x-hidden">
           <button
@@ -1685,17 +1698,19 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                     <Move className="w-4 h-4 mr-2" />
                     <span>{t('images.move')}</span>
                   </button>
-                  <button
-                    onClick={handleBatchDelete}
-                    className="flex items-center px-3 py-2 bg-white text-ink-secondary rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 text-sm"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    <span>{t('images.delete')}</span>
-                  </button>
+                  {can('delete_image') && (
+                    <button
+                      onClick={handleBatchDelete}
+                      className="flex items-center px-3 py-2 bg-white text-ink-secondary rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 text-sm"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      <span>{t('images.delete')}</span>
+                    </button>
+                  )}
                 </>
               )}
-              {!isGuest && <RecycleBin onChange={() => { void loadImages({ page: imagesPage }); void loadFolders(); }} />}
-              {!isGuest && <ImportWorkspace folders={folders} onComplete={() => { void loadImages({ page: imagesPage }); void loadFolders(); }} />}
+              {!isGuest && (can('delete_image') || can('delete_folder') || can('delete_task')) && <RecycleBin canManage={can} onChange={() => { void loadImages({ page: imagesPage }); void loadFolders(); }} />}
+              {!isGuest && <ImportWorkspace canUpload={canUploadImage} folders={folders} onComplete={() => { void loadImages({ page: imagesPage }); void loadFolders(); }} />}
               {!isGuest && selectedImages.length > 0 && <BulkCaptureTime ids={selectedImages} onDone={() => void loadImages({ page: imagesPage })} />}
               {!isGuest && selectedImages.length > 0 && <Button onClick={() => navigate('/prediction')}>预测所选 {selectedImages.length} 张</Button>}
 

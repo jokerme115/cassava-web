@@ -1,7 +1,7 @@
 import { getUserPreferences } from '../utils/userPreferences';
 import { message } from '../utils/feedback';
 import React, { useEffect, useRef, useState } from 'react';
-import { Button, Dropdown, Drawer, Modal, Progress, Select, Switch, Input, Alert, Spin } from 'antd';
+import { Button, Dropdown, Drawer, Modal, Progress, Select, Switch, Input, Alert, Spin, Tooltip } from 'antd';
 import { Upload, History, RotateCcw } from 'lucide-react';
 import api from '../services/rest/client';
 import { folderPath, useWorkspace, updateWorkspace } from '../utils/workspaceContext';
@@ -18,7 +18,7 @@ const isArchive = (file: File) => /\.(zip|7z|rar)$/i.test(file.name);
 const pathOf = (file: File) => file.webkitRelativePath || file.name;
 const sha256 = async (blob: Blob) => [...new Uint8Array(await crypto.subtle.digest('SHA-256', await blob.arrayBuffer()))].map(n => n.toString(16).padStart(2, '0')).join('');
 
-export default function ImportWorkspace({ folders, onComplete }: { folders: Folder[]; onComplete: () => void }) {
+export default function ImportWorkspace({ folders, onComplete, canUpload = true }: { folders: Folder[]; onComplete: () => void; canUpload?: boolean }) {
   const workspace = useWorkspace();
   const target = workspace.folder && /^\d+$/.test(workspace.folder) ? workspace.folder : workspace.lastWritableFolder;
   const [jobs, setJobs] = useState<ImportJob[]>([]);
@@ -156,13 +156,13 @@ export default function ImportWorkspace({ folders, onComplete }: { folders: Fold
     try { await api.post(`/imports/${job.id}/${action}/`, {}, { timeout: action === 'finalize' ? 600000 : 60000 }); void refresh(); }
     catch (error) { message.error(getApiErrorMessage(error, '操作失败')); }
   };
-  return <div className="import-workspace-controls flex min-w-0 flex-wrap items-center gap-2" onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); choose(Array.from(event.dataTransfer.files)); }}>
+  return <div className="import-workspace-controls flex min-w-0 flex-wrap items-center gap-2" onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); if (!canUpload) return; choose(Array.from(event.dataTransfer.files)); }}>
     <span className="import-target max-w-64 truncate text-xs text-muted" title={folderPath(folders, target)}>上传至：{folderPath(folders, target)}</span>
-    <Dropdown trigger={['click']} disabled={busy} menu={{ items: [{ key: 'images', label: '图片（可多选）' }, { key: 'folder', label: '文件夹' }, { key: 'archive', label: '压缩包（ZIP / 7Z / RAR）' }], onClick: ({ key }) => {
+    <Dropdown trigger={['click']} disabled={busy || !canUpload} menu={{ items: [{ key: 'images', label: '图片（可多选）' }, { key: 'folder', label: '文件夹' }, { key: 'archive', label: '压缩包（ZIP / 7Z / RAR）' }], onClick: ({ key }) => {
       setResumeId(null);
       if (key === 'folder') folderInput.current?.click();
       else if (fileInput.current) { fileInput.current.accept = key === 'archive' ? '.zip,.7z,.rar' : '.jpg,.jpeg,.png,.bmp,.webp,.tif,.tiff,.mpo'; fileInput.current.click(); }
-    } }}><Button aria-label="上传" type="primary" icon={<Upload size={15} />} disabled={busy}>上传</Button></Dropdown>
+    } }}><Tooltip title={canUpload ? '' : '当前账号无此权限'}><span className="inline-flex"><Button aria-label="上传" type="primary" icon={<Upload size={15} />} disabled={busy || !canUpload}>上传</Button></span></Tooltip></Dropdown>
     <Button aria-label="导入任务" icon={<History size={16} />} onClick={() => setOpen(true)} />
     <input ref={fileInput} hidden type="file" multiple accept=".jpg,.jpeg,.png,.bmp,.webp,.tif,.tiff,.mpo,.zip,.7z,.rar" onChange={event => { choose(Array.from(event.target.files || [])); event.target.value = ''; }} />
     <input ref={folderInput} hidden type="file" multiple {...({ webkitdirectory: '' } as React.InputHTMLAttributes<HTMLInputElement>)} onChange={event => { choose(Array.from(event.target.files || [])); event.target.value = ''; }} />

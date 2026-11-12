@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { permissionsApi } from '../services/api';
 import { PERMISSIONS, ROLES, PERMISSION_GROUPS } from '../constants/permissions';
@@ -29,6 +29,10 @@ interface PermissionState {
  */
 export const usePermission = () => {
   const { t } = useTranslation();
+  // 用 ref 持有 t：t 在语言切换/mock 环境下引用会变，若进入 loadPermissions 依赖会导致
+  // 权限被反复拉取（测试里表现为无限循环）。错误文案只在出错时取当前 t 即可。
+  const tRef = useRef(t);
+  tRef.current = t;
   const [state, setState] = useState<PermissionState>({
     permissions: [],
     roles: [],
@@ -55,10 +59,10 @@ export const usePermission = () => {
       setState(prev => ({
         ...prev,
         isLoading: false,
-        error: t('navigation.permission_guard.load_error')
+        error: tRef.current('navigation.permission_guard.load_error')
       }));
     }
-  }, [t]);
+  }, []);
 
   // Check if user has specific permission
   const hasPermission = useCallback((permissionCode: string): boolean => {

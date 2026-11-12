@@ -1,6 +1,6 @@
 import { message } from '../utils/feedback';
 import { useEffect, useState } from 'react';
-import { Alert, Button, Modal, Select } from 'antd';
+import { Alert, Button, Modal, Select, Tooltip } from 'antd';
 import { Download } from 'lucide-react';
 import api from '../services/rest/client';
 import { predictionsApi } from '../services/api';
@@ -11,9 +11,11 @@ import type { PredictionResult } from '../types';
 export type { FigureStyle } from '../utils/exportStyle';
 
 type ExportFilters = { task_id?: string; search?: string; status?: string; review_status?: string; style?: string; version?: string; result_ids?: string };
-export default function ExportDesigner({ prediction, count, filters, onExport, exporting }: {
+export default function ExportDesigner({ prediction, count, filters, onExport, exporting, canExport = true }: {
   prediction?: PredictionResult | null; count: number; filters: ExportFilters;
   onExport: (type: 'csv' | 'xlsx' | 'zip', filters: ExportFilters) => Promise<void>; exporting: boolean;
+  /** 无 export_prediction 权限时按钮置灰并说明原因，避免点了才报 403 */
+  canExport?: boolean;
 }) {
   const [open, setOpen] = useState(false), [style, setStyle] = useState<FigureStyle>(defaults);
   const [version, setVersion] = useState('latest'), [scope, setScope] = useState('filtered');
@@ -60,7 +62,7 @@ export default function ExportDesigner({ prediction, count, filters, onExport, e
     if (missingTemplate) { message.error('请选择可用模板'); return; }
     await onExport(format, exportFilters);
   };
-  return <><Button icon={<Download size={15} />} disabled={!prediction} onClick={() => setOpen(true)}>导出</Button>
+  return <><Tooltip title={canExport ? '' : '当前账号无此权限'}><span className="inline-flex"><Button icon={<Download size={15} />} disabled={!prediction || !canExport} onClick={() => setOpen(true)}>导出</Button></span></Tooltip>
     <Modal title="导出" centered open={open} onCancel={() => { if (!exporting) setOpen(false); }} width={Math.min(1040, window.innerWidth)}
       styles={{ body: { maxHeight: 'min(72vh, calc(100dvh - 200px))', overflowY: 'auto' } }}
       footer={<div className="flex items-center justify-end gap-3"><span className="mr-auto text-xs text-muted">{scope === 'current' ? 1 : count} 条 · {version === 'latest' ? '最新修订优先' : version === 'model' ? '模型原预测' : `修订 v${version}`}</span><Button disabled={exporting} onClick={() => setOpen(false)}>取消</Button><Button type="primary" icon={<Download size={15} />} loading={exporting} disabled={missingTemplate || (format === 'zip' && (previewLoading || !!error))} onClick={() => void submit()}>导出</Button></div>}>

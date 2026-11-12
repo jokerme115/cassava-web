@@ -19,6 +19,7 @@ import {
   X
 } from 'lucide-react';
 import { useTaskStore } from '../hooks/useTaskStore';
+import { usePermission } from '../hooks/usePermission';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import PageHeader from './PageHeader';
@@ -30,6 +31,11 @@ interface TaskCenterProps {
 
 const TaskCenter: React.FC<TaskCenterProps> = ({ currentUser }) => {
   const { t } = useTranslation();
+  // 按钮跟着权限走：没权限的入口直接不渲染，别让用户点了才收到 403。
+  // 权限还在加载时按“没有”处理（hasPermission 返回 false），避免先显示后消失的闪烁。
+  const { hasPermission } = usePermission();
+  const root = Boolean(currentUser?.is_superuser);
+  const can = (code: string) => root || hasPermission(code);
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const focusedLink = useRef<string | null>(null);
@@ -274,11 +280,13 @@ const TaskCenter: React.FC<TaskCenterProps> = ({ currentUser }) => {
                             {task.status === 'failed' && task.type !== 'upload' && (
                               <button onClick={() => { void retryTask(task); }} title={t('tasks.retry')} aria-label={t('tasks.retry')} className="rounded-lg border border-hairline bg-white p-1.5 text-ink-secondary transition hover:bg-white"><RotateCcw className="h-3.5 w-3.5" /></button>
                             )}
-                            {(task.status === 'pending' || task.status === 'running') && (
+                            {(task.status === 'pending' || task.status === 'running') && can('cancel_task') && (
                               <button onClick={() => cancelTask(task.id)} title={t('tasks.cancel_task')} aria-label={t('tasks.cancel_task')} className="rounded-lg border border-hairline bg-white p-1.5 text-ink-secondary transition hover:bg-white"><X className="h-3.5 w-3.5" /></button>
                             )}
                             <button onClick={() => { setSelectedTask(task); setShowTaskDetail(true); setSearchParams({ task: task.id }); }} title={t('tasks.details')} aria-label={t('tasks.details')} className="rounded-lg border border-hairline bg-white p-1.5 text-ink-secondary transition hover:bg-white"><Info className="h-3.5 w-3.5" /></button>
-                            <button onClick={() => handleDelete(task.id)} title={t('tasks.delete_task')} aria-label={t('tasks.delete_task')} className="rounded-lg border border-hairline bg-white p-1.5 text-danger-strong transition hover:bg-[rgba(243,18,96,0.08)]"><Trash2 className="h-3.5 w-3.5" /></button>
+                            {can('delete_task') && (
+                              <button onClick={() => handleDelete(task.id)} title={t('tasks.delete_task')} aria-label={t('tasks.delete_task')} className="rounded-lg border border-hairline bg-white p-1.5 text-danger-strong transition hover:bg-[rgba(243,18,96,0.08)]"><Trash2 className="h-3.5 w-3.5" /></button>
+                            )}
                           </div>
                         </div>
                         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-hairline">
