@@ -7,6 +7,7 @@
 SSE 事件：
   {"type":"status","text":"正在检索结果中心记录…"}
   {"type":"evidence","cards":[...],"scopeNote":"…","notFound":[...]}
+  {"type":"kb","items":[{"id":3,"section":"易混淆情形","question":"…","source":"…"}]}  # 知识库命中时才有
   {"type":"delta","text":"片段"}                     # 多次，顺序拼接为完整回答
   {"type":"followup","text":"还需要看这张的复检状态吗？"}
   {"type":"done","source":"llm|template"}
@@ -17,6 +18,7 @@ SSE 事件：
 """
 import json
 import logging
+import os
 import re
 
 import requests
@@ -28,6 +30,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import BaseRenderer, JSONRenderer
 from rest_framework.response import Response
 
+from . import knowledge
 from .authentication import ExpiringTokenAuthentication
 from .measurement import measurement_info, latest_correction
 from .models import PredictionResult
@@ -63,10 +66,16 @@ SYSTEM_PROMPT = (
     '4. 待复核的记录必须如实说"待复核"，不得说成"已确认"。\n'
     '\n'
     '表达方式：\n'
-    '- 用简体中文，像一位熟悉这批数据的同事在当面讲解：自然、口语一点、有答有引，不要机械套模板；'
+    '- 回答走三段式：①先一句直接结论；②给出依据（检索到的数字+口径，或领域知识出处，格式如"依据：领域知识库§3"）；'
+    '③给一句可执行的动作建议（如建议复核/复拍/查某条记录）。三段要自然衔接，不要生硬编号，'
+    '简单问题可合并成两三句话，但结论-依据-建议的顺序保持。\n'
+    '- 像一位熟悉这批数据的同事在当面讲解：自然、口语一点、有答有引，不要机械套模板；'
     '不用感叹号，不做自我介绍，不出现"作为AI"等字样。\n'
-    '- 长度跟着问题走：简单问题一两句话说清即可；解释口径或给建议时可以分点，但不堆砌客套话。\n'
-    '- 被问到某数值怎么来时，说明口径：有效切面内劣变像素数 ÷ 有效切面像素数 × 100%，按面积加权。\n'
+    '- 便于理解可以用一句类比，例如"4% 相当于每 25 个像素里有 1 个被判为劣变"，类比只能帮理解，'
+    '不得引入检索结果和领域知识之外的新数字。\n'
+    '- 不确定、没依据的问题要直说不确定并说明原因（如"该问题超出结果记录与领域知识库范围"），不许硬答。\n'
+    '- 被问到某数值怎么来时，说明口径：有效切面内劣变像素数 ÷ 有效切面像素数 × 100%，按面积加权；'
+    '分级阈值口径为 <4 健康 / 4–7 轻微 / ≥7 严重（平台分级口径）。\n'
     '- 文中提到的 PPD 数值必须带百分号（如"15.40%"），与依据卡片上的写法一致，不要裸写数字。\n'
     '- 回答末尾可以在相关时自然地提一句还能帮用户查什么，但不是每条回答都要加。'
 )
@@ -307,13 +316,16 @@ def _llm_url():
     return base + '/chat/completions'
 
 
-def _llm_stream(message, history, records_payload):
+def _llm_stream(message, history, records_payload, kb_items=None):
     """逐段 yield delta 事件；成功返回完整文本，失败返回 None。"""
     retrieval_block = json.dumps({
         '说明': '以下为结果中心实时检索到的记录，未列出的数据不可引用',
         '检索结果': records_payload,
     }, ensure_ascii=False)
-    messages = [{'role': 'system', 'content': SYSTEM_PROMPT + '\n<检索结果>\n' + retrieval_block + '\n</检索结果>'}]
+    system_content = SYSTEM_PROMPT + '\n<检索结果>\n' + retrieval_block + '\n</检索结果>'
+    if kb_items:
+        system_content += '\n<领域知识>\n' + knowledge.format_injection(kb_items) + '\n</领域知识>'
+    messages = [{'role': 'system', 'content': system_content}]
     for item in (history or [])[-8:]:
         role = item.get('role')
         content = item.get('content')
@@ -366,6 +378,50 @@ def build_followup(payloads, not_found, scope):
     return None
 
 
+# ---- 问答留痕统计（JSON 文件持久化，答辩用数据） ----
+
+STAT_KEYS = ('total', 'recordHits', 'kbHits', 'noBasis')
+
+
+def _stats_path():
+    return os.path.join(settings.MEDIA_ROOT, 'assistant_stats.json')
+
+
+def _load_stats():
+    try:
+        with open(_stats_path(), encoding='utf-8') as f:
+            data = json.load(f)
+        if isinstance(data, dict):
+            return {k: int(data.get(k) or 0) for k in STAT_KEYS}
+    except Exception:
+        pass
+    return {k: 0 for k in STAT_KEYS}
+
+
+def _save_stats(data):
+    try:
+        os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
+        tmp = _stats_path() + '.tmp'
+        with open(tmp, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False)
+        os.replace(tmp, _stats_path())
+    except Exception:
+        logger.exception('PPD 助手统计写入失败')
+
+
+def bump_stats(record_hit, kb_hit, no_basis):
+    data = _load_stats()
+    data['total'] += 1
+    if record_hit:
+        data['recordHits'] += 1
+    if kb_hit:
+        data['kbHits'] += 1
+    if no_basis:
+        data['noBasis'] += 1
+    _save_stats(data)
+    return data
+
+
 class EventStreamRenderer(BaseRenderer):
     """允许 Accept: text/event-stream 通过 DRF 内容协商（SSE 专用）。"""
     media_type = 'text/event-stream'
@@ -395,10 +451,18 @@ def assistant_chat(request):
                 for p in payloads) or last_file) else 'recent'
             yield _sse({'type': 'evidence', 'cards': cards, 'scopeNote': scope_note,
                         'notFound': not_found})
+            kb_items = knowledge.search_knowledge(message)
+            if kb_items:
+                yield _sse({'type': 'kb', 'items': kb_items})
+
+            def _finish(src):
+                bump_stats(bool(cards), bool(kb_items), not cards and not kb_items)
+                return _sse({'type': 'done', 'source': src})
+
             text, source, emitted = None, 'template', False
             if settings.ASSISTANT_LLM_ENABLED and settings.ASSISTANT_LLM_API_KEY:
                 try:
-                    stream_gen = _llm_stream(message, history, payloads)
+                    stream_gen = _llm_stream(message, history, payloads, kb_items)
                     iterator = iter(stream_gen)
                     while True:
                         try:
@@ -415,7 +479,7 @@ def assistant_chat(request):
                     source = 'template'
                     if emitted:
                         # 已流出部分内容：不再整段重发模板，避免重复
-                        yield _sse({'type': 'done', 'source': 'template'})
+                        yield _finish('template')
                         return
             if not text:
                 text = template_answer(message, payloads, scope_note, not_found,
@@ -424,7 +488,7 @@ def assistant_chat(request):
             followup = build_followup(payloads, not_found, scope)
             if followup:
                 yield _sse({'type': 'followup', **followup})
-            yield _sse({'type': 'done', 'source': source})
+            yield _finish(source)
         except Exception:
             logger.exception('PPD 助手处理失败')
             yield _sse({'type': 'error', 'text': UNAVAILABLE_TEXT})
@@ -434,3 +498,11 @@ def assistant_chat(request):
     response['Cache-Control'] = 'no-cache'
     response['X-Accel-Buffering'] = 'no'
     return response
+
+
+@api_view(['GET'])
+@authentication_classes([ExpiringTokenAuthentication])
+@permission_classes([IsAuthenticated])
+def assistant_stats(request):
+    """问答留痕统计：总数/命中任务记录数/命中知识库数/无依据数。"""
+    return Response(_load_stats())
