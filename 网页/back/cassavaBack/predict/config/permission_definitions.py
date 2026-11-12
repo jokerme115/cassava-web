@@ -94,7 +94,7 @@ ROLES = {
             'view_image', 'upload_image', 'delete_image', 'edit_image',
             'view_folder', 'create_folder', 'edit_folder',
             'view_task', 'create_task', 'cancel_task', 'delete_task',
-            'view_prediction', 'view_segmentation'
+            'view_prediction', 'view_segmentation', 'export_prediction'
         ],
         'description': '高级用户，拥有更多操作权限'
     }

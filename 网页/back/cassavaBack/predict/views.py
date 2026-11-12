@@ -93,6 +93,12 @@ class CassavaImageViewSet(RecyclingActions, viewsets.ModelViewSet, PermissionMix
         'upload_files': 'upload_image',
         'upload_batch': 'upload_image',
         'capture_metadata': 'edit_image',
+        # 回收站动作必须显式映射，否则会兜底到 permission_codename(view_image)，
+        # 导致只有查看权的账号也能永久清除图片（2026-11-12 审计发现）
+        'restore': 'delete_image',
+        'purge': 'delete_image',
+        'deletion_impact': 'view_image',
+        'selection': 'view_image',
     }
 
     def get_queryset(self):
@@ -381,6 +387,11 @@ class FolderViewSet(RecyclingActions, viewsets.ModelViewSet, PermissionMixin, Re
         'destroy': 'delete_folder',
         'images': 'view_folder',
         'add_images': 'edit_folder',
+        # 回收站动作显式映射，避免兜底到 view_folder 后可永久清除（2026-11-12 审计）
+        'restore': 'delete_folder',
+        'purge': 'delete_folder',
+        'delete_with_strategy': 'delete_folder',
+        'deletion_impact': 'view_folder',
     }
 
     def get_serializer_context(self):
@@ -561,6 +572,11 @@ class SegmentationResultViewSet(viewsets.ModelViewSet, PermissionMixin, Response
     permission_codename = 'view_segmentation'
     allow_guest = True
     pagination_class = StandardResultsSetPagination
+    perms_map = {
+        'list': 'view_segmentation',
+        'retrieve': 'view_segmentation',
+        'destroy': 'delete_segmentation',
+    }
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
@@ -606,8 +622,11 @@ class PredictionResultViewSet(viewsets.ModelViewSet, PermissionMixin, ResponseFo
         'editor': 'view_prediction',
         'corrections': 'view_prediction',
         'correction_detail': 'view_prediction',
-        'export': 'view_prediction',
+        'export': 'export_prediction',
         'overlay': 'view_prediction',
+        # 删除结果必须用 delete_prediction：不写映射会兜底到 view_prediction，
+        # 等于"能看就能删"（2026-11-12 审计发现）
+        'destroy': 'delete_prediction',
     }
 
     def get_queryset(self):
@@ -951,6 +970,10 @@ class ProcessingTaskViewSet(RecyclingActions, viewsets.ModelViewSet, PermissionM
         'partial_update': 'create_task',
         'destroy': 'delete_task',
         'cancel': 'cancel_task',
+        # 回收站动作显式映射，避免兜底到 view_task 后可永久清除（2026-11-12 审计）
+        'restore': 'delete_task',
+        'purge': 'delete_task',
+        'deletion_impact': 'view_task',
     }
 
     def perform_destroy(self, instance):
