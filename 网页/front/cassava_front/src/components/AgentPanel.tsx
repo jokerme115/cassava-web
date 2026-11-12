@@ -11,7 +11,7 @@ import { RichText, ThinkingDots, useTypewriter } from './ppdChat';
 /* ----------------------------- 类型 ----------------------------- */
 
 type ConfirmArgs = { taskName?: string; model?: string; count?: number; files?: string[] };
-type ConfirmState = 'pending' | 'sending' | 'uploading' | 'starting' | 'done' | 'cancelled' | 'failed';
+type ConfirmState = 'pending' | 'sending' | 'uploading' | 'starting' | 'done' | 'cancelled' | 'stopped' | 'failed';
 type ConfirmInfo = {
   requestId: string;
   args: ConfirmArgs;
@@ -32,6 +32,8 @@ type AgentMsg = {
   error?: boolean;
   /** 从历史接口回放的消息：没有工具过程，也不套「本轮没有返回内容」的兜底 */
   history?: boolean;
+  /** 用户点了停止：气泡以灰字「已停止」收尾，不算出错也不算空轮 */
+  stopped?: boolean;
   fileCount?: number;
   confirm?: ConfirmInfo;
   task?: TaskInfo;
@@ -243,6 +245,17 @@ const preprocessMarkdown = (text: string): string => {
   return out.join('\n');
 };
 
+/* 汇总类回复（指标清单 / 原本的表格 / 统计结论）单独做成轻卡片，
+   与普通对话文字拉开层次：看起来就是一张「结果卡」，而不是又一堆行。 */
+const isSummaryText = (text: string): boolean => {
+  const lines = text.split('\n').map((line) => line.trim()).filter(Boolean);
+  if (!lines.length) return false;
+  if (lines.filter((line) => line.startsWith('|')).length >= 2) return true;
+  const bullets = lines.filter((line) => /^[-*•]\s+/.test(line)).length;
+  if (bullets < 3) return false;
+  return /汇总|统计|总览|概览|分布|合计|平均|结果|报告/.test(text);
+};
+
 /* ----------------------------- 子组件 ----------------------------- */
 
 const TaskRow: React.FC<{ task: TaskInfo }> = ({ task }) => {
@@ -344,6 +357,7 @@ const ConfirmCard: React.FC<{ info: ConfirmInfo; onExecute: () => void; onReject
         <div className="mt-3 flex flex-wrap items-center gap-x-2 text-xs font-medium text-success-text"><span className="inline-flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" />已确认执行</span>{!!info.skipped && <span className="font-normal text-warning-text">{info.skipped} 张已存在，已直接复用</span>}</div>
       )}
       {state === 'cancelled' && <div className="mt-3 text-xs font-medium text-muted">已取消，不会上传也不会创建任务</div>}
+      {state === 'stopped' && <div className="mt-3 text-xs font-medium text-muted">已停止，任务未创建</div>}
       {state === 'failed' && <div className="mt-3 flex items-start gap-1.5 text-xs text-danger-text"><AlertCircle className="mt-px h-3.5 w-3.5 shrink-0" />{info.error || '执行失败，请稍后重试。'}</div>}
     </div>
   );
@@ -415,12 +429,18 @@ const StepTimeline: React.FC<{ steps: AgentStep[] }> = ({ steps }) => {
 };
 
 const AgentBubble: React.FC<{ message: AgentMsg; onExecute: (id: string) => void; onReject: (id: string) => void }> = ({ message: m, onExecute, onReject }) => {
-  const { shown, typing } = useTypewriter(m.content, !!m.streaming);
+  const typed = useTypewriter(m.content, !!m.streaming);
+  // 用户点了停止：已经收到的字一次性显示，不再让打字机把积压慢慢吐完
+  const shown = m.stopped ? m.content : typed.shown;
+  const streaming = !!m.streaming && !m.stopped;
+  const typing = streaming && typed.typing;
   const hasSteps = !!m.steps && m.steps.length > 0;
   const waiting = !!m.streaming && !m.content && !m.task && !m.confirm && !hasSteps;
   const body = m.error ? shown : preprocessMarkdown(shown);
+  // 汇总/统计类回复走卡片，普通对话文字保持纯文本；判断用完整正文，避免打字过程中样式来回跳
+  const summary = !m.error && !!m.content && isSummaryText(preprocessMarkdown(m.content));
   // turn_end 之后仍然一个字都没有：给一条灰字，避免留下空气泡（历史回放不算）
-  const empty = !m.streaming && !m.content && !m.task && !m.confirm && !m.history;
+  const empty = !m.streaming && !m.content && !m.task && !m.confirm && !m.history && !m.stopped;
   // 阅读顺序：先说话（要做什么），再给确认卡（请你点执行），执行过程时间线放卡片后面当日志。
   // 没有确认卡时（events 流、纯汇报）时间线仍在顶部，先看过程再看结论。
   const steps = hasSteps ? <StepTimeline steps={m.steps!} /> : null;
@@ -432,11 +452,18 @@ const AgentBubble: React.FC<{ message: AgentMsg; onExecute: (id: string) => void
         {stepsFirst && steps}
         {waiting ? <ThinkingDots text={m.status || THINKING_TEXT} /> : (
           (m.content || m.streaming) && (m.error
-            ? <div className="flex items-start gap-1.5 rounded-lg bg-danger-text/5 px-2.5 py-2"><AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-danger-text" /><RichText text={body} tone="text-danger-text" /></div>
-            : <RichText text={body} caret={!!m.streaming || typing} tone="text-ink" />)
+            ? <div className="flex max-w-[68ch] items-start gap-1.5 rounded-lg bg-danger-text/5 px-2.5 py-2"><AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-danger-text" /><RichText text={body} tone="text-danger-text" /></div>
+            : summary
+              ? (
+                <div data-testid="agent-summary-card" className="w-full rounded-xl border border-hairline bg-surface-muted/60 px-3.5 py-3 shadow-[0_1px_0_rgba(255,255,255,0.7)_inset]">
+                  <RichText text={body} caret={streaming || typing} tone="text-ink" />
+                </div>
+              )
+              : <div className="max-w-[64ch]"><RichText text={body} caret={streaming || typing} tone="text-ink" /></div>)
         )}
         {m.confirm && <ConfirmCard info={m.confirm} onExecute={() => onExecute(m.id)} onReject={() => onReject(m.id)} />}
         {!stepsFirst && steps}
+        {m.stopped && !m.streaming && <p data-testid="agent-stopped" className="text-xs text-muted-light">已停止</p>}
         {empty && <p data-testid="agent-empty-turn" className="text-sm text-muted">本轮没有返回内容，请重试</p>}
         {m.task && <TaskRow task={m.task} />}
         {typeof m.tokens === 'number' && !m.streaming && <p className="text-[11px] text-muted-light">本轮用量 {m.tokens.toLocaleString('en-US')} tokens</p>}
@@ -484,6 +511,8 @@ const AgentPanel = forwardRef<AgentPanelHandle, { displayName?: string; onSessio
 
   const hasPending = msgs.some((m) => m.confirm?.state === 'pending');
   const busy = turnActive || hasPending || picking;
+  // 正在跑（chat 流 / events 流 / 确认后上传）时才给「停止」；等用户点确认卡的时候不算
+  const stoppable = turnActive && !hasPending && !picking;
 
   const patch = useCallback((id: string, update: (m: AgentMsg) => AgentMsg) => {
     setMsgs((list) => list.map((m) => (m.id === id ? update(m) : m)));
@@ -641,6 +670,38 @@ const AgentPanel = forwardRef<AgentPanelHandle, { displayName?: string; onSessio
     patch(id, (m) => ({ ...m, content: m.content ? `${m.content}\n${text}` : text, error: true, streaming: false, status: undefined }));
     setTurnActive(false);
   }, [patch]);
+
+  /* ---- 停止当前轮 ----
+     先本地收尾（abort 流 + 气泡标「已停止」），再通知后端打断智能体。
+     后端 404 / 失败都不报错：用户看到的就是已经停了。
+     任务进度轮询不跟着停——预测在后端照跑，进度条继续如实刷新。 */
+  const stopTurn = useCallback(async () => {
+    const session = sessionRef.current;
+    const controller = ctrlRef.current;
+    ctrlRef.current = null;
+    controller?.abort();
+    setTurnActive(false);
+    setMsgs((list) => list.map((m) => {
+      if (m.role !== 'assistant') return m;
+      const midFlight = !!m.confirm && (m.confirm.state === 'sending' || m.confirm.state === 'uploading' || m.confirm.state === 'starting');
+      if (!m.streaming && !m.status && !midFlight) return m;
+      return {
+        ...m,
+        streaming: false,
+        status: undefined,
+        stopped: true,
+        ...(midFlight ? { confirm: { ...m.confirm!, state: 'stopped' as ConfirmState } } : {}),
+      };
+    }));
+    if (!session) return;
+    try {
+      await fetch(apiUrl('/agent/stop/'), {
+        method: 'POST',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ session }),
+      });
+    } catch { /* 本地已停；后端没收到就让它自己超时 */ }
+  }, [stopPolling]);
 
   /* ---- 发送 ---- */
   const send = useCallback(async (raw: string, skipPick = false) => {
@@ -925,12 +986,26 @@ const AgentPanel = forwardRef<AgentPanelHandle, { displayName?: string; onSessio
             aria-label="输入指令"
             className="max-h-28 min-h-[1.75rem] min-w-0 flex-1 resize-none self-center bg-transparent py-1 text-sm leading-relaxed text-ink outline-none placeholder:text-muted-light disabled:cursor-not-allowed"
           />
-          <button type="submit" disabled={busy || !input.trim()} aria-label="发送指令" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-fill text-white transition-colors hover:bg-brand-fill-hover disabled:cursor-not-allowed disabled:opacity-35">
-            <ArrowUp className="h-4 w-4" />
-          </button>
+          {stoppable ? (
+            <button
+              type="button"
+              data-testid="agent-stop"
+              onClick={() => void stopTurn()}
+              aria-label="停止本轮回复"
+              title="停止本轮回复"
+              className="flex h-8 shrink-0 items-center gap-1.5 rounded-pill border border-hairline bg-surface-muted/70 px-3 text-xs font-medium text-ink-secondary transition-colors hover:border-danger-text/30 hover:bg-danger-100/50 hover:text-danger-text"
+            >
+              <span aria-hidden="true" className="h-2 w-2 rounded-[2px] bg-current" />
+              停止
+            </button>
+          ) : (
+            <button type="submit" disabled={busy || !input.trim()} aria-label="发送指令" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-fill text-white transition-colors hover:bg-brand-fill-hover disabled:cursor-not-allowed disabled:opacity-35">
+              <ArrowUp className="h-4 w-4" />
+            </button>
+          )}
         </form>
         <div className="mt-1.5 flex items-center justify-between gap-2 px-1 text-[11px] text-muted-light">
-          <span>Enter 发送 · 上传和创建任务前会先请你确认</span>
+          <span>{stoppable ? '正在回复，点「停止」可中断本轮' : 'Enter 发送 · 上传和创建任务前会先请你确认'}</span>
           {msgs.length > 0 && (
             <button type="button" onClick={startNew} disabled={turnActive && !hasPending} className="inline-flex items-center gap-1 text-muted hover:text-ink disabled:opacity-40"><SquarePen className="h-3 w-3" />新会话</button>
           )}

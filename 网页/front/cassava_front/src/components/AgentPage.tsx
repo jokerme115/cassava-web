@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Activity, AlertCircle, BarChart3, Bot, FolderOpen, History, Loader2, MessageSquare, Play, ShieldCheck, SquarePen, X } from 'lucide-react';
+import { Activity, AlertCircle, BarChart3, Bot, FolderOpen, History, Loader2, MessageSquare, Play, ShieldCheck, SquarePen, Trash2, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import AgentPanel, { AgentPanelHandle } from './AgentPanel';
 import PageHeader from './PageHeader';
@@ -89,6 +89,10 @@ const AgentPage: React.FC<{ currentUser?: User }> = ({ currentUser }) => {
   const [activeSession, setActiveSession] = useState<string | null>(null);
   const [railOpen, setRailOpen] = useState(false);
   const [opening, setOpening] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<{ session: string; text: string } | null>(null);
+  const deletingRef = useRef<string | null>(null);
 
   const loadSessions = useCallback(async () => {
     try {
@@ -158,6 +162,40 @@ const AgentPage: React.FC<{ currentUser?: User }> = ({ currentUser }) => {
     setRailOpen(false);
   }, [opening]);
 
+  /* 删除历史会话：轻量二次确认 → 后端删除 → 从列表移除；
+     删掉的正好是当前打开的会话，就把对话区清空回新会话空态。 */
+  const deleteSession = useCallback(async (session: string) => {
+    if (deletingRef.current) return;
+    deletingRef.current = session;
+    setDeleting(session);
+    setDeleteError(null);
+    try {
+      const res = await fetch(apiUrl('/agent/sessions/delete/'), {
+        method: 'POST',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ session }),
+      });
+      if (!res.ok) {
+        const text = res.status === 401 ? '登录已过期，请重新登录'
+          : res.status === 404 ? '这个会话已经不存在了'
+          : '删除失败，请重试';
+        setDeleteError({ session, text });
+        return;
+      }
+      setSessions((list) => (list ? list.filter((item) => item.session !== session) : list));
+      setConfirmDelete(null);
+      if (activeSession === session) {
+        panelRef.current?.reset();
+        setActiveSession(null);
+      }
+    } catch {
+      setDeleteError({ session, text: '网络出错了，删除失败' });
+    } finally {
+      deletingRef.current = null;
+      setDeleting(null);
+    }
+  }, [activeSession]);
+
   const sessionCount = sessions?.length ?? 0;
 
   const emptyBlock = 'flex h-full min-h-[120px] flex-col items-center justify-center gap-1 px-2 py-6 text-center';
@@ -186,28 +224,69 @@ const AgentPage: React.FC<{ currentUser?: User }> = ({ currentUser }) => {
     <ul className="space-y-1">
       {sessions.map((item) => {
         const isActive = item.session === activeSession;
+        const askingDelete = confirmDelete === item.session;
+        const rowError = deleteError?.session === item.session ? deleteError.text : '';
         return (
-          <li key={item.session}>
-            <button
-              type="button"
-              data-active={isActive}
-              aria-current={isActive ? 'true' : undefined}
-              onClick={() => void openSession(item.session)}
-              disabled={!!opening}
-              className={`w-full rounded-xl px-2.5 py-2 text-left transition-colors disabled:opacity-60 ${
-                isActive
-                  ? 'bg-[#f1f5ef] shadow-[inset_3px_0_0_0_#3d8060] ring-1 ring-inset ring-accent-line/25'
-                  : 'hover:bg-surface-muted'
-              }`}
-            >
-              <span className="flex items-baseline gap-1.5">
-                <span className={`min-w-0 flex-1 truncate text-[13px] leading-[18px] ${isActive ? 'font-semibold text-ink' : 'text-ink-secondary'}`} title={item.title || '未命名会话'}>
-                  {item.title || '未命名会话'}
-                </span>
-                {opening === item.session && <Loader2 className="h-3 w-3 shrink-0 animate-spin text-accent-line" />}
-              </span>
-              <span className="mt-0.5 block text-[11px] leading-[15px] text-muted-light">{relativeTime(item.updatedAt)}</span>
-            </button>
+          <li key={item.session} data-testid="agent-session-item" data-session={item.session} className="group relative">
+            {askingDelete ? (
+              <div data-testid="agent-session-confirm" className="rounded-xl border border-hairline bg-surface-muted/80 px-2.5 py-2">
+                <p className="text-[12px] font-medium leading-[17px] text-ink">删除这个会话？</p>
+                <p className="mt-0.5 truncate text-[11px] leading-[15px] text-muted" title={item.title || '未命名会话'}>{item.title || '未命名会话'}</p>
+                <div className="mt-2 flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => void deleteSession(item.session)}
+                    disabled={deleting === item.session}
+                    className="inline-flex h-6 items-center gap-1 rounded-pill bg-danger-text px-2.5 text-[11px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                  >
+                    {deleting === item.session ? <><Loader2 className="h-3 w-3 animate-spin" />删除中</> : '删除'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setConfirmDelete(null); setDeleteError(null); }}
+                    disabled={deleting === item.session}
+                    className="inline-flex h-6 items-center rounded-pill border border-hairline-strong bg-white px-2.5 text-[11px] text-ink-secondary transition-colors hover:bg-surface-sunken disabled:opacity-60"
+                  >
+                    取消
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  data-active={isActive}
+                  aria-current={isActive ? 'true' : undefined}
+                  onClick={() => void openSession(item.session)}
+                  disabled={!!opening}
+                  className={`w-full rounded-xl py-2 pl-2.5 pr-8 text-left transition-colors disabled:opacity-60 ${
+                    isActive
+                      ? 'bg-[#f1f5ef] shadow-[inset_3px_0_0_0_#3d8060] ring-1 ring-inset ring-accent-line/25'
+                      : 'hover:bg-surface-muted'
+                  }`}
+                >
+                  <span className="flex items-baseline gap-1.5">
+                    <span className={`min-w-0 flex-1 truncate text-[13px] leading-[18px] ${isActive ? 'font-semibold text-ink' : 'text-ink-secondary'}`} title={item.title || '未命名会话'}>
+                      {item.title || '未命名会话'}
+                    </span>
+                    {opening === item.session && <Loader2 className="h-3 w-3 shrink-0 animate-spin text-accent-line" />}
+                  </span>
+                  <span className="mt-0.5 block text-[11px] leading-[15px] text-muted-light">{relativeTime(item.updatedAt)}</span>
+                </button>
+                <button
+                  type="button"
+                  data-testid="agent-session-delete"
+                  onClick={() => { setConfirmDelete(item.session); setDeleteError(null); }}
+                  disabled={!!opening || !!deleting}
+                  aria-label={`删除会话：${item.title || '未命名会话'}`}
+                  title="删除会话"
+                  className="absolute right-1 top-1.5 flex h-6 w-6 items-center justify-center rounded-md text-muted-light opacity-100 transition-all hover:bg-white hover:text-danger-text focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger-text/25 disabled:opacity-0 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-visible:opacity-100"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </>
+            )}
+            {rowError && <p data-testid="agent-session-delete-error" className="mt-1 px-2.5 text-[11px] leading-[15px] text-danger-text">{rowError}</p>}
           </li>
         );
       })}
@@ -228,7 +307,7 @@ const AgentPage: React.FC<{ currentUser?: User }> = ({ currentUser }) => {
                 leading={<span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-fill text-white"><Bot className="h-5 w-5" /></span>}
                 title="智能体"
                 subtitle="上传图片、创建预测任务、跟踪进度，执行前一律由你确认。"
-                actions={(
+                actions={isGuest ? undefined : (
                   <button
                     type="button"
                     onClick={() => setRailOpen(true)}
