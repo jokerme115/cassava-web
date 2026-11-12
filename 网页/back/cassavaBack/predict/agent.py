@@ -59,10 +59,11 @@ AGENT_SYSTEM_PROMPT = (
     '1. 用户要求上传/统计图片时：先调用 cassava 的 plan_upload（fileNames=消息中列出的文件名，'
     'model 默认 pbt_c512，taskName 默认「预测任务-当前日期时间」），工具返回后本轮回复即结束，'
     '等待用户在网页端确认并上传，不要继续调用其他工具。\n'
-    '2. 收到「用户已完成上传，图片 ID：[...]」后：调用 create_task 建任务，然后反复调用 task_status '
-    '轮询直到 status 为 completed 或 failed（每次轮询之间直接连续调用即可），completed 后调用 '
-    'prediction_summary，并用中文汇报：记录总数、平均/最高/最低 PPD、健康(<4)/轻微(4-7)/严重(≥7)分布、'
-    '需要复核的数量与文件名。所有数字只能来自工具返回，禁止编造。\n'
+    '2. 收到「用户已完成上传，图片 ID：[...]」后：调用 create_task 建任务，然后调用 task_status '
+    '（该工具默认会阻塞轮询直到任务结束再返回，最长 10 分钟；无需自己反复调用），'
+    '返回 status 为 completed 时接着调用 prediction_summary，并用中文汇报：记录总数、平均/最高/最低 PPD、'
+    '健康(<4)/轻微(4-7)/严重(≥7)分布、需要复核的数量与文件名。'
+    'status 为 failed 时如实说明失败原因。所有数字只能来自工具返回，禁止编造。\n'
     '3. 用户只是提问或闲聊时：直接用中文回答，涉及数值时只能引用工具结果，没有数据就说明查不到。'
 )
 
@@ -230,6 +231,23 @@ def _confirm_args(tool_inputs):
     return {'taskName': task_name, 'model': model, 'count': len(files), 'files': files}
 
 
+def _confirm_args_from(meta_in, tool_inputs):
+    """确认卡参数：metadata.input 优先，缺省字段用 plan_upload 入参 / 默认值补齐。"""
+    args = _confirm_args(tool_inputs)
+    if isinstance(meta_in, dict):
+        files = _normalise_files(meta_in.get('fileNames') or meta_in.get('files'))
+        if files:
+            args['files'] = files
+            args['count'] = len(files)
+        model = str(meta_in.get('model') or '').strip()
+        if model:
+            args['model'] = model
+        task_name = str(meta_in.get('taskName') or '').strip()
+        if task_name:
+            args['taskName'] = task_name
+    return args
+
+
 def _read_events(response, sink):
     """后台线程：把 opencode 的 SSE 帧解析后塞进队列。"""
     buffer = b''
@@ -286,6 +304,7 @@ def _stream_events(session_id):
 
     emitted = {}
     tool_inputs = []
+    emitted_tasks = set()
     cost = None
     tokens = None
     awaiting_confirm = False
@@ -302,7 +321,7 @@ def _stream_events(session_id):
                 action = str(item.get('action') or '')
                 if action == CONFIRM_ACTION or CONFIRM_TOOL_HINT in action:
                     meta_in = (item.get('metadata') or {}).get('input')
-                    args = meta_in if isinstance(meta_in, dict) else _confirm_args(tool_inputs)
+                    args = _confirm_args_from(meta_in, tool_inputs)
                     awaiting_confirm = True
                     yield _sse('confirm', {'requestId': item.get('id'), 'args': args})
     except (requests.RequestException, ValueError):
@@ -361,8 +380,18 @@ def _stream_events(session_id):
                 for call in calls:
                     if not isinstance(call, dict) or call.get('input') is None:
                         continue
-                    tool_inputs.append({'tool': str(call.get('tool') or ''),
-                                        'input': call.get('input')})
+                    tool_name = str(call.get('tool') or '')
+                    tool_input = call.get('input') if isinstance(call.get('input'), dict) else {}
+                    tool_inputs.append({'tool': tool_name, 'input': call.get('input')})
+                    if 'task_status' in tool_name:
+                        try:
+                            task_id_seen = int(tool_input.get('taskId'))
+                        except (TypeError, ValueError):
+                            task_id_seen = None
+                        if task_id_seen and task_id_seen not in emitted_tasks:
+                            emitted_tasks.add(task_id_seen)
+                            yield _sse('task_created', {'taskId': task_id_seen,
+                                                        'taskName': str(tool_input.get('taskName') or '')})
                 if len(tool_inputs) > MAX_TOOL_INPUTS:
                     del tool_inputs[:-MAX_TOOL_INPUTS]
             elif event_type == 'permission.asked':
@@ -370,11 +399,29 @@ def _stream_events(session_id):
                 if action == CONFIRM_ACTION or CONFIRM_TOOL_HINT in action:
                     awaiting_confirm = True
                     meta_in = (data.get('metadata') or {}).get('input')
-                    args = meta_in if isinstance(meta_in, dict) else _confirm_args(tool_inputs)
+                    args = _confirm_args_from(meta_in, tool_inputs)
                     yield _sse('confirm', {'requestId': data.get('id'), 'args': args})
             elif event_type == 'permission.replied':
                 awaiting_confirm = False
                 deadline = time.monotonic() + budget
+            elif event_type == 'session.tool.success':
+                for part in (data.get('content') or []):
+                    if not isinstance(part, dict):
+                        continue
+                    try:
+                        payload = json.loads(str(part.get('text') or ''))
+                    except ValueError:
+                        continue
+                    if not isinstance(payload, dict):
+                        continue
+                    new_task_id = payload.get('taskId')
+                    if (isinstance(new_task_id, int) and 'status' not in payload
+                            and 'avg' not in payload and new_task_id not in emitted_tasks):
+                        emitted_tasks.add(new_task_id)
+                        yield _sse('task_created', {'taskId': new_task_id,
+                                                    'taskName': payload.get('taskName'),
+                                                    'model': payload.get('model'),
+                                                    'imageCount': payload.get('imageCount')})
             elif event_type == 'session.step.ended':
                 if data.get('cost') is not None:
                     cost = data.get('cost')

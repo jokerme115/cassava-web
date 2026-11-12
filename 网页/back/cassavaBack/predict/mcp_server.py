@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+import time
 from datetime import datetime
 
 import requests
@@ -207,11 +208,30 @@ def tool_task_status(arguments):
         task_id = int(arguments.get('taskId'))
     except (TypeError, ValueError):
         return {'ok': False, 'error': 'taskId 必须是整数。'}
-    body, error = call_api('GET', f'/api/tasks/{task_id}/')
-    if error:
-        return {'ok': False, 'error': error}
-    if not isinstance(body, dict):
-        return {'ok': False, 'error': '任务状态接口返回格式不可识别。'}
+    try:
+        wait = arguments.get('wait', True)
+        wait = True if wait is None else bool(wait)
+        try:
+            max_wait = int(arguments.get('maxWait') or 600)
+        except (TypeError, ValueError):
+            max_wait = 600
+        max_wait = max(10, min(max_wait, 600))
+    except Exception:
+        wait, max_wait = True, 600
+    deadline = time.time() + max_wait
+    poll_interval = 5.0
+    body = None
+    while True:
+        body, error = call_api('GET', f'/api/tasks/{task_id}/')
+        if error:
+            return {'ok': False, 'error': error}
+        if not isinstance(body, dict):
+            return {'ok': False, 'error': '任务状态接口返回格式不可识别。'}
+        status_value = str(body.get('status') or '')
+        if (not wait or status_value in ('completed', 'failed', 'cancelled')
+                or time.time() >= deadline):
+            break
+        time.sleep(poll_interval)
     status = {'ok': True, 'taskId': task_id}
     for key in TASK_STATUS_KEYS:
         status[key] = body.get(key)
@@ -269,10 +289,16 @@ TOOLS = [
     },
     {
         'name': 'task_status',
-        'description': '查询预测任务状态（status/progress/image_count/result_count/queue_position/name）。',
+        'description': ('查询预测任务状态（status/progress/image_count/result_count/queue_position/name）。'
+                        '默认阻塞轮询直到任务 completed/failed/cancelled 再返回（最长 10 分钟）；'
+                        '传 wait=false 则只查询一次立即返回。'),
         'inputSchema': {
             'type': 'object',
-            'properties': {'taskId': {'type': 'integer', 'description': '任务 ID'}},
+            'properties': {
+                'taskId': {'type': 'integer', 'description': '任务 ID'},
+                'wait': {'type': 'boolean', 'description': '是否阻塞等待任务结束，默认 true'},
+                'maxWait': {'type': 'integer', 'description': '最长等待秒数，默认 600，上限 600'},
+            },
             'required': ['taskId'],
         },
     },
