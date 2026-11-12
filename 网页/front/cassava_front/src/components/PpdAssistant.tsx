@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, ArrowUp, Bot, CheckCircle2, ChevronDown, Clock, History, MessageSquare, SquarePen, Sparkles, Trash2, X } from 'lucide-react';
+import { ArrowLeft, ArrowUp, BookOpen, Bot, CheckCircle2, ChevronDown, HelpCircle, Clock, FileText, History, MessageSquare, SquarePen, Sparkles, Trash2, X } from 'lucide-react';
 import { API_BASE_URL } from '../services/rest/client';
 import { getAuthToken } from '../utils/authToken';
 import { User } from '../types';
@@ -18,12 +18,17 @@ type EvidenceCard = {
   height?: number;
 };
 
+type KbItem = { id: number | string; section?: string; question?: string; source?: string };
+type AssistantStats = { total: number; recordHits: number; kbHits: number; noBasis: number };
+
 type ChatMessage = {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   status?: string;
   cards?: EvidenceCard[];
+  kb?: KbItem[];
+  basisReady?: boolean;
   scopeNote?: string;
   notFound?: string[];
   followup?: string;
@@ -147,7 +152,9 @@ const renderInline = (line: string, keyPrefix: string): React.ReactNode[] => {
   const marks = (line.match(/\*\*/g) || []).length;
   let text = line;
   if (marks % 2 === 1) text = text.endsWith('**') ? text.slice(0, -2) : `${text}**`;
-  return text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).filter(Boolean).map((part, i) => {
+  return text.split(/(\*\*[^*]+\*\*|`[^`]+`|【[^】]*需用户确认[^】]*】)/g).filter(Boolean).map((part, i) => {
+    // 知识库里“素材未覆盖”的条目：标记原样保留，只加醒目底色，提示待确认
+    if (part.startsWith('【') && part.endsWith('】') && part.includes('需用户确认')) return <mark key={`${keyPrefix}-${i}`} data-testid="pending-mark" className="rounded bg-warning-100 px-1 py-0.5 text-[0.9em] font-medium text-warning-text">{part}</mark>;
     if (part.startsWith('**') && part.endsWith('**') && part.length > 4) return <strong key={`${keyPrefix}-${i}`} className="font-semibold text-ink">{part.slice(2, -2)}</strong>;
     if (part.startsWith('`') && part.endsWith('`') && part.length > 2) return <code key={`${keyPrefix}-${i}`} className="rounded bg-surface-sunken px-1 py-0.5 text-[0.85em]">{part.slice(1, -1)}</code>;
     return <React.Fragment key={`${keyPrefix}-${i}`}>{part}</React.Fragment>;
@@ -288,6 +295,34 @@ const EvidenceCards: React.FC<{ cards: EvidenceCard[]; scopeNote?: string; notFo
   );
 };
 
+/* ----------------------------- 依据徽章（三态） ----------------------------- */
+
+const BasisBadge: React.FC<{ kb?: KbItem[]; hasCards: boolean }> = ({ kb, hasCards }) => {
+  const items = (kb || []).slice(0, 3);
+  if (items.length > 0) {
+    const detail = items.map((it) => [`§${it.id}`, it.section, it.question].filter(Boolean).join(' ')).join('\n');
+    const source = items.find((it) => it.source)?.source;
+    return (
+      <span data-testid="basis-badge" data-basis="kb" title={source ? `${detail}\n来源：${source}` : detail} className="inline-flex max-w-full items-center gap-1 rounded-pill border border-hairline-strong px-2 py-0.5 text-[11px] text-muted">
+        <BookOpen className="h-3 w-3 shrink-0" />
+        <span className="truncate">依据：领域知识库 {items.map((it) => `§${it.id}`).join('、')}</span>
+      </span>
+    );
+  }
+  if (hasCards) {
+    return (
+      <span data-testid="basis-badge" data-basis="record" className="inline-flex items-center gap-1 rounded-pill border border-hairline-strong px-2 py-0.5 text-[11px] text-muted">
+        <FileText className="h-3 w-3 shrink-0" />依据：任务记录（见卡片）
+      </span>
+    );
+  }
+  return (
+    <span data-testid="basis-badge" data-basis="none" className="inline-flex items-center gap-1 rounded-pill border border-warning-text/50 bg-warning-100/50 px-2 py-0.5 text-[11px] font-medium text-warning-text">
+      <HelpCircle className="h-3 w-3 shrink-0" />依据：无（未命中记录与知识库）
+    </span>
+  );
+};
+
 const ThinkingDots: React.FC<{ text: string }> = ({ text }) => (
   <span className="inline-flex items-center text-sm text-muted">
     {text}
@@ -320,6 +355,9 @@ const AssistantBubble: React.FC<{
         )}
         {waiting ? <ThinkingDots text={m.status || SEARCHING_TEXT} /> : (
           <RichText text={shown} caret={!!m.streaming || typing} tone={m.error ? 'text-danger-text' : 'text-ink'} />
+        )}
+        {m.basisReady && !m.error && !m.streaming && !typing && (
+          <div className="ppd-msg"><BasisBadge kb={m.kb} hasCards={hasCards} /></div>
         )}
         {m.followup && !m.followupDone && !m.streaming && !typing && (
           <div className="ppd-msg flex flex-wrap items-center gap-1.5 pt-0.5">
@@ -423,6 +461,10 @@ const AssistantShell: React.FC<{ currentUser: User; latestRecord?: AssistantLate
     const session = storeRef.current.sessions.find((s) => s.id === sid);
     if (!session || session.messages.some((m) => m.streaming)) return;
 
+    // 多轮指代：没有显式指定时，沿用本会话最近一次回答里出现的文件，保证“这张/这批”不丢上下文
+    const lastCardFile = [...session.messages].reverse().find((m) => m.role === 'assistant' && m.cards && m.cards.length > 0)?.cards?.[0]?.fileName ?? null;
+    const lastFileName = opts.lastFileName ?? lastCardFile;
+
     const historyPayload = session.messages
       .filter((m) => !m.streaming && !m.error && m.content.trim())
       .slice(-HISTORY_ROUNDS * 2)
@@ -466,6 +508,9 @@ const AssistantShell: React.FC<{ currentUser: User; latestRecord?: AssistantLate
             notFound: Array.isArray(event.notFound) ? event.notFound : [],
           }));
           break;
+        case 'kb':
+          upd((m) => ({ ...m, kb: Array.isArray(event.items) ? event.items.filter((it: any) => it && it.id !== undefined && it.id !== null) : [] }));
+          break;
         case 'delta':
           upd((m) => ({ ...m, content: m.content + (event.text || '') }));
           break;
@@ -474,7 +519,7 @@ const AssistantShell: React.FC<{ currentUser: User; latestRecord?: AssistantLate
           break;
         case 'done':
           finished = true;
-          upd((m) => ({ ...m, streaming: false, status: undefined }));
+          upd((m) => ({ ...m, streaming: false, status: undefined, basisReady: true }));
           break;
         case 'error':
           fail(event.text || FALLBACK_ERROR);
@@ -494,7 +539,7 @@ const AssistantShell: React.FC<{ currentUser: User; latestRecord?: AssistantLate
           Accept: 'text/event-stream',
           ...(token ? { Authorization: `Token ${token}` } : {}),
         },
-        body: JSON.stringify({ message: text, history: historyPayload, lastFileName: opts.lastFileName ?? null }),
+        body: JSON.stringify({ message: text, history: historyPayload, lastFileName }),
       });
       if (!response.ok || !response.body) {
         fail(FALLBACK_ERROR);
@@ -573,9 +618,37 @@ const AssistantShell: React.FC<{ currentUser: User; latestRecord?: AssistantLate
   const prompts = useMemo(() => {
     const list: string[] = [];
     if (latestRecord?.fileName) list.push(`「${latestRecord.fileName}」的 PPD 是多少？`);
-    list.push('PPD 是怎么计算的？', '哪些结果还没复核？');
+    list.push(
+      'PPD 是怎么计算的？',
+      '切面发黑但边缘整齐，是 PPD 还是机械伤？',
+      '4% 和 7% 这两个分级阈值是凭什么定的？',
+      '哪些结果还没复核？',
+    );
     return list;
   }, [latestRecord?.fileName]);
+
+  // 问答留痕统计：每次打开抽屉拉一次，失败（401/网络）静默不显示
+  const [stats, setStats] = useState<AssistantStats | null>(null);
+  useEffect(() => {
+    if (!open) return undefined;
+    const token = getAuthToken();
+    if (!token) { setStats(null); return undefined; }
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL.replace(/\/$/, '')}/assistant/stats/`, {
+          signal: controller.signal,
+          headers: { Accept: 'application/json', Authorization: `Token ${token}` },
+        });
+        if (!res.ok) { setStats(null); return; }
+        const d = await res.json();
+        const n = (v: any) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+        if (n(d?.total) === null) { setStats(null); return; }
+        setStats({ total: d.total, recordHits: n(d.recordHits) ?? 0, kbHits: n(d.kbHits) ?? 0, noBasis: n(d.noBasis) ?? 0 });
+      } catch { /* 静默 */ }
+    })();
+    return () => controller.abort();
+  }, [open, historyOpen]);
 
   const submit = () => { if (!busy) void send(input); };
   const displayName = (currentUser.first_name || currentUser.username || '').trim();
@@ -630,6 +703,11 @@ const AssistantShell: React.FC<{ currentUser: User; latestRecord?: AssistantLate
           </div>
         </header>
 
+        <div data-testid="capability-strip" className="flex flex-wrap items-center gap-x-2 gap-y-0.5 border-b border-hairline bg-surface-muted/60 px-4 py-1.5 text-[11px] leading-snug text-muted">
+          <span><b className="font-medium text-accent-text">我会：</b>查记录 · 解释口径 · 判读建议</span>
+          <span aria-hidden="true" className="text-hairline-strong">｜</span>
+          <span><b className="font-medium text-warning-text">我不会：</b>预测产量 · 诊断病害种类</span>
+        </div>
         <div className="relative min-h-0 flex-1">
           <div
             ref={scrollRef}
@@ -641,7 +719,7 @@ const AssistantShell: React.FC<{ currentUser: User; latestRecord?: AssistantLate
                 <div className="pt-6">
                   <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-fill/10 text-brand-fill"><Sparkles className="h-5 w-5" /></span>
                   <h3 className="mt-3 text-lg font-semibold text-ink">{displayName ? `${displayName}，想查点什么？` : '想查点什么？'}</h3>
-                  <p className="mt-1 text-sm text-muted">可以问某张图的 PPD、计算口径，或哪些结果还没复核。回答里的数字都来自结果中心当前记录。</p>
+                  <p className="mt-1 text-sm text-muted">可以问某张图的 PPD、计算口径、判读依据，或哪些结果还没复核。数字来自结果中心当前记录，口径与判读来自领域知识库。</p>
                   <div className="mt-5 space-y-2">
                     {prompts.map((prompt) => (
                       <button key={prompt} type="button" disabled={busy} onClick={() => void send(prompt)} className="group flex w-full items-center justify-between gap-3 rounded-xl border border-hairline bg-white px-3.5 py-2.5 text-left text-sm text-ink-secondary shadow-card transition-all hover:-translate-y-px hover:border-accent-line/60 hover:text-ink disabled:opacity-50">
@@ -668,6 +746,14 @@ const AssistantShell: React.FC<{ currentUser: User; latestRecord?: AssistantLate
               <button type="button" onClick={() => setHistoryOpen(false)} className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs text-ink-secondary hover:bg-surface-sunken"><ArrowLeft className="h-3.5 w-3.5" />返回对话</button>
               <span className="text-xs text-muted">共 {history.length} 个会话</span>
             </div>
+            {stats && (
+              <div data-testid="assistant-stats" className="flex flex-wrap items-center gap-x-1.5 border-b border-hairline bg-white/70 px-4 py-1.5 text-[11px] tabular-nums text-muted">
+                <span className="font-medium text-ink-secondary">问答 {stats.total} 次</span>
+                <span aria-hidden="true">·</span><span>命中记录 {stats.recordHits}</span>
+                <span aria-hidden="true">·</span><span>领域知识 {stats.kbHits}</span>
+                <span aria-hidden="true">·</span><span className={stats.noBasis > 0 ? 'text-warning-text' : ''}>无依据 {stats.noBasis}</span>
+              </div>
+            )}
             <div className="ppd-scroll min-h-0 flex-1 overflow-y-auto px-3 py-3">
               {history.length === 0 ? (
                 <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-sm text-muted">
@@ -714,9 +800,9 @@ const AssistantShell: React.FC<{ currentUser: User; latestRecord?: AssistantLate
 
         <div className="border-t border-hairline bg-white px-4 pb-3.5 pt-2.5">
           {messages.length > 0 && (
-            <div className="mb-2 flex flex-wrap gap-1.5">
+            <div className="ppd-scroll -mx-1 mb-2 flex gap-1.5 overflow-x-auto px-1 pb-1" data-testid="prompt-chips">
               {prompts.map((prompt) => (
-                <button key={prompt} type="button" title={prompt} disabled={busy} onClick={() => void send(prompt)} className="max-w-full min-w-0 truncate rounded-pill border border-hairline-strong bg-surface-muted px-2.5 py-1 text-xs text-ink-secondary transition-colors hover:border-accent-line hover:text-accent-text disabled:opacity-50">
+                <button key={prompt} type="button" title={prompt} disabled={busy} onClick={() => void send(prompt)} className="max-w-[80%] shrink-0 truncate rounded-pill border border-hairline-strong bg-surface-muted px-2.5 py-1 text-xs text-ink-secondary transition-colors hover:border-accent-line hover:text-accent-text disabled:opacity-50">
                   {prompt}
                 </button>
               ))}
