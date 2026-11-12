@@ -64,6 +64,7 @@
     "prediction": "PPD Prediction",
     "tasks": "Task Center",
     "results": "Result Center",
+    "agent": "Agent",
     "connection": "Connection Test",
     "contact": "Contact Us",
     "login": "Login",

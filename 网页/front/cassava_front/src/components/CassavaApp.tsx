@@ -15,6 +15,7 @@ const ImageManagement = lazy(() => import('./ImageManagement'));
 const PredictionModule = lazy(() => import('./PredictionModule'));
 const TaskCenter = lazy(() => import('./TaskCenter'));
 const ResultsCenter = lazy(() => import('./ResultsCenter'));
+const AgentPage = lazy(() => import('./AgentPage'));
 const ContactUs = lazy(() => import('./ContactUs'));
 const LoginPage = lazy(() => import('./LoginPage'));
 const PermissionManagement = lazy(() => import('./PermissionManagement'));
@@ -23,7 +24,7 @@ const UserProfile = lazy(() => import('./UserProfile'));
 // 风格样板页：只做视觉对比，不接入导航、不触碰主流程
 
 const KNOWN_SECTIONS = new Set([
-  'home', 'images', 'prediction', 'tasks', 'results', 'contact',
+  'home', 'images', 'prediction', 'tasks', 'results', 'agent', 'contact',
   'login', 'register', 'profile', 'permissions', 'audit'
 ]);
 
@@ -391,6 +392,8 @@ const CassavaApp: React.FC = () => {
         return <TaskCenter currentUser={currentUser} />;
       case 'results':
         return <ResultsCenter currentUser={currentUser} />;
+      case 'agent':
+        return <AgentPage currentUser={currentUser} />;
       case 'contact':
         return <ContactUs />;
       case 'profile':
@@ -408,7 +411,8 @@ const CassavaApp: React.FC = () => {
 
   // 首页/联系我们/登录/注册不引用 antd，套主题提供者会把 antd（含 rc-*，约 285 kB gzip）
   // 一起拉进首屏；其余路由（图片、预测、结果、任务、权限、个人中心）需要它。
-  const needsAntd = !['home', 'contact', 'login', 'register'].includes(activeSection);
+  // 智能体页只用 Tailwind + lucide，不需要 antd，所以也挡在提供者之外。
+  const needsAntd = !['home', 'contact', 'login', 'register', 'agent'].includes(activeSection);
   const pageShell = (
     <div
       className="flex h-[calc(100vh-73px)] min-h-0 flex-col overflow-x-hidden"
@@ -416,7 +420,7 @@ const CassavaApp: React.FC = () => {
       aria-label={t('a11y.main_region')}
       tabIndex={0}
     >
-      {currentUser?.is_guest && ['images','prediction','tasks','results'].includes(activeSection) && <div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 border-b border-hairline bg-surface-muted px-4 py-3 text-sm" role="status"><span className="font-semibold text-brand-text">游客试用</span><span className="min-w-0 flex-1 text-ink-secondary">可浏览公开示例、每天创建最多 10 次预测任务；上传、修改和人工复检需登录账号。{activeSection === 'tasks' ? '这里仅显示本次游客身份创建的任务。' : ''}</span><button className="font-medium text-accent-text" onClick={() => { clearGuestSession(); setWorkspaceUser(); setCurrentUser(null); setPendingSection(activeSection); navigate('/login'); }}>登录完整使用 →</button></div>}
+      {currentUser?.is_guest && ['images','prediction','tasks','results','agent'].includes(activeSection) && <div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 border-b border-hairline bg-surface-muted px-4 py-3 text-sm" role="status"><span className="font-semibold text-brand-text">游客试用</span><span className="min-w-0 flex-1 text-ink-secondary">可浏览公开示例、每天创建最多 10 次预测任务；上传、修改和人工复检需登录账号。{activeSection === 'tasks' ? '这里仅显示本次游客身份创建的任务。' : ''}{activeSection === 'agent' ? '智能体上传图片和创建预测任务需要登录账号。' : ''}</span><button className="font-medium text-accent-text" onClick={() => { clearGuestSession(); setWorkspaceUser(); setCurrentUser(null); setPendingSection(activeSection); navigate('/login'); }}>登录完整使用 →</button></div>}
       {renderContent()}
     </div>
   );

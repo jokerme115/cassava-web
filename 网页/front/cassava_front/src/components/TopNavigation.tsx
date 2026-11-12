@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity,
   BarChart3,
+  Bot,
   Brain,
   ChevronDown,
   Languages,
@@ -72,7 +73,8 @@ const TopNavigation: React.FC<TopNavigationProps> = ({
     () => currentUser && !['login', 'register'].includes(activeSection) ? [
       { id: 'prediction', label: t('navigation.prediction'), icon: Brain },
       { id: 'tasks', label: t('navigation.tasks'), icon: Activity },
-      { id: 'results', label: t('navigation.results'), icon: BarChart3 }
+      { id: 'results', label: t('navigation.results'), icon: BarChart3 },
+      { id: 'agent', label: t('navigation.agent'), icon: Bot }
     ] : [],
     [t, currentUser, activeSection]
   );
