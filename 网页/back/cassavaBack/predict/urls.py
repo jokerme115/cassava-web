@@ -13,6 +13,7 @@ from . import views
 from . import permission_views
 from . import auth_views
 from .assistant import assistant_chat, assistant_stats
+from .agent import agent_chat, agent_confirm, agent_events, agent_upload_complete
 from .import_views import ImportJobViewSet
 
 # 创建默认路由器并注册视图集
@@ -84,4 +85,10 @@ urlpatterns = [
     # 结果中心「PPD 助手」：检索增强对话（SSE 流式，Token 鉴权）
     path('assistant/chat/', assistant_chat, name='assistant-chat'),
     path('assistant/stats/', assistant_stats, name='assistant-stats'),
+
+    # 「PPD 智能体」：opencode serve 桥（上传/建任务/统计，SSE 流式，Token 鉴权）
+    path('agent/chat/', agent_chat, name='agent-chat'),
+    path('agent/events/', agent_events, name='agent-events'),
+    path('agent/confirm/', agent_confirm, name='agent-confirm'),
+    path('agent/upload-complete/', agent_upload_complete, name='agent-upload-complete'),
 ]

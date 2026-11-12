@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import json
 import os
 from dotenv import load_dotenv
 
@@ -419,6 +420,21 @@ ASSISTANT_LLM_BASE_URL = os.getenv('ASSISTANT_LLM_BASE_URL', 'https://opencode.a
 ASSISTANT_LLM_API_KEY = os.getenv('ASSISTANT_LLM_API_KEY', '')
 ASSISTANT_LLM_MODEL = os.getenv('ASSISTANT_LLM_MODEL', 'glm-5.3-flash')
 ASSISTANT_LLM_TIMEOUT = _env_int('ASSISTANT_LLM_TIMEOUT', 60)
+
+# ---- 「PPD 智能体」opencode serve 桥接配置 ----
+# 网页端（predict/agent.py）把一轮对话转发给本机 opencode serve，事件流再回灌给浏览器；
+# 智能体的工具走 MCP cassava 服务器（predict/mcp_server.py），需要平台 Token 才能建任务/查结果。
+ASSISTANT_AGENT_OPENCODE_URL = os.getenv('ASSISTANT_AGENT_OPENCODE_URL', 'http://127.0.0.1:4096')
+# 密码文件优先；为空时退回环境变量 ASSISTANT_AGENT_OPENCODE_PASSWORD
+ASSISTANT_AGENT_OPENCODE_PASSWORD_FILE = os.getenv('ASSISTANT_AGENT_OPENCODE_PASSWORD_FILE', '')
+ASSISTANT_AGENT_OPENCODE_USER = os.getenv('ASSISTANT_AGENT_OPENCODE_USER', 'opencode')
+ASSISTANT_AGENT_MODEL = json.loads(
+    os.getenv('ASSISTANT_AGENT_MODEL', '') or '{"providerID": "opencode-go", "id": "glm-5.3-flash"}'
+)
+# 平台 Token 落盘位置（MCP 服务器按 CASSAVA_TOKEN_FILE 读取）；为空则不落盘
+ASSISTANT_AGENT_TOKEN_FILE = os.getenv('ASSISTANT_AGENT_TOKEN_FILE', '')
+# 单轮事件流最长挂起秒数（收到权限确认后不再计时）
+ASSISTANT_AGENT_POLL_MAX = _env_int('ASSISTANT_AGENT_POLL_MAX', 60)
 
 
 DEFAULT_DEEPLAB_MODEL_KEY = os.getenv('DEFAULT_DEEPLAB_MODEL_KEY', 'resnet101').strip().lower() or 'resnet101'
