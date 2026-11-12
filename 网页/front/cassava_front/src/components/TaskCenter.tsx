@@ -78,7 +78,10 @@ const TaskCenter: React.FC<TaskCenterProps> = ({ currentUser }) => {
       if (tasks.length === 1 && page > 1) setPage(page - 1);
       setConfirmOpen(false);
       setPendingDelete(null);
-    } catch { message.error('移入回收站失败，请重试'); }
+    } catch (e) {
+      const detail = (e as { response?: { data?: { detail?: string; message?: string } } })?.response?.data;
+      message.error(detail?.detail || detail?.message || '移入回收站失败，请重试');
+    }
   };
 
   const getStatusMeta = (status: string) => {
