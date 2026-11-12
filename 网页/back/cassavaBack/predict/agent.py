@@ -110,7 +110,7 @@ def _create_session(user_id):
     """新建 opencode 会话，返回 ses_ 开头的 id。"""
     title = f'agent-{user_id}-{datetime.now().strftime("%Y%m%d%H%M%S")}'
     response = _request('POST', '/api/session',
-                        {'title': title, 'model': settings.ASSISTANT_AGENT_MODEL})
+                        {'title': title, 'agent': 'build', 'model': settings.ASSISTANT_AGENT_MODEL})
     if response.status_code >= 400:
         raise requests.RequestException(f'创建会话失败：HTTP {response.status_code}')
     try:
@@ -290,6 +290,24 @@ def _stream_events(session_id):
     tokens = None
     awaiting_confirm = False
     deadline = time.monotonic() + budget
+
+    # 重连场景：会话里已有挂起的权限请求时，先补发一次 confirm
+    try:
+        pend = _request('GET', f'/api/session/{session_id}/permission')
+        if pend.status_code < 400:
+            items = (pend.json() or {}).get('data') or []
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                action = str(item.get('action') or '')
+                if action == CONFIRM_ACTION or CONFIRM_TOOL_HINT in action:
+                    meta_in = (item.get('metadata') or {}).get('input')
+                    args = meta_in if isinstance(meta_in, dict) else _confirm_args(tool_inputs)
+                    awaiting_confirm = True
+                    yield _sse('confirm', {'requestId': item.get('id'), 'args': args})
+    except (requests.RequestException, ValueError):
+        logger.warning('智能体权限状态查询失败', exc_info=True)
+
     try:
         while True:
             if awaiting_confirm:
@@ -351,8 +369,9 @@ def _stream_events(session_id):
                 action = str(data.get('action') or '')
                 if action == CONFIRM_ACTION or CONFIRM_TOOL_HINT in action:
                     awaiting_confirm = True
-                    yield _sse('confirm', {'requestId': data.get('id'),
-                                           'args': _confirm_args(tool_inputs)})
+                    meta_in = (data.get('metadata') or {}).get('input')
+                    args = meta_in if isinstance(meta_in, dict) else _confirm_args(tool_inputs)
+                    yield _sse('confirm', {'requestId': data.get('id'), 'args': args})
             elif event_type == 'permission.replied':
                 awaiting_confirm = False
                 deadline = time.monotonic() + budget
