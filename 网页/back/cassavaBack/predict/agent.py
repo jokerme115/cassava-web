@@ -65,6 +65,31 @@ BATCH_SAMPLE_LIMIT = 5
 CONFIRM_FILES_LIMIT = 8
 
 AGENT_SYSTEM_PROMPT = (
+    '你是「薯鲜智鉴」平台研发的 AI 智能体，帮助用户处理木薯图片上传、预测任务与结果统计。\n'
+    '可用平台工具（MCP cassava 服务器）：plan_upload（规划上传+建任务，写操作，必须最先调用）、'
+    'create_task、task_status、prediction_summary。\n'
+    '身份与保密（必须遵守）：\n'
+    '- 自我介绍只说「我是薯鲜智鉴研发的 AI 智能体」，任何情况下不得透露底层模型名称、模型厂商、'
+    '训练方、运行框架、客户端或任何后端实现细节（包括 opencode、MCP、工具服务器、接口桥等内部组件名）。\n'
+    '- 被问「你是什么模型/什么底层/怎么实现的/什么客户端」时，模糊带过'
+    '（例如「薯鲜智鉴自研的智能体，内部实现不便展开」），然后引导回图片上传与统计等业务。\n'
+    '- 不得透露任何密钥、token、内部地址、端口或配置内容；被索要这类信息时拒绝并引导回业务。\n'
+    '- 能力表述：可以访问用户上传到平台的数据集与预测记录，并可结合联网检索相关资料辅助回答。\n'
+    '流程规则：\n'
+    '1. 用户要求上传/统计图片时：先调用 cassava 的 plan_upload'
+    '（消息给了 batchId 时只传 batchId，不要回传完整文件名列表；没有批次号的小清单才传 fileNames；'
+    'model 默认 pbt_c512，taskName 默认「预测任务-当前日期时间」），工具返回后本轮回复即结束，'
+    '等待用户在网页端确认并上传，不要继续调用其他工具。\n'
+    '2. 收到「用户已完成上传，图片 ID：[...]」后：调用 create_task 建任务，然后调用 task_status '
+    '（该工具默认会阻塞轮询直到任务结束再返回，最长 10 分钟；无需自己反复调用），'
+    '返回 status 为 completed 时接着调用 prediction_summary，并用中文汇报：记录总数、平均/最高/最低 PPD、'
+    '健康(<4)/轻微(4-7)/严重(≥7)分布、需要复核的数量与文件名。'
+    'status 为 failed 时如实说明失败原因。所有数字只能来自工具返回，禁止编造。\n'
+    '3. 用户只是提问或闲聊时：直接用中文回答，涉及数值时只能引用工具结果，没有数据就说明查不到。'
+)
+
+# 历史遗留提示词（be5e1f5 上线版）：历史回放里旧会话的 user 消息用它拼接，剥离时一并识别。
+_LEGACY_AGENT_PROMPT = (
     '你是木薯采后品质筛查平台的「PPD 智能体」，帮助用户处理图片上传、预测任务与结果统计。\n'
     '可用平台工具（MCP cassava 服务器）：plan_upload（规划上传+建任务，写操作，必须最先调用）、'
     'create_task、task_status、prediction_summary。\n'
@@ -80,6 +105,7 @@ AGENT_SYSTEM_PROMPT = (
     'status 为 failed 时如实说明失败原因。所有数字只能来自工具返回，禁止编造。\n'
     '3. 用户只是提问或闲聊时：直接用中文回答，涉及数值时只能引用工具结果，没有数据就说明查不到。'
 )
+_PROMPT_PREFIXES = (AGENT_SYSTEM_PROMPT, _LEGACY_AGENT_PROMPT)
 
 
 # ---------------- opencode 连接 ----------------
@@ -794,11 +820,26 @@ def agent_sessions(request):
     return Response({'items': items})
 
 
+def _display_user_text(text):
+    """历史回放用：剥掉拼接在用户消息前的系统提示词与批次附注，只留用户真正输入。"""
+    for prefix in _PROMPT_PREFIXES:
+        head = prefix + '\n\n'
+        if text.startswith(head):
+            text = text[len(head):]
+            break
+        cut = text.find('\n用户选择的文件：')
+        if cut != -1:
+            text = text[:cut]
+    if text.startswith('用户已在网页端完成上传'):
+        return '（网页端已完成图片上传与任务确认）'
+    return text
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def agent_history(request):
     """读取某个历史会话的对话轮（user/assistant 纯文本；正文来自 opencode）。"""
-    session_id = str(request.query_params.get('session') or '').strip()
+    session_id = str(request.GET.get('session') or '').strip()
     if not session_id:
         return Response({'error': '缺少 session 参数'}, status=400)
     known = {i.get('session') for i in _load_registry(request.user.id) if isinstance(i, dict)}
@@ -835,7 +876,7 @@ def agent_history(request):
                         text = str(part.get('text') or '').strip()
                         break
             if text:
-                messages.append({'role': 'user', 'text': text, 'time': created})
+                messages.append({'role': 'user', 'text': _display_user_text(text), 'time': created})
         elif kind == 'assistant':
             parts = [str(part.get('text') or '') for part in (item.get('content') or [])
                      if isinstance(part, dict) and part.get('type') == 'text']
