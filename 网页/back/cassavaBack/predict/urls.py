@@ -13,7 +13,8 @@ from . import views
 from . import permission_views
 from . import auth_views
 from .assistant import assistant_chat, assistant_stats
-from .agent import agent_chat, agent_confirm, agent_events, agent_upload_complete, agent_sessions, agent_history
+from .agent import (agent_chat, agent_confirm, agent_events, agent_upload_complete,
+                    agent_sessions, agent_history, agent_stop, agent_session_delete)
 from .import_views import ImportJobViewSet
 
 # 创建默认路由器并注册视图集
@@ -92,5 +93,7 @@ urlpatterns = [
     path('agent/confirm/', agent_confirm, name='agent-confirm'),
     path('agent/upload-complete/', agent_upload_complete, name='agent-upload-complete'),
     path('agent/sessions/', agent_sessions, name='agent-sessions'),
+    path('agent/sessions/delete/', agent_session_delete, name='agent-session-delete'),
+    path('agent/stop/', agent_stop, name='agent-stop'),
     path('agent/history/', agent_history, name='agent-history'),
 ]

@@ -820,6 +820,49 @@ def agent_sessions(request):
     return Response({'items': items})
 
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def agent_stop(request):
+    """停止智能体当前轮：转发 opencode interrupt，本地 SSE 随之收尾。"""
+    session_id = str(request.data.get('session') or '').strip()
+    if not session_id:
+        return Response({'error': '缺少 session 参数'}, status=400)
+    known = {i.get('session') for i in _load_registry(request.user.id) if isinstance(i, dict)}
+    if session_id not in known:
+        return Response({'error': '会话不存在'}, status=404)
+    try:
+        response = _request('POST', f'/api/session/{session_id}/interrupt')
+    except requests.RequestException:
+        logger.exception('智能体停止请求失败：%s', session_id)
+        return Response({'error': UNAVAILABLE_TEXT}, status=503)
+    if response.status_code >= 400:
+        logger.warning('opencode interrupt 返回 HTTP %s', response.status_code)
+        return Response({'error': '停止请求未送达智能体'}, status=502)
+    return Response({'ok': True})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def agent_session_delete(request):
+    """删除一条历史会话：opencode 会话删除 + 用户注册表移除。"""
+    session_id = str(request.data.get('session') or '').strip()
+    if not session_id:
+        return Response({'error': '缺少 session 参数'}, status=400)
+    items = [i for i in _load_registry(request.user.id) if isinstance(i, dict)]
+    if not any(i.get('session') == session_id for i in items):
+        return Response({'error': '会话不存在'}, status=404)
+    try:
+        response = _request('DELETE', f'/api/session/{session_id}')
+    except requests.RequestException:
+        logger.exception('智能体会话删除失败：%s', session_id)
+        return Response({'error': UNAVAILABLE_TEXT}, status=503)
+    if response.status_code >= 400:
+        logger.warning('opencode 会话删除返回 HTTP %s', response.status_code)
+        return Response({'error': '会话删除未完成'}, status=502)
+    _save_registry(request.user.id, [i for i in items if i.get('session') != session_id])
+    return Response({'ok': True})
+
+
 def _display_user_text(text):
     """历史回放用：剥掉拼接在用户消息前的系统提示词与批次附注，只留用户真正输入。"""
     for prefix in _PROMPT_PREFIXES:
@@ -883,6 +926,15 @@ def agent_history(request):
             text = '\n'.join(p for p in parts if p).strip()
             if text:
                 messages.append({'role': 'assistant', 'text': text, 'time': created})
+
+    def _sort_key(m):
+        try:
+            return int(m['time'])
+        except (TypeError, ValueError):
+            return 0
+
+    # opencode 2.2.7 消息列表为新→旧倒序，历史回放必须按时间升序重排
+    messages.sort(key=_sort_key)
     return Response({'session': session_id, 'messages': messages})
 
 
