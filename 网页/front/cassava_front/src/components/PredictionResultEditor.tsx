@@ -36,6 +36,7 @@ import i18n from '../i18n';
 import { PredictionResult } from '../types';
 import { predictionsApi, resolveFileUrl } from '../services/api';
 import { calculateMaskPixelMetrics, formatPpd } from '../utils/measurement';
+import { getApiErrorMessage } from '../utils/apiError';
 import { readDraft, writeDraft, removeDraft } from '../utils/correctionDrafts';
 import { imagePointFromRotatedRect, normalizeRotation } from '../utils/imageRotation';
 import { replaceEditedContours } from '../utils/maskContours';
@@ -437,7 +438,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
       setMetrics(calculateMaskPixelMetrics(next.cassava, next.rotten));
       setBaseImage(image);
     }).catch((loadError: any) => {
-      if (active) setError(loadError?.message || t('editor.message.load_failed'));
+      if (active) setError(getApiErrorMessage(loadError, t('editor.message.load_failed')));
     }).finally(() => {
       if (active) setLoading(false);
     });
@@ -1139,7 +1140,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
       onSaved(correction);
       return correction;
     } catch (saveError: any) {
-      message.error(saveError?.response?.data?.message || saveError?.response?.data?.detail || saveError?.message || t('editor.save.failed'));
+      message.error(getApiErrorMessage(saveError, t('editor.save.failed')));
     } finally {
       savingRef.current = false;
       setSaving(false);
@@ -1158,7 +1159,7 @@ const PredictionResultEditor: React.FC<PredictionResultEditorProps> = ({ predict
       await predictionsApi.completeReview(prediction.id, version);
       message.success('已完成复检'); onReviewed?.();
       if (getUserPreferences().autoAdvanceReview && canNext) { rememberView(); onNavigate?.(1); }
-    } catch (error: any) { message.error(error?.response?.data?.error || '完成复检失败，请重新载入'); }
+    } catch (error: any) { message.error(getApiErrorMessage(error, '完成复检失败，请重新载入')); }
   };
   const rotateImage = (direction: -1 | 1) => {
     if (!masksRef.current || savingRef.current || versionLoading) return;

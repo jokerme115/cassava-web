@@ -43,7 +43,7 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
   const unavailable = modelOptions.length > 0 && !(modelOptions.find(m => m.value === (predictionMode === 'ensemble' ? 'ensemble' : modelType))?.available);
   const plainModelName = (id: string, label: string) => id === 'pbt_c512' ? '推荐 · PBT SegFormer 集成' : id === 'pbt_c384' ? 'PBT SegFormer 对照模型' : id === 'hrnet_w48' ? 'HRNet' : id === 'mask2former_swin_t' ? 'Mask2Former' : id === 'm6_best' ? 'M6 半监督' : label.replace(/（历史）/, '');
   useEffect(() => {
-    api.get('/models/').then(response => setModelOptions(response.data.map((item: any) => ({ value: item.id, label: item.label, available: item.available, legacy: item.legacy, advanced: item.advanced, reason: item.reason, protocol: item.protocol, weightSource: item.weight_source, members: item.members })))).catch(() => { setModelsError(true); message.error('模型目录加载失败，请刷新重试'); });
+    api.get('/models/').then(response => setModelOptions(response.data.map((item: any) => ({ value: item.id, label: item.label, available: item.available, legacy: item.legacy, advanced: item.advanced, reason: item.reason, protocol: item.protocol, weightSource: item.weight_source, members: item.members })))).catch((error) => { setModelsError(true); message.error(getApiErrorMessage(error, '模型目录加载失败，请刷新重试')); });
   }, []);
   const frozenProtocol = ['pbt_c512', 'pbt_c384', 'hrnet_w48', 'mask2former_swin_t'].includes(modelType) && predictionMode === 'single';
 
@@ -214,7 +214,7 @@ const PredictionModule: React.FC<{ currentUser?: any }> = ({ currentUser }) => {
     try {
       await saveUserPreferences({ predictionPresets: [...preferences.predictionPresets, { id: crypto.randomUUID(), name, model: modelType, mode: predictionMode, version: 1, parameters: resolvePredictionParameters(modelType, predictionMode, advancedParams) }] });
       setSavePresetOpen(false); message.success('预设已保存');
-    } catch (e: any) { message.error(e?.response?.data?.error || '预设保存失败，请刷新设置后重试'); } finally { setPresetSaving(false); }
+    } catch (e: any) { message.error(getApiErrorMessage(e, '预设保存失败，请刷新设置后重试')); } finally { setPresetSaving(false); }
   };
   const buildTaskPayload = (selectionType: 'images' | 'folders', items: string[], imageCount: number) => ({
     name: taskName,

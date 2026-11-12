@@ -11,8 +11,9 @@ import type { User } from '../types';
 import FigureStyleFields from './FigureStyleFields';
 import { DraftStatus, FigureSettingsPreview, ImportSettingsPreview, ListSettingsPreview, PreviewFrame } from './SettingsPreview';
 import { frozenModels } from '../utils/predictionPresets';
+import { getApiErrorMessage } from '../utils/apiError';
 
-const failure = (e: any) => e?.response?.data?.error || JSON.stringify(e?.response?.data || '保存失败，请重试');
+const failure = (e: any) => getApiErrorMessage(e, '保存失败，请重试');
 export default function WorkflowSettings({ section, user }: { section: string; user: User }) {
   const [prefs, setPrefs] = useState<UserPreferences>(() => ({ ...defaultPreferences, ...user.profile?.preferences }));
   const [form] = Form.useForm(), [editForm] = Form.useForm();
@@ -32,7 +33,7 @@ export default function WorkflowSettings({ section, user }: { section: string; u
     setPrefs(next); form.setFieldsValue(next);
   }, [user, section, form]);
   useEffect(() => {
-    if (section === 'prediction-presets') api.get('/models/').then(r => setModels(r.data)).catch(() => setError('模型目录加载失败，请刷新重试'));
+    if (section === 'prediction-presets') api.get('/models/').then(r => setModels(r.data)).catch((error) => setError(getApiErrorMessage(error, '模型目录加载失败，请刷新重试')));
     try { setLegacy(JSON.parse(localStorage.getItem(workspaceStorageKey('export-templates')) || '[]')); } catch { setLegacy([]); }
   }, [section]);
   const commit = async (patch: Partial<UserPreferences>) => {

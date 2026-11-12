@@ -6,6 +6,7 @@ import { Image, Folder } from '../types';
 import { imagesApi, foldersApi, systemSettingsApi } from '../services/api';
 
 import i18n from '../i18n';
+import { getApiErrorMessage } from '../utils/apiError';
 
 export const useImageStore = (isGuest: boolean = false) => {
   const DEFAULT_IMAGE_PAGE_SIZE = isGuest ? 36 : getUserPreferences().listPageSize;
@@ -165,7 +166,7 @@ export const useImageStore = (isGuest: boolean = false) => {
       }
       console.error(error);
       if (!isGuest) {
-        message.error(i18n.t('images.load_images_failed'));
+        message.error(getApiErrorMessage(error, i18n.t('images.load_images_failed')));
       } else {
         console.warn('Failed to load guest images', error);
       }
@@ -228,7 +229,7 @@ export const useImageStore = (isGuest: boolean = false) => {
       setHasMoreImages(nextHasMore && newLen < maxDisplayImages);
     } catch (error) {
       console.error(error);
-      message.error(i18n.t('images.load_images_failed'));
+      message.error(getApiErrorMessage(error, i18n.t('images.load_images_failed')));
     } finally {
       setLoadingMoreImages(false);
     }
@@ -284,7 +285,7 @@ export const useImageStore = (isGuest: boolean = false) => {
     } catch (error) {
       console.error(error);
       if (!isGuest) {
-        message.error(i18n.t('images.load_folders_failed'));
+        message.error(getApiErrorMessage(error, i18n.t('images.load_folders_failed')));
       }
     }
   };
@@ -365,11 +366,14 @@ export const useImageStore = (isGuest: boolean = false) => {
         } else {
           // 单批失败不再中断整批上传，记录后继续下一批
           message.error(
-            i18n.t('images.upload_batch_failed', {
-              start: batchIndex * batchSize + 1,
-              end: batchIndex * batchSize + batchFiles.length,
-              defaultValue: '第 {{start}}-{{end}} 张上传失败，已跳过',
-            })
+            getApiErrorMessage(
+              err,
+              i18n.t('images.upload_batch_failed', {
+                start: batchIndex * batchSize + 1,
+                end: batchIndex * batchSize + batchFiles.length,
+                defaultValue: '第 {{start}}-{{end}} 张上传失败，已跳过',
+              })
+            )
           );
         }
       }
@@ -408,7 +412,7 @@ export const useImageStore = (isGuest: boolean = false) => {
         refresh();
       }, 1000);
     } catch (error) {
-      message.error(i18n.t('images.upload_zip_failed'));
+      message.error(getApiErrorMessage(error, i18n.t('images.upload_zip_failed')));
       console.error(error);
     }
   };
@@ -417,7 +421,10 @@ export const useImageStore = (isGuest: boolean = false) => {
     const settled = await Promise.allSettled(ids.map(id => imagesApi.delete(id)));
     const failures = ids.filter((_, index) => settled[index].status === 'rejected');
     await refresh(); setSelectedImages(failures);
-    if (failures.length) message.warning(`已移入回收站 ${ids.length - failures.length} 张，${failures.length} 张失败，已保留选中`);
+    if (failures.length) {
+      const firstReason = settled.find((item): item is PromiseRejectedResult => item.status === 'rejected')?.reason;
+      message.warning(getApiErrorMessage(firstReason, `已移入回收站 ${ids.length - failures.length} 张，${failures.length} 张失败，已保留选中`));
+    }
     else message.success('已移入回收站，历史预测与修订保留');
     return failures;
   };
@@ -428,7 +435,7 @@ export const useImageStore = (isGuest: boolean = false) => {
       await refresh();
       message.success(i18n.t('images.update_success'));
     } catch (error) {
-      message.error(i18n.t('images.update_failed'));
+      message.error(getApiErrorMessage(error, i18n.t('images.update_failed')));
       console.error(error);
       throw error;
     }

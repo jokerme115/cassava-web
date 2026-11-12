@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Button, Drawer, Select, Table, Tag } from 'antd';
 import { RefreshCw } from 'lucide-react';
 import { permissionsApi } from '../services/api';
+import { getApiErrorMessage } from '../utils/apiError';
 import WorkspacePagination from './WorkspacePagination';
 
 interface Log { id: number; timestamp: string; username: string; action: string; resourceType: string; resourceId: string; success: boolean; details: unknown }
@@ -20,7 +21,7 @@ export default function OperationsLog() {
     try {
       const data = await permissionsApi.getAuditLogs({ page, page_size: pageSize, ...(action ? { action } : {}), ...(success ? { success } : {}), ...(query ? { resourceType: query } : {}) });
       if (id === sequence.value) { setRows(data.results || []); setTotal(data.count || 0); }
-    } catch { if (id === sequence.value) setError('操作日志加载失败，请重试'); }
+    } catch (error) { if (id === sequence.value) setError(getApiErrorMessage(error, '操作日志加载失败，请重试')); }
     finally { if (id === sequence.value) setLoading(false); }
   }, [page, pageSize, action, success, query, sequence]);
   useEffect(() => { void load(); return () => { sequence.value += 1; }; }, [load, sequence]);

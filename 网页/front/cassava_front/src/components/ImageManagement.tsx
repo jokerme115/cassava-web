@@ -23,6 +23,7 @@ import { Folder, User, Image, ResourceShare } from '../types';
 import ShareModal from './ShareModal';
 import { EditImageModal } from './EditImageModal';
 import { SmartClassificationModal } from './SmartClassificationModal';
+import { getApiErrorMessage } from '../utils/apiError';
 
 interface ImageManagementProps {
   currentUser?: User;
@@ -258,7 +259,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
         })
         .catch((err) => {
           console.error("Failed to load shared resources", err);
-          message.error(t('shares.load_failed'));
+          message.error(getApiErrorMessage(err, t('shares.load_failed')));
         });
     }
   }, [isGuest, isSharedWithMeView, t]);
@@ -271,7 +272,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
         })
         .catch((err) => {
           console.error("Failed to load shared folder images", err);
-          message.error(t('shares.load_failed'));
+          message.error(getApiErrorMessage(err, t('shares.load_failed')));
         });
     }
   }, [isGuest, isSharedWithMeView, sharedWithMeSelectedFolderId, t]);
@@ -324,7 +325,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
       })
       .catch((err) => {
         console.error("Failed to load my shares", err);
-        message.error(t('shares.load_failed'));
+        message.error(getApiErrorMessage(err, t('shares.load_failed')));
       })
       .finally(() => setLoadingMyShares(false));
   }, [isGuest, isMySharesView, t]);
@@ -428,8 +429,8 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
           await sharesApi.revoke(shareId);
           setMyShares((prev) => prev.filter(s => String(s.id) !== String(shareId)));
           message.success(t('shares.revoke_success'));
-        } catch {
-          message.error(t('shares.revoke_failed'));
+        } catch (error) {
+          message.error(getApiErrorMessage(error, t('shares.revoke_failed')));
         }
       },
     });
@@ -693,8 +694,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
           const failedDetail = Array.isArray(failed) && failed.length > 0
             ? failed.map((item: any) => `${item.name}: ${item.error}`).join('; ')
             : '';
-          const detail = failedDetail || err?.response?.data?.error || err?.response?.data?.message;
-          message.error(detail ? String(detail) : t('images.upload_failed'));
+          message.error(failedDetail || getApiErrorMessage(err, t('images.upload_failed')));
           setUploadProgress(prev => prev.map(item => item.status === 'uploading' ? { ...item, status: 'error' } : item));
         }
       }
@@ -742,7 +742,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
       const folder = selectedFolder === 'root' || selectedFolder === 'uncategorized' ? 'uncategorized' : selectedFolder && /^\d+$/.test(selectedFolder) ? selectedFolder : undefined;
       const { data } = await api.get('/images/selection/', { params: { folder, search: searchQuery } });
       setSelectedImages(data.image_ids.map(String)); message.success(`已选择全部符合条件的 ${data.count} 张图片`);
-    } catch (error) { message.error('选择失败，请重试'); }
+      } catch (error) { message.error(getApiErrorMessage(error, '选择失败，请重试')); }
   };
 
   const handleBatchDelete = () => {
@@ -817,8 +817,8 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
       setShowCreateFolderModal(false);
       setCreateFolderParentId(null); // Reset parent ID
       message.success(t('images.folder_created'));
-    } catch {
-      message.error(t('images.create_folder_failed'));
+    } catch (error) {
+      message.error(getApiErrorMessage(error, t('images.create_folder_failed')));
     } finally {
       setCreatingFolder(false);
     }
@@ -834,8 +834,8 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
       setFolderRenameDescription('');
       setContextFolder(null);
       message.success(t('images.folder_renamed'));
-    } catch {
-      message.error(t('images.rename_failed'));
+    } catch (error) {
+      message.error(getApiErrorMessage(error, t('images.rename_failed')));
     }
   };
 
@@ -856,7 +856,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
       message.success(t('images.folder_deleted'));
     } catch (e) {
       console.error(e);
-      message.error(t('images.delete_failed'));
+      message.error(getApiErrorMessage(e, t('images.delete_failed')));
     }
   };
 
@@ -891,8 +891,8 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
       message.success(t('images.folder_moved'));
       // Auto refresh after create and move
       loadImages?.();
-    } catch {
-      message.error(t('images.create_folder_failed'));
+    } catch (error) {
+      message.error(getApiErrorMessage(error, t('images.create_folder_failed')));
     } finally {
       setMoveModalCreatingFolder(false);
     }
@@ -1193,12 +1193,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
       await loadFolders?.();
       message.success(t('images.folder_moved'));
     } catch (e: any) {
-      const detail =
-        e?.response?.data?.detail ||
-        e?.response?.data?.error ||
-        e?.response?.data?.message ||
-        e?.message;
-      message.error(detail ? String(detail) : t('images.move_folder_failed'));
+      message.error(getApiErrorMessage(e, t('images.move_folder_failed')));
     }
   };
 
@@ -1416,7 +1411,7 @@ const ImageManagement: React.FC<ImageManagementProps> = ({ currentUser }) => {
                             message.success(t('images.moved_to_uncategorized'));
                             loadImages();
                         })
-                        .catch(() => message.error(t('images.move_failed')));
+                        .catch((error) => message.error(getApiErrorMessage(error, t('images.move_failed'))));
                 }
             }}
           >

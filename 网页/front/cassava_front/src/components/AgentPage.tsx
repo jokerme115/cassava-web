@@ -5,6 +5,9 @@ import AgentPanel, { AgentPanelHandle } from './AgentPanel';
 import PageHeader from './PageHeader';
 import { API_BASE_URL } from '../services/rest/client';
 import { getAuthToken } from '../utils/authToken';
+import { getApiErrorMessage } from '../utils/apiError';
+import { quotaBadgeText, type AgentQuota } from '../utils/agentQuota';
+import { useAgentQuota } from '../hooks/useAgentQuota';
 import { User } from '../types';
 
 const GUIDE = [
@@ -41,6 +44,47 @@ const relativeTime = (value: string) => {
   if (when.toDateString() === new Date(now.getTime() - 86_400_000).toDateString()) return '昨天';
   if (when.getFullYear() === now.getFullYear()) return `${when.getMonth() + 1}月${when.getDate()}日`;
   return `${when.getFullYear()}年${when.getMonth() + 1}月${when.getDate()}日`;
+};
+
+/**
+ * 页头额度徽标：一颗胶囊说清「今天还能用几次」。
+ * 取不到额度时整块不渲染，页头不留空位、不报错。
+ */
+const QuotaBadge: React.FC<{ quota: AgentQuota }> = ({ quota }) => {
+  const text = quotaBadgeText(quota);
+  const exhausted = !quota.allowed && quota.reason === 'quota_exhausted';
+  const denied = !quota.allowed && !exhausted;
+  const shell = denied
+    ? 'border-hairline bg-white text-muted'
+    : exhausted
+      ? 'border-warning/30 bg-warning-100/45 text-warning-text'
+      : 'border-accent-line/30 bg-[#f1f5ef] text-ink-secondary';
+  const dot = denied ? 'bg-muted-light' : exhausted ? 'bg-warning' : 'bg-accent-line';
+  const tip = denied
+    ? '当前账号没有使用智能体的权限，请联系管理员开通'
+    : exhausted
+      ? `今日已用 ${quota.used} / ${quota.quota} 次，明日 0 点恢复`
+      : quota.unlimited
+        ? '这个账号不限制智能体次数'
+        : `${quota.today ? `${quota.today} · ` : ''}今日已用 ${quota.used} / ${quota.quota} 次，每日 0 点重置`;
+
+  return (
+    <span
+      data-testid="agent-quota-badge"
+      data-state={quota.unlimited ? 'unlimited' : quota.allowed ? 'allowed' : quota.reason || 'denied'}
+      title={tip}
+      className={`inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-pill border px-3 text-[11px] leading-none ${shell}`}
+    >
+      <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+      <span>{text.main}</span>
+      {text.value && (
+        <span className="flex items-baseline gap-1">
+          <span className="text-[12px] font-semibold tabular-nums text-ink">{text.value}</span>
+          <span className="text-ink-secondary">{text.suffix}</span>
+        </span>
+      )}
+    </span>
+  );
 };
 
 const HISTORY_STYLE = `
@@ -117,6 +161,9 @@ const AgentPage: React.FC<{ currentUser?: User }> = ({ currentUser }) => {
   // 游客没有 agent 会话（上传本身也需要登录），不去打这个接口，免得空报一条「加载失败」
   const isGuest = !!currentUser?.is_guest;
   const canLoadHistory = !isGuest;
+  // 额度只在登录态有意义：游客连对话入口都不该有
+  const { quota, refresh: refreshQuota } = useAgentQuota(canLoadHistory);
+  const handleTurnSettled = useCallback(() => { void refreshQuota(); }, [refreshQuota]);
 
   useEffect(() => {
     if (!canLoadHistory) return;
@@ -176,9 +223,12 @@ const AgentPage: React.FC<{ currentUser?: User }> = ({ currentUser }) => {
         body: JSON.stringify({ session }),
       });
       if (!res.ok) {
-        const text = res.status === 401 ? '登录已过期，请重新登录'
-          : res.status === 404 ? '这个会话已经不存在了'
-          : '删除失败，请重试';
+        let payload: unknown = null;
+        try { payload = await res.json(); } catch { payload = null; }
+        const text = getApiErrorMessage(
+          { response: { status: res.status, data: payload } },
+          res.status === 404 ? '这个会话已经不存在了' : '删除失败，请重试',
+        );
         setDeleteError({ session, text });
         return;
       }
@@ -308,24 +358,33 @@ const AgentPage: React.FC<{ currentUser?: User }> = ({ currentUser }) => {
                 title="智能体"
                 subtitle="上传图片、创建预测任务、跟踪进度，执行前一律由你确认。"
                 actions={isGuest ? undefined : (
-                  <button
-                    type="button"
-                    onClick={() => setRailOpen(true)}
-                    aria-expanded={railOpen}
-                    aria-label="历史会话"
-                    className="inline-flex h-9 items-center gap-1.5 rounded-pill border border-hairline bg-white px-3 text-xs text-ink-secondary transition-colors hover:bg-surface-muted lg:hidden"
-                  >
-                    <History className="h-3.5 w-3.5" />
-                    历史
-                    {sessionCount > 0 && <span className="tabular-nums text-muted">{sessionCount}</span>}
-                  </button>
+                  <>
+                    {quota && <QuotaBadge quota={quota} />}
+                    <button
+                      type="button"
+                      onClick={() => setRailOpen(true)}
+                      aria-expanded={railOpen}
+                      aria-label="历史会话"
+                      className="inline-flex h-9 items-center gap-1.5 rounded-pill border border-hairline bg-white px-3 text-xs text-ink-secondary transition-colors hover:bg-surface-muted lg:hidden"
+                    >
+                      <History className="h-3.5 w-3.5" />
+                      历史
+                      {sessionCount > 0 && <span className="tabular-nums text-muted">{sessionCount}</span>}
+                    </button>
+                  </>
                 )}
               />
             </div>
           </header>
 
           <div className="relative flex min-h-0 flex-1">
-            <AgentPanel ref={panelRef} displayName={displayName} onSessionChange={setActiveSession} />
+            <AgentPanel
+              ref={panelRef}
+              displayName={displayName}
+              onSessionChange={setActiveSession}
+              quota={quota}
+              onTurnSettled={handleTurnSettled}
+            />
           </div>
         </section>
 

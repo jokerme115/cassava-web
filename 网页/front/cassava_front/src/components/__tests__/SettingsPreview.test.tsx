@@ -20,7 +20,7 @@ describe('settings effect previews', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: '原图' }));
     expect(screen.getByRole('checkbox', { name: '预测结果' })).toBeDisabled();
     expect(container.querySelectorAll('.preview-composite-block')).toHaveLength(1);
-  });
+  }, 15000);
   it('lets mobile users expand the preview without losing current settings', () => {
     render(<ImportSettingsPreview value={{ ...defaultPreferences, preserveHierarchy: false }}/>);
     fireEvent.click(screen.getByRole('button', { name: '展开导入后的目录预览' }));

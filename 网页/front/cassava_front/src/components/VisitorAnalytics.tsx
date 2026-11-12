@@ -6,6 +6,7 @@ import { GridComponent, LegendComponent, TitleComponent, TooltipComponent } from
 import { CanvasRenderer } from 'echarts/renderers';
 import { useTranslation } from 'react-i18next';
 import { analyticsApi } from '../services/api';
+import { getApiErrorMessage } from '../utils/apiError';
 import { Alert, Button, Table, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 
@@ -79,7 +80,7 @@ const VisitorAnalytics: React.FC = () => {
       setData(res);
     } catch (error) {
       console.error("Failed to fetch analytics", error);
-      setError('访问统计加载失败，请重试');
+      setError(getApiErrorMessage(error, '访问统计加载失败，请重试'));
     } finally {
       setLoading(false);
     }
@@ -101,7 +102,7 @@ const VisitorAnalytics: React.FC = () => {
       });
     } catch (error) {
       console.error("Failed to fetch logs", error);
-      setError('访问明细加载失败，请重试');
+      setError(getApiErrorMessage(error, '访问明细加载失败，请重试'));
     } finally {
       setLogsLoading(false);
     }
@@ -127,7 +128,7 @@ const VisitorAnalytics: React.FC = () => {
       });
     } catch (error) {
       console.error("Failed to fetch IP stats", error);
-      setError('访客明细加载失败，请重试');
+      setError(getApiErrorMessage(error, '访客明细加载失败，请重试'));
       setIpStats([]);
     } finally {
       setIpStatsLoading(false);

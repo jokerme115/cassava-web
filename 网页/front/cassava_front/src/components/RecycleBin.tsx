@@ -40,7 +40,13 @@ export default function RecycleBin({ onChange, canManage }: { onChange: () => vo
     try {
       const { data } = await api.get(`/${activeKind}/${entry.id}/deletion-impact/`);
       modal.confirm({ title: `永久清除“${entry.name}”？`, content: `将删除原图 ${data.images} 张、历史预测 ${data.predictions} 条、人工修订 ${data.corrections} 版。此操作无法恢复。`, okText: '永久清除', okButtonProps: { danger: true }, cancelText: '取消', onOk: async () => {
-        await api.post(`/${activeKind}/${entry.id}/purge/`, { confirm: 'PERMANENT_DELETE' }); void load(); onChange();
+        try {
+          await api.post(`/${activeKind}/${entry.id}/purge/`, { confirm: 'PERMANENT_DELETE' });
+        } catch (error) {
+          message.error(getApiErrorMessage(error, '永久清除失败'));
+          throw error;
+        }
+        void load(); onChange();
       } });
     } catch (error) { message.error(getApiErrorMessage(error, '无法读取删除影响')); }
   };

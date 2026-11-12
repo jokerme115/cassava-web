@@ -1,20 +1,33 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Button, Checkbox, Collapse, Drawer, Form, Input, Modal, Select, Switch, Table, Tag } from 'antd';
+import { Alert, Button, Checkbox, Collapse, Drawer, Form, Input, InputNumber, Modal, Select, Switch, Table, Tag } from 'antd';
 import { Plus, RefreshCw, Search } from 'lucide-react';
 import { permissionsApi } from '../services/api';
 import { usePermission } from '../hooks/usePermission';
 import { message } from '../utils/feedback';
+import { getApiErrorMessage } from '../utils/apiError';
 import type { User } from '../types';
 import WorkspacePagination from './WorkspacePagination';
 
 type Section = 'users' | 'roles' | 'permissions';
 interface Permission { id: number; name: string; codename: string; description: string; category?: string; is_bound?: boolean }
-interface Role { id: number; name: string; description: string; permissions: number[]; user_count: number; is_active: boolean }
+interface Role { id: number; name: string; description: string; permissions: number[]; user_count: number; is_active: boolean; agent_daily_quota?: number | null }
 interface Props { section?: Section; currentUser?: User; onUpdateUser?: (user: User) => void }
 
+// 权限/登录失败统一交给 getApiErrorMessage（403 会说"没有该操作的权限"，不带字段前缀）；
+// 字段级校验错误保留「字段名：原因」的形状，方便用户对着表单改。
 const failure = (error: any) => {
+  const status = error?.response?.status;
+  if (status === 401 || status === 403) return getApiErrorMessage(error, '操作失败，请重试');
   const data = error?.response?.data;
-  return typeof data === 'string' ? data : data ? Object.entries(data).map(([key, value]) => `${key === 'non_field_errors' ? '' : key + '：'}${Array.isArray(value) ? value.join('；') : value}`).join('；') : '操作失败，请重试';
+  if (typeof data === 'string') return data;
+  if (!data) return '操作失败，请重试';
+  return Object.entries(data).map(([key, value]) => `${key === 'non_field_errors' ? '' : key + '：'}${Array.isArray(value) ? value.join('；') : value}`).join('；');
+};
+/** 智能体每日额度：留空跟随系统默认（null）、0 不限、N 每天 N 次 */
+const toDailyQuota = (value: unknown): number | null => {
+  if (value === '' || value === null || value === undefined) return null;
+  const num = Number(value);
+  return Number.isFinite(num) && num >= 0 ? Math.floor(num) : null;
 };
 const groupName = (permission: Permission) => {
   const code = permission.codename;
@@ -107,7 +120,7 @@ export default function AccessSettings({ section = 'users', currentUser, onUpdat
       if (section === 'roles') {
         const role = record === 'new' ? null : await permissionsApi.getRoleById(String(record.id));
         setSelectedPermissions((role?.permission_ids || role?.permissions || []).map(Number));
-        setFormValues(role || { name: '', description: '', is_active: true });
+        setFormValues(role || { name: '', description: '', is_active: true, agent_daily_quota: null });
       } else setFormValues(record === 'new' ? { is_active: true, role_ids: [] } : { ...record, role_ids: (record as User).roles || [] });
       setEditing(record);
     } catch (e) { message.error(failure(e)); }
@@ -123,7 +136,12 @@ export default function AccessSettings({ section = 'users', currentUser, onUpdat
     setSaving(true); setFormError('');
     try {
       if (section === 'roles') {
-        const payload = { ...values, ...(can('assign_role_permissions') ? { permission_ids: selectedPermissions } : {}) };
+        const payload = {
+          ...values,
+          // 空 = 跟随系统默认；0 = 不限；其余按次数走。新建和编辑都带上，避免后端沿用旧值
+          agent_daily_quota: toDailyQuota(values.agent_daily_quota),
+          ...(can('assign_role_permissions') ? { permission_ids: selectedPermissions } : {}),
+        };
         if (editing === 'new') await permissionsApi.createRole(payload);
         else await permissionsApi.updateRole(String(editing!.id), payload);
       } else {
@@ -223,6 +241,15 @@ export default function AccessSettings({ section = 'users', currentUser, onUpdat
           <Form.Item name="name" label="角色名称" rules={[{ required: true, whitespace: true, message: '请输入角色名称' }]}><Input maxLength={100} /></Form.Item>
           <Form.Item name="description" label="说明"><Input.TextArea rows={2} /></Form.Item>
           <Form.Item name="is_active" label="启用角色" valuePropName="checked"><Switch /></Form.Item>
+          <Form.Item name="agent_daily_quota" label="智能体每日额度">
+            <InputNumber
+              min={0}
+              precision={0}
+              className="w-full"
+              placeholder="留空 = 跟随默认 50 次；0 = 不限"
+              aria-label="智能体每日额度"
+            />
+          </Form.Item>
           <div className="mb-3 flex items-center justify-between"><h3 className="font-semibold">可使用的功能</h3><span className="text-xs text-muted">已选 {selectedPermissions.length} 项</span></div>
           {permissionPicker}
         </> : <>

@@ -3,6 +3,7 @@ import { useViewState } from '../utils/useViewState';
 import WorkspacePagination from './WorkspacePagination';
 import { tasksApi } from '../services/api';
 import { message } from '../utils/feedback';
+import { getApiErrorMessage } from '../utils/apiError';
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   Activity,
@@ -85,8 +86,7 @@ const TaskCenter: React.FC<TaskCenterProps> = ({ currentUser }) => {
       setConfirmOpen(false);
       setPendingDelete(null);
     } catch (e) {
-      const detail = (e as { response?: { data?: { detail?: string; message?: string } } })?.response?.data;
-      message.error(detail?.detail || detail?.message || '移入回收站失败，请重试');
+      message.error(getApiErrorMessage(e, '移入回收站失败，请重试'));
     }
   };
 

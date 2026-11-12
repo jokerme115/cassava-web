@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowUp, BookOpen, Bot, CheckCircle2, ChevronDown, HelpCircl
 import { Link } from 'react-router-dom';
 import { API_BASE_URL } from '../services/rest/client';
 import { getAuthToken } from '../utils/authToken';
+import { getApiErrorMessage } from '../utils/apiError';
 import { User } from '../types';
 import { RichText, ThinkingDots, useTypewriter } from './ppdChat';
 
@@ -439,7 +440,9 @@ const AssistantShell: React.FC<{ currentUser: User; latestRecord?: AssistantLate
         body: JSON.stringify({ message: text, history: historyPayload, lastFileName }),
       });
       if (!response.ok || !response.body) {
-        fail(FALLBACK_ERROR);
+        let payload: unknown = null;
+        try { payload = await response.json(); } catch { payload = null; }
+        fail(getApiErrorMessage({ response: { status: response.status, data: payload } }, FALLBACK_ERROR));
       } else {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();

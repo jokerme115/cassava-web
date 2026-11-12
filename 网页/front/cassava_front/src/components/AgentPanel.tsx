@@ -1,10 +1,12 @@
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react';
 import {
-  Activity, AlertCircle, ArrowUp, BarChart3, Bot, CheckCircle2, ChevronDown, FolderOpen, ListChecks,
+  Activity, AlertCircle, ArrowUp, BarChart3, Bot, CheckCircle2, ChevronDown, FolderOpen, Info, ListChecks,
   Loader2, Play, ShieldCheck, SquarePen, Sparkles, Terminal, X, XCircle,
 } from 'lucide-react';
 import { API_BASE_URL } from '../services/rest/client';
 import { getAuthToken } from '../utils/authToken';
+import { getApiErrorMessage } from '../utils/apiError';
+import { quotaNotice, quotaPlaceholder, type AgentQuota } from '../utils/agentQuota';
 import { shortModelLabel } from '../utils/modelLabels';
 import { RichText, ThinkingDots, useTypewriter } from './ppdChat';
 
@@ -175,7 +177,16 @@ const readSse = async (res: Response, onFrame: (name: string, data: any) => void
   if (buffer.trim()) flush(buffer);
 };
 
-const httpErrorText = (status: number) => (status === 401 ? '登录已过期，请重新登录后再试。' : `智能体服务暂时不可用（${status}），请稍后重试。`);
+// SSE 接口没有可读的错误体，只能按状态码说话：403 要明确说是权限，不是「服务不可用」。
+const httpErrorText = (status: number) =>
+  getApiErrorMessage({ response: { status } }, `智能体服务暂时不可用（${status}），请稍后重试。`);
+
+/** 读一次响应体里的可读原因（403 只说「没有权限」而不是状态码）。 */
+const responseErrorText = async (res: Response, fallback: string) => {
+  let payload: unknown = null;
+  try { payload = await res.json(); } catch { payload = null; }
+  return getApiErrorMessage({ response: { status: res.status, data: payload } }, fallback);
+};
 
 /* ----------------------------- Markdown 预处理（只作用于智能体气泡） ----------------------------- */
 
@@ -487,8 +498,15 @@ const FLOW_STYLE = `
 /* ----------------------------- 智能体面板 ----------------------------- */
 
 // 独立页里不再需要 active：保留为可选参数，兼容旧的抽屉调用方式
-const AgentPanel = forwardRef<AgentPanelHandle, { displayName?: string; onSessionChange?: (session: string | null) => void }>(
-  function AgentPanel({ displayName, onSessionChange }, ref) {
+const AgentPanel = forwardRef<AgentPanelHandle, {
+  displayName?: string;
+  onSessionChange?: (session: string | null) => void;
+  /** 使用权限与每日额度；null 表示还没拿到（此时不做任何限制） */
+  quota?: AgentQuota | null;
+  /** 一轮对话结束（流结束 / 出错 / 停止）后回调，用来刷新额度 */
+  onTurnSettled?: () => void;
+}>(
+  function AgentPanel({ displayName, onSessionChange, quota = null, onTurnSettled }, ref) {
   const [msgs, setMsgs] = useState<AgentMsg[]>([]);
   const [input, setInput] = useState('');
   const [files, setFiles] = useState<File[]>([]);
@@ -513,6 +531,10 @@ const AgentPanel = forwardRef<AgentPanelHandle, { displayName?: string; onSessio
   const busy = turnActive || hasPending || picking;
   // 正在跑（chat 流 / events 流 / 确认后上传）时才给「停止」；等用户点确认卡的时候不算
   const stoppable = turnActive && !hasPending && !picking;
+  // 后端明确说了不能发（没有权限 / 今日额度用完）：输入区锁住并说明原因，历史会话照旧可看
+  const blocked = !!quota && !quota.allowed;
+  const quotaTip = quota ? quotaNotice(quota) : null;
+  const locked = busy || blocked;
 
   const patch = useCallback((id: string, update: (m: AgentMsg) => AgentMsg) => {
     setMsgs((list) => list.map((m) => (m.id === id ? update(m) : m)));
@@ -705,6 +727,8 @@ const AgentPanel = forwardRef<AgentPanelHandle, { displayName?: string; onSessio
 
   /* ---- 发送 ---- */
   const send = useCallback(async (raw: string, skipPick = false) => {
+    // 没有权限 / 今日额度用完：后端一定会拒，前端不必先把气泡画出来再报错
+    if (blocked) return;
     const text = raw.trim();
     if (!text) return;
     let chosen = filesRef.current;
@@ -743,7 +767,13 @@ const AgentPanel = forwardRef<AgentPanelHandle, { displayName?: string; onSessio
           ...(sessionRef.current ? { session: sessionRef.current } : {}),
         }),
       });
-      if (!res.ok || !res.body) { failBubble(assistantId, httpErrorText(res.status)); return; }
+      if (!res.ok || !res.body) {
+        // 403 的两句话（没有权限 / 今日额度用完）由后端给，原样显示，不要吞成「发送失败」
+        failBubble(assistantId, res.status === 403
+          ? await responseErrorText(res, '当前账号暂时不能使用智能体，请联系管理员开通')
+          : httpErrorText(res.status));
+        return;
+      }
       const target = { id: assistantId as string | null };
       const { ended, confirmed } = await consume(res, target, () => assistantId);
       patch(assistantId, (m) => (m.streaming ? { ...m, streaming: false, status: undefined } : m));
@@ -753,8 +783,11 @@ const AgentPanel = forwardRef<AgentPanelHandle, { displayName?: string; onSessio
       }
     } catch (error) {
       if ((error as any)?.name !== 'AbortError') failBubble(assistantId, '连接中断了，请检查网络后重试。');
+    } finally {
+      // 一轮结束（正常收尾 / 出错 / 用户停止）都重新问一次额度，徽标跟着变
+      onTurnSettled?.();
     }
-  }, [consume, failBubble, patch]);
+  }, [blocked, consume, failBubble, onTurnSettled, patch]);
 
   /* ---- 确认卡：执行 / 取消 ---- */
   const execute = useCallback(async (mid: string) => {
@@ -777,7 +810,7 @@ const AgentPanel = forwardRef<AgentPanelHandle, { displayName?: string; onSessio
         headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ session, requestId: info.requestId, reply: 'once' }),
       });
-      if (!confirmRes.ok) { fail(confirmRes.status === 401 ? '登录已过期，请重新登录后再试。' : `确认失败（${confirmRes.status}），请重试。`); return; }
+      if (!confirmRes.ok) { fail(await responseErrorText(confirmRes, '确认失败，请重试。')); return; }
 
       // 2) 分批上传
       // args.files 可能只是前 ≤8 个样例：少于 count 时不能当白名单用，否则会漏传
@@ -795,7 +828,7 @@ const AgentPanel = forwardRef<AgentPanelHandle, { displayName?: string; onSessio
         const form = new FormData();
         batch.forEach((f) => form.append('files', f));
         const upRes = await fetch(apiUrl('/images/upload-files/'), { method: 'POST', signal: controller.signal, headers: authHeaders({ Accept: 'application/json' }), body: form });
-        if (upRes.status !== 201 && upRes.status !== 207) { fail(`第 ${i + 1}-${i + batch.length} 张上传失败（${upRes.status}），任务未创建。`); return; }
+        if (upRes.status !== 201 && upRes.status !== 207) { fail(await responseErrorText(upRes, `第 ${i + 1}-${i + batch.length} 张上传失败，任务未创建。`)); return; }
         const body = await upRes.json();
         const uploaded: any[] = Array.isArray(body) ? body : body?.images || body?.results || [];
         uploaded.forEach((img) => { if (img && img.id !== undefined && img.id !== null) imageIds.push(img.id); });
@@ -812,7 +845,7 @@ const AgentPanel = forwardRef<AgentPanelHandle, { displayName?: string; onSessio
         headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ session, imageIds }),
       });
-      if (!doneRes.ok) { fail(`通知智能体失败（${doneRes.status}），请重试。`); return; }
+      if (!doneRes.ok) { fail(await responseErrorText(doneRes, '通知智能体失败，请重试。')); return; }
       setCf({ state: 'done' });
       setFiles([]);
 
@@ -834,8 +867,10 @@ const AgentPanel = forwardRef<AgentPanelHandle, { displayName?: string; onSessio
         if (last?.role === 'assistant') failBubble(last.id, '连接中断了，任务进度可能未能继续显示。');
         else setTurnActive(false);
       } else fail('网络出错了，请重试。');
+    } finally {
+      onTurnSettled?.();
     }
-  }, [consume, failBubble, patch]);
+  }, [consume, failBubble, onTurnSettled, patch]);
 
   const reject = useCallback(async (mid: string) => {
     const info = msgsRef.current.find((m) => m.id === mid)?.confirm;
@@ -884,7 +919,7 @@ const AgentPanel = forwardRef<AgentPanelHandle, { displayName?: string; onSessio
   }), [onSessionChange, startNew, stopPolling]);
 
   const chooseFolder = async () => {
-    if (busy) return;
+    if (locked) return;
     setPicking(true);
     try {
       const picked = await pickFolder(folderInputRef.current);
@@ -894,7 +929,7 @@ const AgentPanel = forwardRef<AgentPanelHandle, { displayName?: string; onSessio
     } finally { setPicking(false); }
   };
 
-  const submit = () => { if (!busy) void send(input); };
+  const submit = () => { if (!locked) void send(input); };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col" data-testid="agent-panel">
@@ -920,7 +955,7 @@ const AgentPanel = forwardRef<AgentPanelHandle, { displayName?: string; onSessio
                 <p className="mt-1 text-sm text-muted">告诉我要预测哪批图片，我会请你选择文件夹，核对任务名、模型和数量，你点「执行」后才会上传并创建预测任务。</p>
                 <div className="mt-5 space-y-2">
                   {EXAMPLES.map((ex) => (
-                    <button key={ex} type="button" onClick={() => { setInput(ex); inputRef.current?.focus(); }} className="group flex w-full items-center justify-between gap-3 rounded-xl border border-hairline bg-white px-3.5 py-2.5 text-left text-sm text-ink-secondary shadow-card transition-all hover:-translate-y-px hover:border-accent-line/60 hover:text-ink">
+                    <button key={ex} type="button" disabled={locked} onClick={() => { setInput(ex); inputRef.current?.focus(); }} className="group flex w-full items-center justify-between gap-3 rounded-xl border border-hairline bg-white px-3.5 py-2.5 text-left text-sm text-ink-secondary shadow-card transition-all hover:-translate-y-px hover:border-accent-line/60 hover:text-ink disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:border-hairline disabled:hover:text-ink-secondary">
                       <span className="min-w-0 truncate">{ex}</span>
                       <ArrowUp className="h-3.5 w-3.5 shrink-0 rotate-45 text-muted-light transition-colors group-hover:text-accent-line" />
                     </button>
@@ -949,7 +984,7 @@ const AgentPanel = forwardRef<AgentPanelHandle, { displayName?: string; onSessio
             <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-pill border border-accent-line/40 bg-surface-muted px-2.5 py-1 text-xs text-accent-text">
               <FolderOpen className="h-3.5 w-3.5 shrink-0" />
               <span className="truncate" title={files.map((f) => f.name).join('\n')}>{chipText(files)}</span>
-              <button type="button" disabled={busy} onClick={() => setFiles([])} aria-label="清除已选文件夹" title="清除，重新选择" className="shrink-0 rounded-full p-0.5 text-muted transition-colors hover:bg-surface-sunken hover:text-ink disabled:opacity-40"><X className="h-3 w-3" /></button>
+              <button type="button" disabled={locked} onClick={() => setFiles([])} aria-label="清除已选文件夹" title="清除，重新选择" className="shrink-0 rounded-full p-0.5 text-muted transition-colors hover:bg-surface-sunken hover:text-ink disabled:opacity-40"><X className="h-3 w-3" /></button>
             </span>
           </div>
         )}
@@ -965,23 +1000,39 @@ const AgentPanel = forwardRef<AgentPanelHandle, { displayName?: string; onSessio
             )}
           </div>
         )}
+        {quotaTip && (
+          <div
+            data-testid="agent-quota-notice"
+            data-reason={quota?.reason || 'no_permission'}
+            className={`mb-2 flex items-start gap-1.5 rounded-lg px-2.5 py-2 text-xs ${
+              quota?.reason === 'quota_exhausted' ? 'bg-warning-100/55 text-warning-text' : 'bg-surface-muted text-ink-secondary'
+            }`}
+          >
+            <Info aria-hidden="true" className="mt-[1px] h-3.5 w-3.5 shrink-0 opacity-70" />
+            <span className="min-w-0 flex-1 leading-[17px]">{quotaTip}</span>
+          </div>
+        )}
         <form
-          className="flex items-end gap-2 rounded-2xl border border-hairline-strong bg-white py-1.5 pl-1.5 pr-1.5 transition-colors focus-within:border-accent-line"
+          className={`flex items-end gap-2 rounded-2xl border py-1.5 pl-1.5 pr-1.5 transition-colors ${
+            blocked
+              ? 'border-hairline bg-surface-muted/60'
+              : 'border-hairline-strong bg-white focus-within:border-accent-line'
+          }`}
           onSubmit={(event) => { event.preventDefault(); submit(); }}
         >
-          <button type="button" disabled={busy} onClick={() => void chooseFolder()} aria-label="选择图片文件夹" title="选择图片文件夹" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface-sunken hover:text-accent-text disabled:cursor-not-allowed disabled:opacity-35">
+          <button type="button" disabled={locked} onClick={() => void chooseFolder()} aria-label="选择图片文件夹" title="选择图片文件夹" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface-sunken hover:text-accent-text disabled:cursor-not-allowed disabled:opacity-35">
             {picking ? <Loader2 className="h-4 w-4 animate-spin" /> : <FolderOpen className="h-4 w-4" />}
           </button>
           <textarea
             ref={inputRef}
             value={input}
             rows={1}
-            disabled={busy}
+            disabled={locked}
             onChange={(event) => setInput(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); submit(); }
             }}
-            placeholder={hasPending ? '请先确认或取消上面的操作…' : '告诉我要做什么，比如上传并预测一批图片…'}
+            placeholder={blocked && quota ? quotaPlaceholder(quota) : hasPending ? '请先确认或取消上面的操作…' : '告诉我要做什么，比如上传并预测一批图片…'}
             maxLength={500}
             aria-label="输入指令"
             className="max-h-28 min-h-[1.75rem] min-w-0 flex-1 resize-none self-center bg-transparent py-1 text-sm leading-relaxed text-ink outline-none placeholder:text-muted-light disabled:cursor-not-allowed"
@@ -999,13 +1050,13 @@ const AgentPanel = forwardRef<AgentPanelHandle, { displayName?: string; onSessio
               停止
             </button>
           ) : (
-            <button type="submit" disabled={busy || !input.trim()} aria-label="发送指令" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-fill text-white transition-colors hover:bg-brand-fill-hover disabled:cursor-not-allowed disabled:opacity-35">
+            <button type="submit" disabled={locked || !input.trim()} aria-label="发送指令" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-fill text-white transition-colors hover:bg-brand-fill-hover disabled:cursor-not-allowed disabled:opacity-35">
               <ArrowUp className="h-4 w-4" />
             </button>
           )}
         </form>
         <div className="mt-1.5 flex items-center justify-between gap-2 px-1 text-[11px] text-muted-light">
-          <span>{stoppable ? '正在回复，点「停止」可中断本轮' : 'Enter 发送 · 上传和创建任务前会先请你确认'}</span>
+          <span>{blocked ? '额度恢复后可以继续对话，历史会话仍然可以查看' : stoppable ? '正在回复，点「停止」可中断本轮' : 'Enter 发送 · 上传和创建任务前会先请你确认'}</span>
           {msgs.length > 0 && (
             <button type="button" onClick={startNew} disabled={turnActive && !hasPending} className="inline-flex items-center gap-1 text-muted hover:text-ink disabled:opacity-40"><SquarePen className="h-3 w-3" />新会话</button>
           )}

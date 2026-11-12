@@ -6,6 +6,7 @@ import { predictionsApi } from '../services/api';
 
 import i18n from '../i18n';
 import { effectivePpd } from '../utils/measurement';
+import { getApiErrorMessage } from '../utils/apiError';
 
 export const useResultsStore = (currentUser?: any, taskId?: string | null, search = '', status = 'all', reviewStatus = 'all', page = 1, pageSize = 48, onInvalidPage?: () => void) => {
   const [results, setResults] = useState<PredictionResult[]>([]);
@@ -49,7 +50,7 @@ export const useResultsStore = (currentUser?: any, taskId?: string | null, searc
     } catch (error: any) {
       if (sequence !== requestSequence.current) return;
       if (page > 1 && error?.response?.status === 404 && invalidPage.current) { invalidPage.current(); return; }
-      message.error(i18n.t('results.load_failed'));
+      message.error(getApiErrorMessage(error, i18n.t('results.load_failed')));
       console.error(error);
     } finally {
       if (sequence === requestSequence.current) setLoading(false);
@@ -113,17 +114,14 @@ export const useResultsStore = (currentUser?: any, taskId?: string | null, searc
       if (warnings) message.warning(`已生成 ${count} 条结果，${warnings} 条存在缺失资源，请检查数据包清单`);
       else message.success(`已生成 ${count} 条结果，已发起下载`);
     } catch (error: any) {
-      let detail = '导出失败，请重试';
-      if (error?.response?.data instanceof Blob) {
+      // 导出走 blob 响应：403 之类的 JSON 错误体被包在 Blob 里，先解出来再交给统一通路
+      let payload: unknown = error?.response?.data ?? null;
+      if (payload instanceof Blob) {
         try {
-          const payload = JSON.parse(await error.response.data.text());
-          detail = payload.message || payload.detail || payload.error || detail;
-        } catch { /* Keep the readable fallback. */ }
-      } else if (error?.response?.data) {
-        const payload = error.response.data;
-        detail = payload.message || payload.detail || payload.error || detail;
+          payload = JSON.parse(await payload.text());
+        } catch { payload = null; }
       }
-      message.error(detail);
+      message.error(getApiErrorMessage({ response: { status: error?.response?.status, data: payload } }, '导出失败，请重试'));
     } finally {
       setExporting(false);
     }

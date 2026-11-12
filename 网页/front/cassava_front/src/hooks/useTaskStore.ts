@@ -52,7 +52,7 @@ export const useTaskStore = (currentUser?: any, scope?: { search: string; status
     } catch (error: any) {
       if (sequence !== sequenceRef.current) return;
       if (paginated && selectedPage > 1 && error?.response?.status === 404 && invalidPageRef.current) { invalidPageRef.current(); return; }
-      if (!silent) message.error(i18n.t('tasks.load_failed'));
+      if (!silent) message.error(getApiErrorMessage(error, i18n.t('tasks.load_failed')));
       console.error(error);
       if (!silent) setTasks([]);
     } finally {
@@ -137,7 +137,7 @@ export const useTaskStore = (currentUser?: any, scope?: { search: string; status
       message.success(i18n.t('tasks.create_success'));
       return createdTask;
     } catch (error) {
-      message.error(i18n.t('tasks.create_failed'));
+      message.error(getApiErrorMessage(error, i18n.t('tasks.create_failed')));
       console.error(error);
       throw error;
     }
@@ -149,7 +149,7 @@ export const useTaskStore = (currentUser?: any, scope?: { search: string; status
       void loadTasks(true);
       message.success(i18n.t('tasks.cancel_success'));
     } catch (error) {
-      message.error(i18n.t('tasks.cancel_failed'));
+      message.error(getApiErrorMessage(error, i18n.t('tasks.cancel_failed')));
       console.error(error);
     }
   };

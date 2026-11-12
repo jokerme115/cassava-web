@@ -8,6 +8,7 @@ import AuditLogs from './AuditLogs';
 import { authApi, systemSettingsApi } from '../services/api';
 import { usePermission } from '../hooks/usePermission';
 import { message } from '../utils/feedback';
+import { getApiErrorMessage } from '../utils/apiError';
 import { cacheUserPreferences, defaultPreferences, type UserPreferences } from '../utils/userPreferences';
 import WorkflowSettings from './WorkflowSettings';
 import { saveUserPreferences } from '../services/preferences';
@@ -17,12 +18,7 @@ import './SettingsWorkspace.css';
 
 const VisitorAnalytics = lazy(() => import('./VisitorAnalytics'));
 interface Props { currentUser: User; onLogout: () => void; onUpdateUser?: (user: User) => void }
-const errorText = (error: any) => {
-  const data = error?.response?.data;
-  if (!data) return '操作失败，请重试';
-  if (typeof data === 'string') return data;
-  return Object.entries(data).map(([key, value]) => `${['error', 'detail', 'non_field_errors'].includes(key) ? '' : key + '：'}${Array.isArray(value) ? value.join('；') : JSON.stringify(value)}`).join('；');
-};
+const errorText = (error: any) => getApiErrorMessage(error, '操作失败，请重试');
 
 function SiteSettings() {
   const [form] = Form.useForm();

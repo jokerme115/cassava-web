@@ -17,6 +17,7 @@ import {
   Key
 } from 'lucide-react';
 import { permissionsApi } from '../services/api';
+import { getApiErrorMessage } from '../utils/apiError';
 
 import { useTranslation } from 'react-i18next';
 
@@ -92,7 +93,7 @@ const UserPermissionEditor: React.FC = () => {
       setTemplates(Array.isArray(templatesData) ? templatesData : []);
     } catch (error) {
       console.error('Failed to load data:', error);
-      showNotification('error', t('user_permission_editor.load_initial_failed'));
+      showNotification('error', getApiErrorMessage(error, t('user_permission_editor.load_initial_failed')));
       // Initialize with empty arrays on error to prevent crashes
       setUsers([]);
       setPermissions([]);
@@ -104,8 +105,8 @@ const UserPermissionEditor: React.FC = () => {
     try {
       const data = await permissionsApi.getUserDetailedPermissions(userId.toString());
       setSelectedPermissions(data.direct_permission_ids);
-    } catch {
-      showNotification('error', t('user_permission_editor.load_user_permissions_failed'));
+    } catch (error) {
+      showNotification('error', getApiErrorMessage(error, t('user_permission_editor.load_user_permissions_failed')));
     }
   }, [showNotification, t]);
 
@@ -147,8 +148,8 @@ const UserPermissionEditor: React.FC = () => {
       if (activeTab === 'history') {
         fetchUserLogs(selectedUser.id);
       }
-    } catch {
-      showNotification('error', t('user_permission_editor.update_permissions_failed'));
+    } catch (error) {
+      showNotification('error', getApiErrorMessage(error, t('user_permission_editor.update_permissions_failed')));
     } finally {
       setSaving(false);
     }
@@ -167,8 +168,8 @@ const UserPermissionEditor: React.FC = () => {
       setNewTemplateName('');
       setNewTemplateDesc('');
       showNotification('success', t('user_permission_editor.save_template_success'));
-    } catch {
-      showNotification('error', t('user_permission_editor.save_template_failed'));
+    } catch (error) {
+      showNotification('error', getApiErrorMessage(error, t('user_permission_editor.save_template_failed')));
     }
   };
 
@@ -217,8 +218,8 @@ const UserPermissionEditor: React.FC = () => {
       setSelectedPermissions(data.direct_permission_ids);
       setIsCopyModalOpen(false);
       showNotification('success', t('user_permission_editor.copied_from_user', { username: sourceUser.username }));
-    } catch {
-      showNotification('error', t('user_permission_editor.copy_permissions_failed'));
+    } catch (error) {
+      showNotification('error', getApiErrorMessage(error, t('user_permission_editor.copy_permissions_failed')));
     }
   };
 

@@ -54,7 +54,7 @@ export default function ImportWorkspace({ folders, onComplete, canUpload = true 
         previousStates.current.set(job.id, job.state);
       }
       if (changed) completeRef.current();
-    } catch { setRefreshError('无法获取最新进度，请检查网络后刷新'); }
+    } catch (error) { setRefreshError(getApiErrorMessage(error, '无法获取最新进度，请检查网络后刷新')); }
   };
   useEffect(() => {
     let stopped = false, timer: ReturnType<typeof setTimeout>;

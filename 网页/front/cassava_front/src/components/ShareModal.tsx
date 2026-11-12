@@ -2,6 +2,7 @@ import { message } from '../utils/feedback';
 import React, { useState, useEffect } from 'react';
 import { Modal, Select, DatePicker, Radio } from 'antd';
 import { sharesApi, permissionsApi } from '../services/api';
+import { getApiErrorMessage } from '../utils/apiError';
 import { useTranslation } from 'react-i18next';
 import { User } from 'lucide-react';
 
@@ -70,17 +71,10 @@ const ShareModal: React.FC<ShareModalProps> = ({ visible, onCancel, resourceType
       onSuccess();
       onCancel();
     } catch (error: any) {
-      const data = error?.response?.data;
       const isTimeout =
         error?.code === 'ECONNABORTED' ||
         (typeof error?.message === 'string' && error.message.toLowerCase().includes('timeout'));
-      const serverMsg =
-        (typeof data?.message === 'string' && data.message) ||
-        (typeof data?.error === 'string' && data.error) ||
-        (typeof data?.detail === 'string' && data.detail) ||
-        (typeof data?.detail === 'object' && data.detail && JSON.stringify(data.detail)) ||
-        (typeof error?.message === 'string' && error.message);
-      message.error((isTimeout ? '请求超时，请检查后端服务或网络连接' : serverMsg) || t('shares.share_failed'));
+      message.error(isTimeout ? '请求超时，请检查后端服务或网络连接' : getApiErrorMessage(error, t('shares.share_failed')));
     } finally {
       setLoading(false);
     }

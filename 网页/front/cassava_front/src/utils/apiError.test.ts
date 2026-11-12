@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getApiErrorMessage } from './apiError';
+import { getApiErrorMessage, PERMISSION_DENIED_MESSAGE, SESSION_EXPIRED_MESSAGE } from './apiError';
 
 describe('getApiErrorMessage', () => {
   it('透出 DRF 的 detail 文案', () => {
@@ -37,5 +37,30 @@ describe('getApiErrorMessage', () => {
   it('连 message 都没有时回落', () => {
     expect(getApiErrorMessage(null, '创建任务失败')).toBe('创建任务失败');
     expect(getApiErrorMessage({}, '创建任务失败')).toBe('创建任务失败');
+  });
+
+  it('403 没有可读原因时明确说是权限问题', () => {
+    expect(getApiErrorMessage({ response: { status: 403, data: { success: false } } }, '删除失败')).toBe(
+      PERMISSION_DENIED_MESSAGE,
+    );
+    expect(getApiErrorMessage({ response: { status: 403, data: {} } }, '删除失败')).toBe(PERMISSION_DENIED_MESSAGE);
+    expect(getApiErrorMessage({ response: { status: 403 } }, '删除失败')).toBe(PERMISSION_DENIED_MESSAGE);
+  });
+
+  it('403 带服务端 detail 时用服务端文案', () => {
+    const error = { response: { status: 403, data: { detail: '您没有执行该操作的权限。' } } };
+    expect(getApiErrorMessage(error, '删除失败')).toBe('您没有执行该操作的权限。');
+  });
+
+  it('401 提示重新登录', () => {
+    expect(getApiErrorMessage({ response: { status: 401 } }, '保存失败')).toBe(SESSION_EXPIRED_MESSAGE);
+    expect(getApiErrorMessage({ response: { status: 401, data: { detail: '身份认证信息未提供。' } } }, '保存失败')).toBe(
+      SESSION_EXPIRED_MESSAGE,
+    );
+  });
+
+  it('其它状态码仍回落原兜底文案', () => {
+    expect(getApiErrorMessage({ response: { status: 500, data: {} } }, '导出失败，请重试')).toBe('导出失败，请重试');
+    expect(getApiErrorMessage({ response: { status: 502 } }, '导出失败，请重试')).toBe('导出失败，请重试');
   });
 });

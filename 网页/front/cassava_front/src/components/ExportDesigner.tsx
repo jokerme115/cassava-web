@@ -8,6 +8,7 @@ import { getUserPreferences } from '../utils/userPreferences';
 import { referenceStyle as defaults, type FigureStyle } from '../utils/exportStyle';
 import FigureStyleFields from './FigureStyleFields';
 import type { PredictionResult } from '../types';
+import { getApiErrorMessage } from '../utils/apiError';
 export type { FigureStyle } from '../utils/exportStyle';
 
 type ExportFilters = { task_id?: string; search?: string; status?: string; review_status?: string; style?: string; version?: string; result_ids?: string };
@@ -45,9 +46,10 @@ export default function ExportDesigner({ prediction, count, filters, onExport, e
         .then(response => { if (active) { url = URL.createObjectURL(response.data); setPreview(url); setError(''); } })
         .catch(async caught => {
           if (!active || controller.signal.aborted) return;
-          let text = '预览失败，请检查版本与原图';
-          try { const body = JSON.parse(await caught.response.data.text()); text = body.error || text; } catch { /* use fallback */ }
-          if (active) setError(text);
+          // 预览接口也用 blob 返错，先把 JSON 解出来再走统一通路
+          let payload: unknown = null;
+          try { payload = JSON.parse(await caught.response.data.text()); } catch { payload = null; }
+          if (active) setError(getApiErrorMessage({ response: { status: caught?.response?.status, data: payload } }, '预览失败，请检查版本与原图'));
         }).finally(() => { if (active) setPreviewLoading(false); });
     }, 350);
     return () => { active = false; controller.abort(); window.clearTimeout(timer); if (url) URL.revokeObjectURL(url); };
