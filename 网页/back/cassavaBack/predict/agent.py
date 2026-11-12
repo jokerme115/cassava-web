@@ -827,9 +827,9 @@ def _display_user_text(text):
         if text.startswith(head):
             text = text[len(head):]
             break
-        cut = text.find('\n用户选择的文件：')
-        if cut != -1:
-            text = text[:cut]
+    cut = text.find('\n用户选择的文件：')
+    if cut != -1:
+        text = text[:cut]
     if text.startswith('用户已在网页端完成上传'):
         return '（网页端已完成图片上传与任务确认）'
     return text

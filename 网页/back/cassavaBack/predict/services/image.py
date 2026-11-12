@@ -56,8 +56,12 @@ class ImageService(BaseService):
         raise Exception(f"Unsupported image format: {image_format}")
     
     @staticmethod
-    def upload_image(file, folder_id=None, check_duplicate=True, force=False, user=None):
-        """All upload routes share original-byte identity and metadata. Never overwrite."""
+    def upload_image(file, folder_id=None, check_duplicate=True, force=False, user=None, return_existing=False):
+        """All upload routes share original-byte identity and metadata. Never overwrite.
+
+        return_existing=True 时，内容重复不再只报错，而是把同目录已存在的图片一并返回
+        （(existing, ('DUPLICATE_CONTENT', …))），供调用方直接复用已有记录。
+        """
         import hashlib
         from datetime import datetime, timezone as dt_timezone, timedelta
         from django.db import transaction
@@ -112,7 +116,7 @@ class ImageService(BaseService):
                             pass
                     existing = candidates.filter(content_sha256=digest).first()
                     if existing:
-                        return None, ('DUPLICATE_CONTENT', f'同目录内容重复，已跳过：{existing.name}')
+                        return (existing if return_existing else None), ('DUPLICATE_CONTENT', f'同目录内容重复，已跳过：{existing.name}')
                 name = unique_name(candidates, name)
                 extension = normalized.get('suggested_extension') or os.path.splitext(name)[1].lower()
                 key = f'images/{folder.pk if folder else "unclassified"}/{uuid.uuid4().hex}{extension}'

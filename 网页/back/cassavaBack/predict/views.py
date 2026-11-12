@@ -227,15 +227,25 @@ class CassavaImageViewSet(RecyclingActions, viewsets.ModelViewSet, PermissionMix
         files = request.FILES.getlist('files')
         if not files:
             return self.error_response('未提供文件', status_code=400)
-        uploaded, skipped, failed = [], [], []
+        uploaded, skipped, failed, reused = [], [], [], []
         for file in files:
             image, error = ImageService.upload_image(file, request.data.get('folder_id') or None,
-                check_duplicate=request.data.get('check_duplicate', '1') != '0', user=request.user)
+                check_duplicate=request.data.get('check_duplicate', '1') != '0', user=request.user,
+                return_existing=True)
             if error:
-                (skipped if error[0] == 'DUPLICATE_CONTENT' else failed).append({'name': file.name, 'code': error[0], 'error': error[1]})
+                if error[0] == 'DUPLICATE_CONTENT' and image is not None:
+                    # 内容重复：直接复用已存在的图片记录（智能体上传链路可直接建任务）
+                    reused.append(image)
+                    skipped.append({'name': file.name, 'code': error[0], 'error': error[1], 'reused': True})
+                else:
+                    (skipped if error[0] == 'DUPLICATE_CONTENT' else failed).append({'name': file.name, 'code': error[0], 'error': error[1]})
             else:
                 uploaded.append(image)
         serialized = CassavaImageSerializer(uploaded, many=True, context=self.get_serializer_context()).data
+        reused_serialized = CassavaImageSerializer(reused, many=True, context=self.get_serializer_context()).data
+        for item in reused_serialized:
+            item['reused'] = True
+        serialized = list(serialized) + list(reused_serialized)
         if not skipped and not failed:
             return Response(serialized, status=201)
         return Response({'images': serialized, 'success_count': len(uploaded), 'duplicates': skipped, 'failed': failed}, status=207 if failed else 201)

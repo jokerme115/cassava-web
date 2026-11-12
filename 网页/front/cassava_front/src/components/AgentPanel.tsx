@@ -341,7 +341,7 @@ const ConfirmCard: React.FC<{ info: ConfirmInfo; onExecute: () => void; onReject
         </div>
       )}
       {state === 'done' && (
-        <div className="mt-3 flex flex-wrap items-center gap-x-2 text-xs font-medium text-success-text"><span className="inline-flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" />已确认执行</span>{!!info.skipped && <span className="font-normal text-warning-text">{info.skipped} 张已存在，已跳过上传</span>}</div>
+        <div className="mt-3 flex flex-wrap items-center gap-x-2 text-xs font-medium text-success-text"><span className="inline-flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" />已确认执行</span>{!!info.skipped && <span className="font-normal text-warning-text">{info.skipped} 张已存在，已直接复用</span>}</div>
       )}
       {state === 'cancelled' && <div className="mt-3 text-xs font-medium text-muted">已取消，不会上传也不会创建任务</div>}
       {state === 'failed' && <div className="mt-3 flex items-start gap-1.5 text-xs text-danger-text"><AlertCircle className="mt-px h-3.5 w-3.5 shrink-0" />{info.error || '执行失败，请稍后重试。'}</div>}
